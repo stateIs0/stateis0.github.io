@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>SOFA--源码分析-—-预热权重 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="SOFA--源码分析-—-预热权重">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/04/2018/2018-05-04-SOFA--源码分析-—-预热权重/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SOFA--源码分析-—-预热权重">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="SOFA--源码分析-—-预热权重" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-05-03T18:11:11.000Z">2018-05-04</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/SOFA/">SOFA</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    13 分钟 读完 (大约 1898 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                SOFA--源码分析-—-预热权重
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       ## 前言</p>
+<p>SOFA-RPC 支持根据权重对服务进行预热功能，具体地址：<a href="https://github.com/alipay/sofa-rpc/wiki/Provider-Warmup-Weight" target="_blank" rel="noopener">预热权重</a>.</p>
+<p>引用官方文档：</p>
+<p>预热权重功能让客户端机器能够根据服务端的相应权重进行流量的分发。该功能也常被用于集群内少数机器的启动场景。利用流量权重功能在短时间内对服务端机器进行预热，然后再接收正常的流量比重。 运行机制如下： </p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-7b33cacfc6b7ba3e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>1.服务端服务在启动时会将自身的预热时间，预热期内权重，预热完成后的正常权重推送给服务注册中心。如上图 ServiceB 指向 Service Registry 。</p>
+<p>2.客户端在引用服务的时候会获得每个服务实例的预热权重信息。如上图 Service Registry 指向 client 。</p>
+<p>3.客户端在进行调用的时候会根据服务所在地址的预热时期所对应的权重进行流量分发。如上图 client 指向 ServiceA 和 ServiceB 。 ServiceA 预热完毕，权重默认 100 ， ServiceB 处于预热期，权重为 10，因此所承受流量分别为 100%110 和 10%110 。</p>
+<h2 id="如何使用"><a href="#如何使用" class="headerlink" title="如何使用"></a>如何使用</h2><p>该功能使用方式如下。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ProviderConfig&lt;HelloWordService&gt; providerConfig = <span class="hljs-keyword">new</span> ProviderConfig&lt;HelloWordService&gt;() </span><br><span class="line">            .setWeight(<span class="hljs-number">100</span>) </span><br><span class="line">            .setParameter(ProviderInfoAttrs.ATTR_WARMUP_WEIGHT,<span class="hljs-string">"10"</span>) </span><br><span class="line">            .setParameter(ProviderInfoAttrs.ATTR_WARM_UP_END_TIME,<span class="hljs-string">"12000"</span>);</span><br></pre></td></tr></table></figure>
+<p>如上，该服务的预热期为12s，在预热期内权重为10，预热期结束后的正常权重为100。如果该服务一共发布在两个机器A,B上，A机器正处于预热期内，并使用上述配置，B已经完成预热，正常权重为200。那么客户端在调用的时候，此时流量分发的比重为10：200，A机器预热结束后，流量分发比重为100：200。 在SOFABoot中，如下配置预热时间，预热期间权重和预热完后的权重即可。</p>
+<figure class="highlight xml hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">sofa:reference</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"sampleRestFacadeReferenceBolt"</span> <span class="hljs-attr">interface</span>=<span class="hljs-string">"com.alipay.sofa.endpoint.facade.SampleFacade"</span>&gt;</span></span><br><span class="line">    <span class="hljs-tag">&lt;<span class="hljs-name">sofa:binding.bolt</span>&gt;</span></span><br><span class="line">         <span class="hljs-tag">&lt;<span class="hljs-name">sofa:global-attrs</span> <span class="hljs-attr">weight</span>=<span class="hljs-string">"100"</span> <span class="hljs-attr">warm-up-time</span>=<span class="hljs-string">"10000"</span> <span class="hljs-attr">warm-up-weight</span>=<span class="hljs-string">"1000"</span>/&gt;</span></span><br><span class="line">     <span class="hljs-tag">&lt;/<span class="hljs-name">sofa:binding.bolt</span>&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;/<span class="hljs-name">sofa:reference</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>再来看看源码实现。</p>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><p>从 demo 中看，SOFA 需要在 ProviderConfig 中配置属性，而这些属性都是保存在一个 Map 中。</p>
+<p>代码：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> S <span class="hljs-title">setParameter</span><span class="hljs-params">(String key, String value)</span> </span>&#123;</span><br><span class="line">       <span class="hljs-keyword">if</span> (parameters == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">           parameters = <span class="hljs-keyword">new</span> ConcurrentHashMap&lt;String, String&gt;();</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="hljs-keyword">if</span> (value == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">           parameters.remove(key);</span><br><span class="line">       &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">           parameters.put(key, value);</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="hljs-keyword">return</span> castThis();</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<p>当发布服务的时候，这个 Map 会被发布到注册中心。具体代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">doRegister</span><span class="hljs-params">(String appName, String serviceName, ProviderInfo providerInfo)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (LOGGER.isInfoEnabled(appName)) &#123;</span><br><span class="line">        LOGGER.infoWithApp(appName, LogCodes.getLog(LogCodes.INFO_ROUTE_REGISTRY_PUB, serviceName));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-comment">//&#123;service : [provider...]&#125;</span></span><br><span class="line">    ProviderGroup oldGroup = memoryCache.get(serviceName);</span><br><span class="line">    <span class="hljs-keyword">if</span> (oldGroup != <span class="hljs-keyword">null</span>) &#123; <span class="hljs-comment">// 存在老的key</span></span><br><span class="line">        oldGroup.add(providerInfo);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123; <span class="hljs-comment">// 没有老的key，第一次加入</span></span><br><span class="line">        List&lt;ProviderInfo&gt; news = <span class="hljs-keyword">new</span> ArrayList&lt;ProviderInfo&gt;();</span><br><span class="line">        news.add(providerInfo);</span><br><span class="line">        memoryCache.put(serviceName, <span class="hljs-keyword">new</span> ProviderGroup(news));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-comment">// 备份到文件 改为定时写</span></span><br><span class="line">    needBackup = <span class="hljs-keyword">true</span>;</span><br><span class="line">    doWriteFile();</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (subscribe) &#123;</span><br><span class="line">        notifyConsumerListeners(serviceName, memoryCache.get(serviceName));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码中，提供者会将 providerInfo 的信息写到本地文件(注册中心)中。</p>
+<p>而消费者则会从注册中心订阅服务列表的信息。具体代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Override</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;ProviderGroup&gt; <span class="hljs-title">subscribe</span><span class="hljs-params">(ConsumerConfig config)</span> </span>&#123;</span><br><span class="line">    String key = LocalRegistryHelper.buildListDataId(config, config.getProtocol());</span><br><span class="line">    List&lt;ConsumerConfig&gt; listeners = notifyListeners.get(key);</span><br><span class="line">    <span class="hljs-keyword">if</span> (listeners == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        listeners = <span class="hljs-keyword">new</span> ArrayList&lt;ConsumerConfig&gt;();</span><br><span class="line">        notifyListeners.put(key, listeners);</span><br><span class="line">    &#125;</span><br><span class="line">    listeners.add(config);</span><br><span class="line">    <span class="hljs-comment">// 返回已经加载到内存的列表（可能不是最新的)</span></span><br><span class="line">    ProviderGroup group = memoryCache.get(key);</span><br><span class="line">    <span class="hljs-keyword">if</span> (group == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        group = <span class="hljs-keyword">new</span> ProviderGroup();</span><br><span class="line">        memoryCache.put(key, group);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> Collections.singletonList(group);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面这段代码会被 DefaultConsumerBootstrap 调用，根据消费者的配置信息，生成一个 key，然后将消费者添加到通知列表中（当数据变化时，通知消费者，由定时任务执行）。</p>
+<p>然后，从内存中取出key 对应的服务分组，并返回集合（就是提供者注册的信息）。</p>
+<p>这段代码会在 AbstractCluster 的 init 方法中调用—— <code>List&lt;ProviderGroup&gt; all = consumerBootstrap.subscribe();</code>。</p>
+<p>服务分组的数据结构是 ProviderInfo，是一个抽象的服务提供列表，其中包含服务的信息，比如地址，协议类型，主机地址，端口，路径，版本，动态参数，静态参数，服务状态等等，其中就包括<strong>权重</strong>。</p>
+<p>获取权重的方法如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">getWeight</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    ProviderStatus status = getStatus();</span><br><span class="line">    <span class="hljs-keyword">if</span> (status == ProviderStatus.WARMING_UP) &#123;</span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">            <span class="hljs-comment">// 还处于预热时间中</span></span><br><span class="line">            Integer warmUpWeight = (Integer) getDynamicAttr(ProviderInfoAttrs.ATTR_WARMUP_WEIGHT);</span><br><span class="line">            <span class="hljs-keyword">if</span> (warmUpWeight != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                <span class="hljs-keyword">return</span> warmUpWeight;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="hljs-keyword">return</span> weight;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> weight;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意 getStatus 方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> ProviderStatus <span class="hljs-title">getStatus</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (status == ProviderStatus.WARMING_UP) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (System.currentTimeMillis() &gt; (Long) getDynamicAttr(ProviderInfoAttrs.ATTR_WARM_UP_END_TIME)) &#123;</span><br><span class="line">            <span class="hljs-comment">// 如果已经过了预热时间，恢复为正常</span></span><br><span class="line">            status = ProviderStatus.AVAILABLE;</span><br><span class="line">            setDynamicAttr(ProviderInfoAttrs.ATTR_WARM_UP_END_TIME, <span class="hljs-keyword">null</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> status;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>逻辑如下：</p>
+<p>获取服务状态，如果是预热状态，则获取预热状态的权重值，反之，如果不是，反之正常值（默认 100）。</p>
+<p>获取状态的方法则是判断时间，如果当前时间大于预热时间，则修改状态为可用。并删除动态参数列表中的“预热时间”。</p>
+<p>那么，什么时候会获取权重呢？</p>
+<p>如果看过之前文章的同学肯定知道，在负载均衡的时候，会调用。</p>
+<p>我们看看默认的随机均衡算法。还记得当时，楼主有个地方不是很明白，我们要根据权重随机，当时看来，并没有什么用处，今天明白了。再上一遍代码吧：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">@ AbstractLoadBalancer.java</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">int</span> <span class="hljs-title">getWeight</span><span class="hljs-params">(ProviderInfo providerInfo)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 从provider中或得到相关权重,默认值100</span></span><br><span class="line">    <span class="hljs-keyword">return</span> providerInfo.getWeight() &lt; <span class="hljs-number">0</span> ? <span class="hljs-number">0</span> : providerInfo.getWeight();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>获取权重，默认 100.</p>
+<p>再看随机算法的 doSelect 方法。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">@ RandomLoadBalancer.java</span><br><span class="line"><span class="hljs-meta">@Override</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> ProviderInfo <span class="hljs-title">doSelect</span><span class="hljs-params">(SofaRequest invocation, List&lt;ProviderInfo&gt; providerInfos)</span> </span>&#123;</span><br><span class="line">    ProviderInfo providerInfo = <span class="hljs-keyword">null</span>;</span><br><span class="line">    <span class="hljs-keyword">int</span> size = providerInfos.size(); <span class="hljs-comment">// 总个数</span></span><br><span class="line">    <span class="hljs-keyword">int</span> totalWeight = <span class="hljs-number">0</span>; <span class="hljs-comment">// 总权重</span></span><br><span class="line">    <span class="hljs-keyword">boolean</span> isWeightSame = <span class="hljs-keyword">true</span>; <span class="hljs-comment">// 权重是否都一样</span></span><br><span class="line">    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="hljs-keyword">int</span> weight = getWeight(providerInfos.get(i));</span><br><span class="line">        totalWeight += weight; <span class="hljs-comment">// 累计总权重</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (isWeightSame &amp;&amp; i &gt; <span class="hljs-number">0</span> &amp;&amp; weight != getWeight(providerInfos.get(i - <span class="hljs-number">1</span>))) &#123;</span><br><span class="line">            isWeightSame = <span class="hljs-keyword">false</span>; <span class="hljs-comment">// 计算所有权重是否一样</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">if</span> (totalWeight &gt; <span class="hljs-number">0</span> &amp;&amp; !isWeightSame) &#123;</span><br><span class="line">        <span class="hljs-comment">// 如果权重不相同且权重大于0则按总权重数随机</span></span><br><span class="line">        <span class="hljs-keyword">int</span> offset = random.nextInt(totalWeight);</span><br><span class="line">        <span class="hljs-comment">// 并确定随机值落在哪个片断上</span></span><br><span class="line">        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">            offset -= getWeight(providerInfos.get(i));</span><br><span class="line">            <span class="hljs-keyword">if</span> (offset &lt; <span class="hljs-number">0</span>) &#123;</span><br><span class="line">                providerInfo = providerInfos.get(i);</span><br><span class="line">                <span class="hljs-keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-comment">// 如果权重相同或权重为0则均等随机</span></span><br><span class="line">        providerInfo = providerInfos.get(random.nextInt(size));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> providerInfo;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先判断各个服务的权重是否相同，如果不同，进入第二个 if。</p>
+<p>关键点来了，如果权重不同，那么从总的权重中，随机一个数，一次从服务列表的权重递减。知道该值小于0，那么就使用该服务。</p>
+<p>这样就能<strong>大致</strong>保证权重小的被击中的几率较小。具体取决于 Java 的随机算法，但是我们还是比较相信 Java 的。</p>
+<p>我们来推倒一下这个算法。</p>
+<p>假设有 A， B， C， 3 个服务，每个服务默认权重 100，其中 C 现在处于预热阶段，则 C 的权重等于 10.</p>
+<p>那么总权重 210。</p>
+<p>如果C落在第一位，那么一定会选中C的情况是权重落在0-9之间；<br>如果C落在第二位，那么一定会选中C的情况是权重落在100-109之间；<br>如果C是在第三位，那么一定会选中C的情况是权重落在200-209；</p>
+<p>符合权重。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>现在看来，预热权重还是挺简单的，主要在负载均衡出进行处理就行。</p>
+<p>今天就到这里，bye！！！</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/05/04/2018/2018-05-04-Java-如何获取泛型类型/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Java-如何获取泛型类型</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/05/03/2018/2018-05-03-SOFA-源码分析-—-负载均衡和一致性-Hash/">
+                <span class="level-item">SOFA-源码分析-—-负载均衡和一致性-Hash</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/05/04/2018/2018-05-04-SOFA--源码分析-—-预热权重/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="SOFA--源码分析-—-预热权重" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

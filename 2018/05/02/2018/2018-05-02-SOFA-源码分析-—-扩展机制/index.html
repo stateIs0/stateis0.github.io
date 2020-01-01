@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>SOFA-源码分析-—-扩展机制 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="SOFA-源码分析-—-扩展机制">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/02/2018/2018-05-02-SOFA-源码分析-—-扩展机制/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SOFA-源码分析-—-扩展机制">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="SOFA-源码分析-—-扩展机制" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-05-01T18:11:11.000Z">2018-05-02</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/SOFA/">SOFA</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    18 分钟 读完 (大约 2761 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                SOFA-源码分析-—-扩展机制
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       <!--more-->       ## 前言</p>
+<p>我们在之前的文章中已经稍微了解过 SOFA 的扩展机制，我们也说过，一个好的框架，必然是易于扩展的。那么 SOFA 具体是怎么实现的呢？</p>
+<p>一起来看看。</p>
+<h2 id="如何使用？"><a href="#如何使用？" class="headerlink" title="如何使用？"></a>如何使用？</h2><p>看官方的 demo：</p>
+<p>1.定义扩展点。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Extensible</span></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">Person</span> </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">getName</span><span class="hljs-params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>2.定义扩展实现</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Extension</span>(<span class="hljs-string">"A"</span>)</span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">PersonA</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Person</span></span>&#123;</span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">getName</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="hljs-string">"li wei"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>3.编写扩展描述文件：META-INF/services/sofa-rpc/com.alipay.sofa.rpc.extension.Person。文件内容如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">A=com.alipay.sofa.rpc.extension.PersonA</span><br></pre></td></tr></table></figure>
+<p>4.加载扩展点，获取到扩展实现类使用。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Person person = ExtensionLoaderFactory.getExtensionLoader(Person.class).getExtension(<span class="hljs-string">"A"</span>);</span><br></pre></td></tr></table></figure>
+<p>很简单对不对，只需要 2 个注解，一个配置文件，然后使用工厂方法通过接口名称和扩展点名称就能够获取到实例。So，我们今天要看的就是这些东西，其实挺简单的，如果用过 Java 自带的 SPI 就会很熟悉了。</p>
+<h2 id="源码实现"><a href="#源码实现" class="headerlink" title="源码实现"></a>源码实现</h2><p>从哪里下手呢？当然是这个工厂方法。</p>
+<p>源码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> &lt;T&gt; <span class="hljs-function">ExtensionLoader&lt;T&gt; <span class="hljs-title">getExtensionLoader</span><span class="hljs-params">(Class&lt;T&gt; clazz)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> getExtensionLoader(clazz, <span class="hljs-keyword">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>调用的是重载的另一个方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> &lt;T&gt; <span class="hljs-function">ExtensionLoader&lt;T&gt; <span class="hljs-title">getExtensionLoader</span><span class="hljs-params">(Class&lt;T&gt; clazz, ExtensionLoaderListener&lt;T&gt; listener)</span> </span>&#123;</span><br><span class="line">    ExtensionLoader&lt;T&gt; loader = LOADER_MAP.get(clazz);</span><br><span class="line">    <span class="hljs-keyword">if</span> (loader == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">synchronized</span> (ExtensionLoaderFactory.class) &#123;</span><br><span class="line">            loader = LOADER_MAP.get(clazz);</span><br><span class="line">            <span class="hljs-keyword">if</span> (loader == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                loader = <span class="hljs-keyword">new</span> ExtensionLoader&lt;T&gt;(clazz, listener);</span><br><span class="line">                LOADER_MAP.put(clazz, loader);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> loader;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>很简单，从 Map 中取出，如果没有，创建一个，放入缓存。这里使用了双重检查锁。</p>
+<p>注意，这里有个参数，ExtensionLoaderListener ，作用是当加载完毕的的时候，回调他的 onLoad 方法，通常是在异步的时候使用。</p>
+<p>所以，看出来了吧，关键过程在 new ExtensionLoader（）。</p>
+<h2 id="ExtensionLoader-的创建过程"><a href="#ExtensionLoader-的创建过程" class="headerlink" title="ExtensionLoader 的创建过程"></a>ExtensionLoader 的创建过程</h2><p>构造方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">ExtensionLoader</span><span class="hljs-params">(Class&lt;T&gt; interfaceClass, ExtensionLoaderListener&lt;T&gt; listener)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">this</span>(interfaceClass, <span class="hljs-keyword">true</span>, listener);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>重载：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-title">ExtensionLoader</span><span class="hljs-params">(Class&lt;T&gt; interfaceClass, <span class="hljs-keyword">boolean</span> autoLoad, ExtensionLoaderListener&lt;T&gt; listener)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (RpcRunningState.isShuttingDown()) &#123;</span><br><span class="line">        <span class="hljs-keyword">this</span>.interfaceClass = <span class="hljs-keyword">null</span>;</span><br><span class="line">        <span class="hljs-keyword">this</span>.interfaceName = <span class="hljs-keyword">null</span>;</span><br><span class="line">        <span class="hljs-keyword">this</span>.listener = <span class="hljs-keyword">null</span>;</span><br><span class="line">        <span class="hljs-keyword">this</span>.factory = <span class="hljs-keyword">null</span>;</span><br><span class="line">        <span class="hljs-keyword">this</span>.extensible = <span class="hljs-keyword">null</span>;</span><br><span class="line">        <span class="hljs-keyword">this</span>.all = <span class="hljs-keyword">null</span>;</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-comment">// 接口为空，既不是接口，也不是抽象类</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (interfaceClass == <span class="hljs-keyword">null</span> ||</span><br><span class="line">        !(interfaceClass.isInterface() || Modifier.isAbstract(interfaceClass.getModifiers()))) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(<span class="hljs-string">"Extensible class must be interface or abstract class!"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">this</span>.interfaceClass = interfaceClass;</span><br><span class="line">    <span class="hljs-keyword">this</span>.interfaceName = ClassTypeUtils.getTypeStr(interfaceClass);</span><br><span class="line">    <span class="hljs-keyword">this</span>.listener = listener;</span><br><span class="line">    Extensible extensible = interfaceClass.getAnnotation(Extensible.class);</span><br><span class="line">    <span class="hljs-keyword">if</span> (extensible == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(</span><br><span class="line">            <span class="hljs-string">"Error when load extensible interface "</span> + interfaceName + <span class="hljs-string">", must add annotation @Extensible."</span>);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">this</span>.extensible = extensible;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-comment">// 非单例则是空</span></span><br><span class="line">    <span class="hljs-keyword">this</span>.factory = extensible.singleton() ? <span class="hljs-keyword">new</span> ConcurrentHashMap&lt;String, T&gt;() : <span class="hljs-keyword">null</span>;</span><br><span class="line">    <span class="hljs-keyword">this</span>.all = <span class="hljs-keyword">new</span> ConcurrentHashMap&lt;String, ExtensionClass&lt;T&gt;&gt;();</span><br><span class="line">    <span class="hljs-keyword">if</span> (autoLoad) &#123;</span><br><span class="line">        List&lt;String&gt; paths = RpcConfigs.getListValue(RpcOptions.EXTENSION_LOAD_PATH);</span><br><span class="line">        <span class="hljs-keyword">for</span> (String path : paths) &#123;</span><br><span class="line">            loadFromFile(path);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里有个地方需要注意，autoLoad 属性默认是 ture，也就是默认自动加载。当然，基本上都是自动加载的，这里的参数用于测试用的。</p>
+<p>来看这个构造方法。首先是一波赋值操作。</p>
+<p>然后检查参数。检查是否是抽象类或者接口，检查是否有 Extensible 注解。</p>
+<p>如果是单例，创建一个 Map 保存这个对象，如果不是，Map 就是 null，每次都创建新的。</p>
+<p>其中，会有一个  <code>RpcConfigs.getListValue(RpcOptions.EXTENSION_LOAD_PATH)</code> 的操作，用于从获取配置好的路径，通过全局搜索，找到 rpc-config-default.json。包含以下内容：</p>
+<figure class="highlight hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 扩展点加载的路径</span><br><span class="line">"extension.load.path": [</span><br><span class="line">  "META-INF/services/sofa-rpc/",</span><br><span class="line">  <span class="hljs-string">"META-INF/services/"</span></span><br><span class="line">],</span><br></pre></td></tr></table></figure>
+<p>两个路径。所以返回值是个 List。</p>
+<p>for 循环解析 list 中的 path，即调用 loadFromFile 方法。</p>
+<p>方法内容如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title">loadFromFile</span><span class="hljs-params">(String path)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 默认如果不指定文件名字，就是接口名</span></span><br><span class="line">    String file = StringUtils.isBlank(extensible.file()) ? interfaceName : extensible.file().trim();</span><br><span class="line">    String fullFileName = path + file;</span><br><span class="line">    ClassLoader classLoader = ClassLoaderUtils.getClassLoader(getClass());</span><br><span class="line">    loadFromClassLoader(classLoader, fullFileName);  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先判断注解的 file 属性是否为空，如果是空，则使用接口名，否则使用 file 指定的名称。</p>
+<p>然后，将配置文件中 path 和 file 属性拼接。这里其实可以使用 StringBuilder。</p>
+<p>然后呢？获取 ClassLoader，默认使用当下线程的 ClassLoader，如果为空，使用当前 ExtensionLoader 的 ClassLoader ，若给定的 class 是空，则使用 SystemClassLoader。</p>
+<p>从这里可以看出 SPI 设计的好处，如果使用策略模式实现的话，那么 ClassLoader 必定相同，而类似  SPI 的设计，可以让上层应用和下层应用的 ClassLoader 隔离开来。</p>
+<p>拿到 ClassLoader 和 全路径的接口名后，开始加载文件。</p>
+<p>代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">loadFromClassLoader</span><span class="hljs-params">(ClassLoader classLoader, String fullFileName)</span> <span class="hljs-keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    Enumeration&lt;URL&gt; urls = classLoader != <span class="hljs-keyword">null</span> ? classLoader.getResources(fullFileName)</span><br><span class="line">        : ClassLoader.getSystemResources(fullFileName);</span><br><span class="line">    <span class="hljs-comment">// 可能存在多个文件。</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (urls != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">while</span> (urls.hasMoreElements()) &#123;</span><br><span class="line">            <span class="hljs-comment">// 读取一个文件</span></span><br><span class="line">            URL url = urls.nextElement();</span><br><span class="line">            BufferedReader reader = <span class="hljs-keyword">null</span>;</span><br><span class="line">            <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">                reader = <span class="hljs-keyword">new</span> BufferedReader(<span class="hljs-keyword">new</span> InputStreamReader(url.openStream(), <span class="hljs-string">"UTF-8"</span>));</span><br><span class="line">                String line;</span><br><span class="line">                <span class="hljs-keyword">while</span> ((line = reader.readLine()) != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                    readLine(url, line);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">                <span class="hljs-keyword">if</span> (reader != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                    reader.close();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先通过 ClassLoader 获取 classpath 下的文件 URL 集合。然后遍历这些 URL，通过流读取文件，并通过  readLine 方法解析每一行读取出的字符串。这里的字符串就是 SPI 配置文件中的，类似下面的：</p>
+<p>文件名称：<code>com.alipay.sofa.rpc.extension.Person</code><br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">A=com.alipay.sofa.rpc.extension.PersonA</span><br></pre></td></tr></table></figure></p>
+<p>通过加载指定路径 + 接口名（或 Extensible 指定 file），得到文件名，然后读取文件中的文本。由于按行读取，可能读取多次。</p>
+<p>然后看 readLine 方法处理解析出来的字符串。</p>
+<p>这个方法就比较长了，主要是数据校验，就不贴出来了，说说逻辑。</p>
+<ol>
+<li><p>首先解析该行的数据，parseAliasAndClassName 方法，如果是 # 号，就是注释之类的处理。根据 = 号分割，得到 ClassName，创建一个数据，下标 0 是别名，例如上面的 A，下标 1 是全类名。</p>
+</li>
+<li><p>使用 Class.forName 反射加载该类。</p>
+</li>
+<li><p>获取该类的 Extension 注解，</p>
+</li>
+</ol>
+<ul>
+<li>如果是 null，抛出异常，</li>
+<li>如果不是，获取 value 值，value 值不能是空。</li>
+<li>如果 SPI 文件中没有配置别名，使用注解上的。</li>
+<li>如果SPI 文件配置了，则校验和注解上的是否一致，</li>
+<li>如果不一致，抛出异常。</li>
+<li>如果接口的注解声明需要编码，而实现类没有配置，抛出异常。</li>
+<li>如果别名是 default 或者 * ，抛出异常。</li>
+</ul>
+<ol start="4">
+<li>检查当前系统中，是否已经含有相同的别名的类，注意：这里是一个接口对应一个 Map，因此这里的校验是相对于这个接口，也就是检查当前接口的同名（别名）实现。</li>
+</ol>
+<ul>
+<li>如果有同名的，且<strong>当前实现类扩展</strong> override 是 ture（可以覆盖），且新的实现类的优先级没有老的高，忽略这个新的，反之，加载这个新类。</li>
+<li>如果<strong>当前实现类扩展</strong> 不能覆盖，判断，如果旧的实现类扩展可覆盖，且旧优先级大于等于新的。忽略新的，反之，如果旧的扩展类不能覆盖或者优先级小于新的，抛出已存在异常，因为系统不知道该怎么办（新的不能覆盖，老的也不能覆盖且优先级低）。</li>
+</ul>
+<ol start="5">
+<li><p>如果没有老的，直接加载新的实现类，创建一个 extensionClass 对象。</p>
+</li>
+<li><p>如果加载创建成功，检查是否有互斥的扩展点，循环该接口中缓存的所有的实现。</p>
+</li>
+</ol>
+<ul>
+<li>如果当前的实现类的优先级大于等于已存在的，检查新的扩展是否排除老的扩展，这个<code>排除扩展</code>是个别名数组，如果有，循环删除缓存中的 extensionClass。</li>
+<li>如果当前的实现类的优先级小于已存在的，则检查已存在的<code>排除扩展</code> 是否包含当前扩展点，如果包含，就不会放入到缓存中了。</li>
+</ul>
+<ol start="7">
+<li>调用 loadSuccess 方法，将刚刚创建的 extensionClass 和对应的别名放入到 all map 中，也就是缓存中。如果配置了监听器，调用监听器的 onLoad 方法，告知监听器：加载完毕，请指示！</li>
+</ol>
+<p>关闭流。</p>
+<p>到这里，一个完整的扩展点就加载完毕了！！！</p>
+<p>回到  ExtensionLoaderFactory 的 getExtesionLoader 方法，构造方法结束，通过接口名称，成功从SPI 文件中加载了实现类，然后呢？将接口和对应的 ExtensionLoader 对象放入到缓存中，下次使用。</p>
+<p>最后，返回 ExtensionLoader 对象。</p>
+<p>通常，紧接着就会调用这个对象的 getExtension 方法。类似下面这样的：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Person person = ExtensionLoaderFactory.getExtensionLoader(Person.class).getExtension(<span class="hljs-string">"A"</span>);</span><br></pre></td></tr></table></figure>
+<p>通过别名获取实例。</p>
+<p>可以猜到，肯定是从这个实例的缓存中获取别名对应的 ExtensionClass 对象。如果没有，则抛出 Not Found 异常.</p>
+<p>代码：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> T <span class="hljs-title">getExtension</span><span class="hljs-params">(String alias)</span> </span>&#123;</span><br><span class="line">    ExtensionClass&lt;T&gt; extensionClass = getExtensionClass(alias);</span><br><span class="line">    <span class="hljs-keyword">if</span> (extensionClass == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> SofaRpcRuntimeException(<span class="hljs-string">"Not found extension of "</span> + interfaceName + <span class="hljs-string">" named: \""</span> + alias + <span class="hljs-string">"\"!"</span>);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (extensible.singleton() &amp;&amp; factory != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">            T t = factory.get(alias);</span><br><span class="line">            <span class="hljs-keyword">if</span> (t == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                <span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) &#123;</span><br><span class="line">                    t = factory.get(alias);</span><br><span class="line">                    <span class="hljs-keyword">if</span> (t == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                        t = extensionClass.getExtInstance();</span><br><span class="line">                        factory.put(alias, t);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="hljs-keyword">return</span> t;</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">            <span class="hljs-keyword">return</span> extensionClass.getExtInstance();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>如果接口标识是单例的且缓存不是空，则从缓存中取出，这里使用双重检查锁，拿到 ExtensionClass 对象后，对应他的 getExtInstance 方法，方法内容就是使用反射创建一个对象实例。并将别名和对应的对象放入到缓存中。</p>
+</li>
+<li><p>注意：ExtensionLoader 有 2 个缓存，一个是 <code>ConcurrentHashMap&lt;String, ExtensionClass&lt;T&gt;&gt; all</code> 缓存是别名和对应的 ExtensionClass，表示一个接口可以有多个实现。另一个是 ConcurrentHashMap&lt;String, T&gt;， 这个 Map 保存的是对应别名的单例对象。</p>
+</li>
+<li><p>如果不是单例的，使用反射创建一个新的。</p>
+</li>
+</ul>
+<p>好了，到这里，一个完整的对象就创建出来了。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>借用一下 SOFA  官方对扩展点的介绍：</p>
+<blockquote>
+<h1 id="为了对-SOFARPC-各个环节的都有充足的可扩展性，SOFA-RPC定义了一套十分灵活的扩展机制，所有扩展实现都是平等的。"><a href="#为了对-SOFARPC-各个环节的都有充足的可扩展性，SOFA-RPC定义了一套十分灵活的扩展机制，所有扩展实现都是平等的。" class="headerlink" title="为了对 SOFARPC 各个环节的都有充足的可扩展性，SOFA-RPC定义了一套十分灵活的扩展机制，所有扩展实现都是平等的。"></a>为了对 SOFARPC 各个环节的都有充足的可扩展性，SOFA-RPC定义了一套十分灵活的扩展机制，所有扩展实现都是平等的。</h1><p>这套机制不管是对SOFA-RPC本身的开发者其使用者而言都是非常有用的。SOFA-RPC将其自身抽象为了多个模块，各个模块之间无显式依赖，通过SPI的方式进行交互。</p>
+</blockquote>
+<p>SOFA  的扩展点没有使用 Java 的  SPI ，而是使用了 Java 的设计进行了扩展。比如：</p>
+<ul>
+<li>可以使用别名，</li>
+<li>可以有优先级（排序），</li>
+<li>可以覆盖，</li>
+<li>可以控制是否单例，</li>
+<li>是否编码。</li>
+<li>可以自定义文件位置。</li>
+<li>是否排斥其他扩展点。</li>
+</ul>
+<p>相比较 JDK 的 SPI ，功能强大了太多。值得借鉴。</p>
+<p>好了。关于 SOFA  扩展点的设计分析就到这里。</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/05/02/2018/2018-05-02-SOFA-源码分析-—-链路数据透传/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">SOFA-源码分析-—-链路数据透传</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/05/01/2018/2018-05-01-从--sofa-XXX--标签开始看-SOFA-Boot-如何融入-Spring/">
+                <span class="level-item">从--Sofa-XXX--标签开始看-SOFA-Boot-如何融入-Spring</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/05/02/2018/2018-05-02-SOFA-源码分析-—-扩展机制/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="SOFA-源码分析-—-扩展机制" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

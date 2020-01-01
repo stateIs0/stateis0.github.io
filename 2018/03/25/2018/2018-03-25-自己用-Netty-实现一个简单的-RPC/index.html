@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>自己用-Netty-实现一个简单的-RPC - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="自己用-Netty-实现一个简单的-RPC">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/25/2018/2018-03-25-自己用-Netty-实现一个简单的-RPC/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="自己用-Netty-实现一个简单的-RPC">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="自己用-Netty-实现一个简单的-RPC" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-03-24T18:11:11.000Z">2018-03-25</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Netty/">Netty</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    12 分钟 读完 (大约 1759 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                自己用-Netty-实现一个简单的-RPC
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       目录：</p>
+<ol>
+<li>需求</li>
+<li>设计</li>
+<li>实现<ol>
+<li>创建 maven 项目，导入 Netty 4.1.16。</li>
+<li>项目目录结构</li>
+<li>设计接口</li>
+<li>提供者相关实现</li>
+<li>消费者相关实现</li>
+<li>测试结果</li>
+</ol>
+</li>
+<li>总结</li>
+</ol>
+<p>源码地址：<a href="https://github.com/stateIs0/rpc-netty-demo" target="_blank" rel="noopener">github 地址</a></p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>众所周知，dubbo 底层使用了 Netty 作为网络通讯框架，而 Netty 的高性能我们之前也分析过源码，对他也算还是比较了解了。今天我们就自己用 Netty 实现一个简单的 RPC 框架。</p>
+<h2 id="1-需求"><a href="#1-需求" class="headerlink" title="1. 需求"></a>1. 需求</h2><p>模仿 dubbo，消费者和提供者约定接口和协议，消费者远程调用提供者，提供者返回一个字符串，消费者打印提供者返回的数据。底层网络通信使用 Netty 4.1.16。</p>
+<h2 id="2-设计"><a href="#2-设计" class="headerlink" title="2. 设计"></a>2. 设计</h2><ol>
+<li>创建一个接口，定义抽象方法。用于消费者和提供者之间的约定。</li>
+<li>创建一个提供者，该类需要监听消费者的请求，并按照约定返回数据。</li>
+<li>创建一个消费者，该类需要透明的调用自己不存在的方法，内部需要使用 Netty 请求提供者返回数据。</li>
+</ol>
+<h2 id="3-实现"><a href="#3-实现" class="headerlink" title="3. 实现"></a>3. 实现</h2><h4 id="1-创建-maven-项目，导入-Netty-4-1-16。"><a href="#1-创建-maven-项目，导入-Netty-4-1-16。" class="headerlink" title="1. 创建 maven 项目，导入 Netty 4.1.16。"></a>1. 创建 maven 项目，导入 Netty 4.1.16。</h4><figure class="highlight xml hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>cn.thinkinjava<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>rpc-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span></span><br><span class="line">  <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span></span><br><span class="line">    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>io.netty<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span></span><br><span class="line">    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>netty-all<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>4.1.16.Final<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span></span><br><span class="line">  <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h4 id="2-项目目录结构如下："><a href="#2-项目目录结构如下：" class="headerlink" title="2. 项目目录结构如下："></a>2. 项目目录结构如下：</h4><p><img src="https://upload-images.jianshu.io/upload_images/4236553-e1850d945000f7cc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<h4 id="3-设计接口"><a href="#3-设计接口" class="headerlink" title="3. 设计接口"></a>3. 设计接口</h4><p>一个简单的 hello world：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">HelloService</span> </span>&#123;</span><br><span class="line">  <span class="hljs-function">String <span class="hljs-title">hello</span><span class="hljs-params">(String msg)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="4-提供者相关实现"><a href="#4-提供者相关实现" class="headerlink" title="4. 提供者相关实现"></a>4. 提供者相关实现</h4><p>4.1. 首先实现约定接口，用于返回客户端数据：<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * 实现类</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HelloServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">HelloService</span> </span>&#123;</span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">hello</span><span class="hljs-params">(String msg)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> msg != <span class="hljs-keyword">null</span> ? msg + <span class="hljs-string">" -----&gt; I am fine."</span> : <span class="hljs-string">"I am fine."</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>4.2. 实现 Netty 服务端和自定义 handler</p>
+<p>启动 Netty Server 代码：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">startServer0</span><span class="hljs-params">(String hostName, <span class="hljs-keyword">int</span> port)</span> </span>&#123;</span><br><span class="line">  <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">    ServerBootstrap bootstrap = <span class="hljs-keyword">new</span> ServerBootstrap();</span><br><span class="line">    NioEventLoopGroup eventLoopGroup = <span class="hljs-keyword">new</span> NioEventLoopGroup();</span><br><span class="line">    bootstrap.group(eventLoopGroup)</span><br><span class="line">        .channel(NioServerSocketChannel.class)</span><br><span class="line">        .childHandler(<span class="hljs-keyword">new</span> ChannelInitializer&lt;SocketChannel&gt;() &#123;</span><br><span class="line">          <span class="hljs-meta">@Override</span></span><br><span class="line">          <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">initChannel</span><span class="hljs-params">(SocketChannel ch)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">            ChannelPipeline p = ch.pipeline();</span><br><span class="line">            p.addLast(<span class="hljs-keyword">new</span> StringDecoder());</span><br><span class="line">            p.addLast(<span class="hljs-keyword">new</span> StringEncoder());</span><br><span class="line">            p.addLast(<span class="hljs-keyword">new</span> HelloServerHandler());</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    bootstrap.bind(hostName, port).sync();</span><br><span class="line">  &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码中添加了 String类型的编解码 handler，添加了一个自定义 handler。</p>
+<p>自定义 handler 逻辑如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * 用于处理请求数据</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HelloServerHandler</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ChannelInboundHandlerAdapter</span> </span>&#123;</span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelRead</span><span class="hljs-params">(ChannelHandlerContext ctx, Object msg)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 如何符合约定，则调用本地方法，返回数据</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (msg.toString().startsWith(ClientBootstrap.providerName)) &#123;</span><br><span class="line">      String result = <span class="hljs-keyword">new</span> HelloServiceImpl()</span><br><span class="line">          .hello(msg.toString().substring(msg.toString().lastIndexOf(<span class="hljs-string">"#"</span>) + <span class="hljs-number">1</span>));</span><br><span class="line">      ctx.writeAndFlush(result);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里显示判断了是否符合约定（并没有使用复杂的协议，只是一个字符串判断），然后创建一个具体实现类，并调用方法写回客户端。</p>
+<p>还需要一个启动类：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ServerBootstrap</span> </span>&#123;</span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>&#123;</span><br><span class="line">    NettyServer.startServer(<span class="hljs-string">"localhost"</span>, <span class="hljs-number">8088</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>好，关于提供者的代码就写完了，主要就是创建一个 netty 服务端，实现一个自定义的 handler，自定义 handler 判断是否符合之间的约定（算是协议吧），如果符合，就创建一个接口的实现类，并调用他的方法返回字符串。</p>
+<h4 id="5-消费者相关实现"><a href="#5-消费者相关实现" class="headerlink" title="5. 消费者相关实现"></a>5. 消费者相关实现</h4><p>消费者有一个需要注意的地方，就是调用需要透明，也就是说，框架使用者不用关心底层的网络实现。这里我们可以使用 JDK 的动态代理来实现这个目的。</p>
+<p>思路：客户端调用代理方法，返回一个实现了 HelloService 接口的代理对象，调用代理对象的方法，返回结果。</p>
+<p>我们需要在代理中做手脚，当调用代理方法的时候，我们需要初始化 Netty 客户端，还需要向服务端请求数据，并返回数据。</p>
+<p>5.1. 首先创建代理相关的类</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">RpcConsumer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> ExecutorService executor = Executors</span><br><span class="line">      .newFixedThreadPool(Runtime.getRuntime().availableProcessors());</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> HelloClientHandler client;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * 创建一个代理对象</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">createProxy</span><span class="hljs-params">(<span class="hljs-keyword">final</span> Class&lt;?&gt; serviceClass,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">      <span class="hljs-keyword">final</span> String providerName)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),</span><br><span class="line">        <span class="hljs-keyword">new</span> Class&lt;?&gt;[]&#123;serviceClass&#125;, (proxy, method, args) -&gt; &#123;</span><br><span class="line">          <span class="hljs-keyword">if</span> (client == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">            initClient();</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="hljs-comment">// 设置参数</span></span><br><span class="line">          client.setPara(providerName + args[<span class="hljs-number">0</span>]);</span><br><span class="line">          <span class="hljs-keyword">return</span> executor.submit(client).get();</span><br><span class="line">        &#125;);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * 初始化客户端</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">initClient</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    client = <span class="hljs-keyword">new</span> HelloClientHandler();</span><br><span class="line">    EventLoopGroup group = <span class="hljs-keyword">new</span> NioEventLoopGroup();</span><br><span class="line">    Bootstrap b = <span class="hljs-keyword">new</span> Bootstrap();</span><br><span class="line">    b.group(group)</span><br><span class="line">        .channel(NioSocketChannel.class)</span><br><span class="line">        .option(ChannelOption.TCP_NODELAY, <span class="hljs-keyword">true</span>)</span><br><span class="line">        .handler(<span class="hljs-keyword">new</span> ChannelInitializer&lt;SocketChannel&gt;() &#123;</span><br><span class="line">          <span class="hljs-meta">@Override</span></span><br><span class="line">          <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">initChannel</span><span class="hljs-params">(SocketChannel ch)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">            ChannelPipeline p = ch.pipeline();</span><br><span class="line">            p.addLast(<span class="hljs-keyword">new</span> StringDecoder());</span><br><span class="line">            p.addLast(<span class="hljs-keyword">new</span> StringEncoder());</span><br><span class="line">            p.addLast(client);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">      b.connect(<span class="hljs-string">"localhost"</span>, <span class="hljs-number">8088</span>).sync();</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">      e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该类有 2 个方法，创建代理和初始化客户端。</p>
+<p>初始化客户端逻辑： 创建一个 Netty 的客户端，并连接提供者，并设置一个自定义 handler，和一些 String 类型的编解码器。</p>
+<p>创建代理逻辑：使用 JDK 的动态代理技术，代理对象中的 invoke 方法实现如下：<br>如果 client 没有初始化，则初始化 client，这个 client 既是 handler ，也是一个 Callback。将参数设置进 client ，使用线程池调用 client 的 call 方法并阻塞等待数据返回。</p>
+<p>看看 HelloClientHandler 的实现：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HelloClientHandler</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ChannelInboundHandlerAdapter</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Callable</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">private</span> ChannelHandlerContext context;</span><br><span class="line">  <span class="hljs-keyword">private</span> String result;</span><br><span class="line">  <span class="hljs-keyword">private</span> String para;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelActive</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> </span>&#123;</span><br><span class="line">    context = ctx;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * 收到服务端数据，唤醒等待线程</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title">channelRead</span><span class="hljs-params">(ChannelHandlerContext ctx, Object msg)</span> </span>&#123;</span><br><span class="line">    result = msg.toString();</span><br><span class="line">    notify();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * 写出数据，开始等待唤醒</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> Object <span class="hljs-title">call</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    context.writeAndFlush(para);</span><br><span class="line">    wait();</span><br><span class="line">    <span class="hljs-keyword">return</span> result;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setPara</span><span class="hljs-params">(String para)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">this</span>.para = para;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该类缓存了 ChannelHandlerContext，用于下次使用，有两个属性：返回结果和请求参数。</p>
+<p>当成功连接后，缓存 ChannelHandlerContext，当调用 call 方法的时候，将请求参数发送到服务端，等待。当服务端收到并返回数据后，调用 channelRead 方法，将返回值赋值个 result，并唤醒等待在 call 方法上的线程。此时，代理对象返回数据。</p>
+<p>再看看设计的测试类：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ClientBootstrap</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> String providerName = <span class="hljs-string">"HelloService#hello#"</span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line"></span><br><span class="line">    RpcConsumer consumer = <span class="hljs-keyword">new</span> RpcConsumer();</span><br><span class="line">    <span class="hljs-comment">// 创建一个代理对象</span></span><br><span class="line">    HelloService service = (HelloService) consumer</span><br><span class="line">        .createProxy(HelloService.class, providerName);</span><br><span class="line">    <span class="hljs-keyword">for</span> (; ; ) &#123;</span><br><span class="line">      Thread.sleep(<span class="hljs-number">1000</span>);</span><br><span class="line">      System.out.println(service.hello(<span class="hljs-string">"are you ok ?"</span>));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>测试类首先创建了一个代理对象，然后每隔一秒钟调用代理的 hello 方法，并打印服务端返回的结果。</p>
+<h2 id="测试结果"><a href="#测试结果" class="headerlink" title="测试结果"></a>测试结果</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-1e8afde163935d94.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>成功打印。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>看了这么久的 Netty 源码，我们终于实现了一个自己的 Netty 应用，虽然这个应用很简单，甚至代码写的有些粗糙，但功能还是实现了，RPC 的目的就是允许像调用本地服务一样调用远程服务，需要对使用者透明，于是我们使用了动态代理。并使用 Netty 的 handler 发送数据和响应数据，完成了一次简单的 RPC 调用。</p>
+<p>当然，还是那句话，代码比较简单，主要是思路，以及了解 RPC 底层的实现。</p>
+<p>好吧。good luck！！！！</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/03/25/2018/2018-03-25-阅读源码的利器——Intellij-IDEA-Replace-in-Path-使用技巧/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">阅读源码的利器——Intellij-IDEA-Replace-in-Path-使用技巧</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/03/24/2018/2018-03-24-看-Netty-在-Dubbo-中如何应用/">
+                <span class="level-item">看-Netty-在-Dubbo-中如何应用</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/03/25/2018/2018-03-25-自己用-Netty-实现一个简单的-RPC/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="自己用-Netty-实现一个简单的-RPC" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

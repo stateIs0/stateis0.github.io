@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>SOFA-源码分析-—-负载均衡和一致性-Hash - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="SOFA-源码分析-—-负载均衡和一致性-Hash">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/03/2018/2018-05-03-SOFA-源码分析-—-负载均衡和一致性-Hash/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SOFA-源码分析-—-负载均衡和一致性-Hash">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="SOFA-源码分析-—-负载均衡和一致性-Hash" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-05-02T18:11:11.000Z">2018-05-03</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/SOFA/">SOFA</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    9 分钟 读完 (大约 1352 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                SOFA-源码分析-—-负载均衡和一致性-Hash
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       ## 前言</p>
+<p>SOFA 内置负载均衡，支持 5 种负载均衡算法，随机（默认算法），本地优先，轮询算法，一致性 hash，按权重负载轮询（不推荐，已被标注废弃）。</p>
+<p>一起看看他们的实现（重点还是一致性 hash）。</p>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><p>具体源码在  AbstractLoadBalancer 类中，子类需要实现 doSelect 方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> ProviderInfo <span class="hljs-title">doSelect</span><span class="hljs-params">(SofaRequest invocation, List&lt;ProviderInfo&gt; providerInfos)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>随机是默认算法，RandomLoadBalancer 类是具体实现，基本是就是 providerInfos.get(random.nextInt(size)) 的逻辑，但考虑到权重，会按总权重数随机找个数字，然后这个数字会递减直到小于 0 的时候，确定那个节点。好像看起来和权重没什么关系？ 有大佬懂的可以指导一下。</p>
+<p>本地优先算法，则是找本机的 localhost 进行匹配，优先选择和本机地址相同的服务，然后在这些服务列表进行随机选一个。</p>
+<p>轮询就是一个个来。使用取于算法。</p>
+<p>然后就是一致性 Hash 了，重点讲讲。 有必要复习一下我们之前写过的一致性 hash 算法 demo： <a href="http://thinkinjava.cn/article/89">自己实现一个一致性 Hash 算法</a>。</p>
+<p>SOFA 具体实现是 ConsistentHashLoadBalancer 类。内部维护一个 Map，每个服务对应一个选择器，这个选择器内部维护着一个 TreeMap，SOFA 会将所有节点均匀的散列在 Map 中，也就是 hash 环上，使用了虚拟节点。当根据服务的 key 获取节点的时候(如果服务列表没变)，会通过 hash 值找到比他大的那个节点，相同的请求每次找到的都是同一个节点（根据第一个参数 hash）。</p>
+<p>来看看具体实现。</p>
+<p>先看看 doSelect 方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Override</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> ProviderInfo <span class="hljs-title">doSelect</span><span class="hljs-params">(SofaRequest request, List&lt;ProviderInfo&gt; providerInfos)</span> </span>&#123;</span><br><span class="line">    String interfaceId = request.getInterfaceName();</span><br><span class="line">    String method = request.getMethodName();</span><br><span class="line">    String key = interfaceId + <span class="hljs-string">"#"</span> + method;</span><br><span class="line">    <span class="hljs-keyword">int</span> hashcode = providerInfos.hashCode(); <span class="hljs-comment">// 判断是否同样的服务列表</span></span><br><span class="line">    Selector selector = selectorCache.get(key);</span><br><span class="line">    <span class="hljs-keyword">if</span> (selector == <span class="hljs-keyword">null</span> <span class="hljs-comment">// 原来没有</span></span><br><span class="line">        ||</span><br><span class="line">        selector.getHashCode() != hashcode) &#123; <span class="hljs-comment">// 或者服务列表已经变化</span></span><br><span class="line">        selector = <span class="hljs-keyword">new</span> Selector(interfaceId, method, providerInfos, hashcode);</span><br><span class="line">        selectorCache.put(key, selector);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> selector.select(request);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>根据接口名和方法名从 map 中找到对应的服务选择器，如果没有，或者服务列表变了，则重新创建一个，这点和缓存的一致性 Hash 设计还是有点不一样。</p>
+<p>缓存的一致性 Hash 的目的是：如果服务列表变了，比如节点的增减，那么，缓存的 key 通过相同的 hash 算法依然能够找到对应的缓存节点（最多失效一个节点的数据——如果增减一个节点）。</p>
+<p>但 RPC 服务的一致性 hash 的目的是：希望相同的请求总是落在同一个节点上。</p>
+<p>而这里无法确定增加的是哪一个节点，索性直接创建一个新的。</p>
+<p>然后，调用选择的 select 方法返回一个服务节点。</p>
+<p>先看看选择器的构造方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">Selector</span><span class="hljs-params">(String interfaceId, String method, List&lt;ProviderInfo&gt; actualNodes, <span class="hljs-keyword">int</span> hashcode)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">this</span>.interfaceId = interfaceId;</span><br><span class="line">    <span class="hljs-keyword">this</span>.method = method;</span><br><span class="line">    <span class="hljs-keyword">this</span>.hashcode = hashcode;</span><br><span class="line">    <span class="hljs-comment">// 创建虚拟节点环 （默认一个provider共创建128个虚拟节点，较多比较均匀）</span></span><br><span class="line">    <span class="hljs-keyword">this</span>.virtualNodes = <span class="hljs-keyword">new</span> TreeMap&lt;Long, ProviderInfo&gt;();</span><br><span class="line">    <span class="hljs-keyword">int</span> num = <span class="hljs-number">128</span>;</span><br><span class="line">    <span class="hljs-keyword">for</span> (ProviderInfo providerInfo : actualNodes) &#123;</span><br><span class="line">        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; num / <span class="hljs-number">4</span>; i++) &#123;</span><br><span class="line">            <span class="hljs-keyword">byte</span>[] digest = messageDigest(providerInfo.getHost() + providerInfo.getPort() + i);</span><br><span class="line">            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> h = <span class="hljs-number">0</span>; h &lt; <span class="hljs-number">4</span>; h++) &#123;</span><br><span class="line">                <span class="hljs-keyword">long</span> m = hash(digest, h);</span><br><span class="line">                virtualNodes.put(m, providerInfo);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主要逻辑就是构造虚拟节点，使用 TreeMap，和我们之前实现的一样。那么虚拟节点是如何设计的呢？</p>
+<p>SOFA 为每个节点分配了 128 个虚拟节点，保存在 Map 中，也就是 128 个引用指向同一个对象。这里的 hash 算法用来 md5 然后再复杂的 hash 一波，为了更加的均衡吧。</p>
+<p>当使用 select 方法的时候，怎么找到相同的节点呢？</p>
+<p>代码：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> ProviderInfo <span class="hljs-title">sekectForKey</span><span class="hljs-params">(<span class="hljs-keyword">long</span> hash)</span> </span>&#123;</span><br><span class="line">    ProviderInfo providerInfo = virtualNodes.get(hash);</span><br><span class="line">    <span class="hljs-keyword">if</span> (providerInfo == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        SortedMap&lt;Long, ProviderInfo&gt; tailMap = virtualNodes.tailMap(hash);</span><br><span class="line">        <span class="hljs-keyword">if</span> (tailMap.isEmpty()) &#123;</span><br><span class="line">            hash = virtualNodes.firstKey();</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">            hash = tailMap.firstKey();</span><br><span class="line">        &#125;</span><br><span class="line">        providerInfo = virtualNodes.get(hash);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> providerInfo;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>hash 该方法第一个参数，找到比他的 hash 值大节点集合中的第一个节点，如果没有比他大的，则最小的那个节点（回到原点）。</p>
+<p>标准的一致性 hash 算法。保证了每次相同的请求都会落在同一个节点上。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>RPC 的一致性 hash 和缓存的一致性 hash 的目的是不同的。<br>缓存的目的是：当集群中缓存节点增减的时候，服务访问相同 key 依然能够访问到相同的节点（增减造成的失效节点很少）。不会像普通的取于算法那样造成无法访问，进而引起缓存雪崩，甚至 DB 宕机。</p>
+<p>而 RPC 的目的是：希望相同的请求（第一个参数相同），每次都会打在相同的节点上。</p>
+<p>换个角度想想，其实都是一样的，目的都是为了相同的请求每次都访问到相同的节点。</p>
+<p>好啦，关于 SOFA  的负载均衡就到这里啦。</p>
+<p>bye！！！</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/05/04/2018/2018-05-04-SOFA--源码分析-—-预热权重/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">SOFA--源码分析-—-预热权重</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/05/03/2018/2018-05-03-SOFA-源码分析—-事件总线/">
+                <span class="level-item">SOFA-源码分析—-事件总线</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/05/03/2018/2018-05-03-SOFA-源码分析-—-负载均衡和一致性-Hash/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="SOFA-源码分析-—-负载均衡和一致性-Hash" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>Apollo 9 — adminService 主 &amp; 灰度版本发布 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Apollo 9 — adminService 主 &amp; 灰度版本发布">
+<meta property="og:url" content="http://thinkinjava.cn/2018/07/18/2018/2018-07-19-Apollo 9 —adminService 主 & 灰度版本发布/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Apollo 9 — adminService 主 &amp; 灰度版本发布">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="Apollo 9 — adminService 主 &amp; 灰度版本发布" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-07-18T07:01:01.000Z">2018-07-18</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Apollo/">Apollo</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    14 分钟 读完 (大约 2066 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                Apollo 9 — adminService 主 &amp; 灰度版本发布
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       <!--more-->       ## 目录</p>
+<ol>
+<li>Controller 层</li>
+<li>Service 层 publish 方法</li>
+<li>发送 ReleaseMessage 消息</li>
+<li>总结</li>
+</ol>
+<h2 id="1-Controller-层"><a href="#1-Controller-层" class="headerlink" title="1. Controller 层"></a>1. Controller 层</h2><p>主版本发布即点击主版本发布按钮：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-c827c10ed25ebd7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>具体接口位置：<code>com.ctrip.framework.apollo.adminservice.controller</code> 包下 <code>ReleaseController#publish</code><br>实际上灰度版本发布也是调用这个接口的。<br>代码：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * 主版本发布</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-meta">@Transactional</span></span><br><span class="line"><span class="hljs-meta">@RequestMapping</span>(path = <span class="hljs-string">"/apps/&#123;appId&#125;/clusters/&#123;clusterName&#125;/namespaces/&#123;namespaceName&#125;/releases"</span>, method = RequestMethod.POST)</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> ReleaseDTO <span class="hljs-title">publish</span><span class="hljs-params">(@PathVariable(<span class="hljs-string">"appId"</span>)</span> String appId,</span></span><br><span class="line"><span class="hljs-function">                          @<span class="hljs-title">PathVariable</span><span class="hljs-params">(<span class="hljs-string">"clusterName"</span>)</span> String clusterName,</span></span><br><span class="line"><span class="hljs-function">                          @<span class="hljs-title">PathVariable</span><span class="hljs-params">(<span class="hljs-string">"namespaceName"</span>)</span> String namespaceName,</span></span><br><span class="line"><span class="hljs-function">                          @<span class="hljs-title">RequestParam</span><span class="hljs-params">(<span class="hljs-string">"name"</span>)</span> String releaseName,</span></span><br><span class="line"><span class="hljs-function">                          @<span class="hljs-title">RequestParam</span><span class="hljs-params">(name = <span class="hljs-string">"comment"</span>, required = <span class="hljs-keyword">false</span>)</span> String releaseComment,</span></span><br><span class="line"><span class="hljs-function">                          @<span class="hljs-title">RequestParam</span><span class="hljs-params">(<span class="hljs-string">"operator"</span>)</span> String operator,</span></span><br><span class="line"><span class="hljs-function">                          @<span class="hljs-title">RequestParam</span><span class="hljs-params">(name = <span class="hljs-string">"isEmergencyPublish"</span>, defaultValue = <span class="hljs-string">"false"</span>)</span> <span class="hljs-keyword">boolean</span> isEmergencyPublish) </span>&#123;</span><br><span class="line">  <span class="hljs-comment">// 校验存在与否</span></span><br><span class="line">  Namespace namespace = namespaceService.findOne(appId, clusterName, namespaceName);</span><br><span class="line">  <span class="hljs-keyword">if</span> (namespace == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> NotFoundException(String.format(<span class="hljs-string">"Could not find namespace for %s %s %s"</span>, appId,</span><br><span class="line">                                              clusterName, namespaceName));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-comment">// 发布</span></span><br><span class="line">  Release release = releaseService.publish(namespace, releaseName, releaseComment, operator, isEmergencyPublish);</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">//send release message 发送消息到 ReleaseMessage</span></span><br><span class="line">  Namespace parentNamespace = namespaceService.findParentNamespace(namespace);</span><br><span class="line">  String messageCluster;</span><br><span class="line">  <span class="hljs-keyword">if</span> (parentNamespace != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">    messageCluster = parentNamespace.getClusterName();</span><br><span class="line">  &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">    messageCluster = clusterName;</span><br><span class="line">  &#125;</span><br><span class="line">  messageSender.sendMessage(ReleaseMessageKeyGenerator.generate(appId, messageCluster, namespaceName),</span><br><span class="line">                            Topics.APOLLO_RELEASE_TOPIC);</span><br><span class="line">  <span class="hljs-keyword">return</span> BeanUtils.transfrom(ReleaseDTO.class, release);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该层主要做了 2 件事情，1是调用 Service 层的 public 方法做真正的发布操作，2是发送“发布消息”到数据库——等待 ConfigService 消费。</p>
+<p>所以，我们主要关注 Service 层的 publish 方法。</p>
+<h2 id="2-Service-层-publish-方法"><a href="#2-Service-层-publish-方法" class="headerlink" title="2. Service 层 publish 方法"></a>2. Service 层 publish 方法</h2><p>该方法有些繁琐，主要流程图如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-7e6e131876893357.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=" publish 流程图"></p>
+<p>可以通过比对流程图和代码来看。</p>
+<p>代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Transactional</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> Release <span class="hljs-title">publish</span><span class="hljs-params">(Namespace namespace, String releaseName, String releaseComment,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                       String operator, <span class="hljs-keyword">boolean</span> isEmergencyPublish)</span> </span>&#123;</span><br><span class="line">  <span class="hljs-comment">// 检查锁</span></span><br><span class="line">  checkLock(namespace, isEmergencyPublish, operator);</span><br><span class="line">  <span class="hljs-comment">// 获取 item</span></span><br><span class="line">  Map&lt;String, String&gt; operateNamespaceItems = getNamespaceItems(namespace);</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">// 根据当前 namespace 找到父 namespace, 也就是灰度的主版本.</span></span><br><span class="line">  Namespace parentNamespace = namespaceService.findParentNamespace(namespace);</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">//branch release // 父 namespace 不是 null, 说明当前就是灰度版本.</span></span><br><span class="line">  <span class="hljs-keyword">if</span> (parentNamespace != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">    <span class="hljs-comment">// 发布灰度版本.</span></span><br><span class="line">    <span class="hljs-keyword">return</span> publishBranchNamespace(parentNamespace, namespace, operateNamespaceItems,</span><br><span class="line">                                  releaseName, releaseComment, operator, isEmergencyPublish);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">// 非灰度版本, 找到子版本</span></span><br><span class="line">  Namespace childNamespace = namespaceService.findChildNamespace(namespace);</span><br><span class="line"></span><br><span class="line">  Release previousRelease = <span class="hljs-keyword">null</span>;</span><br><span class="line">  <span class="hljs-keyword">if</span> (childNamespace != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">    <span class="hljs-comment">// 找到上一个版本</span></span><br><span class="line">    previousRelease = findLatestActiveRelease(namespace);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">//master release</span></span><br><span class="line">  Map&lt;String, Object&gt; operationContext = Maps.newHashMap();</span><br><span class="line">  <span class="hljs-comment">// 记录是否紧急发布</span></span><br><span class="line">  operationContext.put(ReleaseOperationContext.IS_EMERGENCY_PUBLISH, isEmergencyPublish);</span><br><span class="line">  <span class="hljs-comment">// 主版本发布</span></span><br><span class="line">  Release release = masterRelease(namespace, releaseName, releaseComment, operateNamespaceItems,</span><br><span class="line">                                  operator, ReleaseOperation.NORMAL_RELEASE, operationContext);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">//merge to branch and auto release</span></span><br><span class="line">  <span class="hljs-comment">// 将主版本合并到灰度版本. 并自动发布</span></span><br><span class="line">  <span class="hljs-keyword">if</span> (childNamespace != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">    mergeFromMasterAndPublishBranch(namespace, childNamespace, operateNamespaceItems,</span><br><span class="line">                                    releaseName, releaseComment, operator, previousRelease,</span><br><span class="line">                                    release, isEmergencyPublish);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-keyword">return</span> release;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ol>
+<li><p>检查锁：如果不是紧急发布，就需要检查锁，如果这个 namespace 的最后修改者就是当前用户，那么就抛出异常。禁止其修改。</p>
+</li>
+<li><p>根据 namespace 获取所有的 item，也就是配置。</p>
+</li>
+<li><p>判断当前的 namespace 是否有父 namespace，如果有，说明当前 namespace 是灰度 namespace，则进行灰度发布（主版本发布和灰度发布逻辑不同）。</p>
+</li>
+</ol>
+<p>这里说下父子 namespace 在 apollo 的设计：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-e94fb9c5c13105d7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="主体E-R Diagram  图片来自 apollo wiki"></p>
+<p>从图中可以看出，namespace 和 cluster 是多对一的关系，而 cluster 有个字段：ParentClusterId，也就是说，cluster 是有层级的。每当创建一个灰度配置，实际上，就是创建了一个新的 cluster，这个新的 cluster 的名字就是 <code>时间戳-字符串</code>，大概是这样的：<code>20180705150428-1dc5208dc9e8146b</code>. 然后再在这个新 cluster 下面创建新的 namespace，那么，namespace 无形中也有了层级（父子）关系。</p>
+<ol start="4">
+<li><p>如果没有父 namespace，说明是主版本发布，那么就需要处理他的子 （灰度）版本，同时，为了后面比对灰度版本和上一个版本的区别（如果灰度修改了上一个版本的数据，就需要记录，否则，灰度数据和主版本将无法对应），还要记录上一个版本的 release 信息。</p>
+</li>
+<li><p><strong>发布主版本</strong>。并保存发布历史。</p>
+</li>
+<li><p>如果存在灰度版本，就更新灰度版本的配置，并发布灰度版本。</p>
+</li>
+</ol>
+<p>关于灰度版本，这里多提一句，每次发布都是一个 release，release 对象有个 configuration，包含了此次发布的全量配置，因此，灰度发布的 configuration 中，包含了每次对应的主版本的配置，如果主版本发生了变化，那么灰度版本肯定也是要变更的。所以需要重新发布灰度版本。</p>
+<p>其中关键的方法就是 <code>mergeConfiguration</code>，该方法表明了灰度发布的主要逻辑：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> Map&lt;String, String&gt; <span class="hljs-title">mergeConfiguration</span><span class="hljs-params">(Map&lt;String, String&gt; baseConfigurations,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                                               Map&lt;String, String&gt; coverConfigurations)</span> </span>&#123;</span><br><span class="line">  Map&lt;String, String&gt; result = <span class="hljs-keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">  <span class="hljs-comment">//copy base configuration</span></span><br><span class="line">  <span class="hljs-keyword">for</span> (Map.Entry&lt;String, String&gt; entry : baseConfigurations.entrySet()) &#123;</span><br><span class="line">    result.put(entry.getKey(), entry.getValue());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">//update and publish</span></span><br><span class="line">  <span class="hljs-keyword">for</span> (Map.Entry&lt;String, String&gt; entry : coverConfigurations.entrySet()) &#123;</span><br><span class="line">    result.put(entry.getKey(), entry.getValue());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>方法很简单：两个参数，主版本配置，灰度版本配置。首先将主版本配置保存到 Map 中，然后将灰度版本配置也 put 到 Map 中，利用 Map 唯一 Key 的特性，保证灰度版本覆盖主版本。</p>
+<p>所以这个方法的 put 顺序决定了<strong>灰度版本覆盖主版本。</strong></p>
+<p>publish 方法更多的细节不再赘述，有疑惑的地方可以交流。</p>
+<h2 id="3-发送-ReleaseMessage-消息"><a href="#3-发送-ReleaseMessage-消息" class="headerlink" title="3. 发送 ReleaseMessage 消息"></a>3. 发送 ReleaseMessage 消息</h2><p>这个发送消息的操作本来应该是 MQ，apollo 为了减少依赖，直接使用的 mysql，但已经留好了MQ 的设计。关于 ReleaseMessage 的设计，我这里引用一下 apollo 的文档：</p>
+<blockquote>
+<p>Admin Service在配置发布后，需要通知所有的Config Service有配置发布，从而Config Service可以通知对应的客户端来拉取最新的配置。<br>从概念上来看，这是一个典型的消息使用场景，Admin Service作为producer发出消息，各个Config Service作为consumer消费消息。通过一个消息组件（Message Queue）就能很好的实现Admin Service和Config Service的解耦。<br>在实现上，考虑到Apollo的实际使用场景，以及为了尽可能减少外部依赖，我们没有采用外部的消息中间件，而是通过数据库实现了一个简单的消息队列。<br><strong>实现方式如下：</strong></p>
+<ol>
+<li>Admin Service在配置发布后会往ReleaseMessage表插入一条消息记录，消息内容就是配置发布的AppId+Cluster+Namespace，参见<a href="https://github.com/ctripcorp/apollo/blob/master/apollo-biz/src/main/java/com/ctrip/framework/apollo/biz/message/DatabaseMessageSender.java" target="_blank" rel="noopener">DatabaseMessageSender</a></li>
+<li>Config Service有一个线程会每秒扫描一次ReleaseMessage表，看看是否有新的消息记录，参见<a href="https://github.com/ctripcorp/apollo/blob/master/apollo-biz/src/main/java/com/ctrip/framework/apollo/biz/message/ReleaseMessageScanner.java" target="_blank" rel="noopener">ReleaseMessageScanner</a></li>
+<li>Config Service如果发现有新的消息记录，那么就会通知到所有的消息监听器（<a href="https://github.com/ctripcorp/apollo/blob/master/apollo-biz/src/main/java/com/ctrip/framework/apollo/biz/message/ReleaseMessageListener.java" target="_blank" rel="noopener">ReleaseMessageListener</a>），如<a href="https://github.com/ctripcorp/apollo/blob/master/apollo-configservice/src/main/java/com/ctrip/framework/apollo/configservice/controller/NotificationControllerV2.java" target="_blank" rel="noopener">NotificationControllerV2</a>，消息监听器的注册过程参见<a href="https://github.com/ctripcorp/apollo/blob/master/apollo-configservice/src/main/java/com/ctrip/framework/apollo/configservice/ConfigServiceAutoConfiguration.java" target="_blank" rel="noopener">ConfigServiceAutoConfiguration</a></li>
+<li>NotificationControllerV2得到配置发布的AppId+Cluster+Namespace后，会通知对应的客户端</li>
+</ol>
+</blockquote>
+<p>示意图如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-e1372f1232717d10.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>apollo 定义了 MessageSender 接口，定义了一个 sendMessage 方法，这个方法目前只有基于 Mysql 的实现，即 DatabaseMessageSender 实现类。</p>
+<p>该类会将数据直接保存到数据库。然后清理掉<code>比刚刚存的消息旧的消息</code>—— 防止消息表不断增大。</p>
+<h2 id="4-总结"><a href="#4-总结" class="headerlink" title="4. 总结"></a>4. 总结</h2><p>发布分为主版本发布，灰度版本发布，全量发布，这次说了前两个，全量发布下次再说。</p>
+<p>而主/灰发布的一个比较繁琐的地方就是两个版本的合并，<strong>灰度版本发布要合并主版本。主版本发布要更新灰度版本</strong>。</p>
+<p>同时，灰度的设计也有点绕，中间隔了一层 cluster。</p>
+<p>在发布成功之后，需要发送消息到数据库，让 ConfigService 能够感知到此次发布，并通知客户端。关于如何通知客户端，下次再说。</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/07/21/2018/2018-07-22-如何从零设计一个配置中心/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">如何从零设计一个配置中心</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/07/18/2018/2018-07-20-Apollo 10 — adminService 全量发布/">
+                <span class="level-item">Apollo 10 — adminService 全量发布</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/07/18/2018/2018-07-19-Apollo 9 —adminService 主 &amp; 灰度版本发布/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="Apollo 9 — adminService 主 &amp; 灰度版本发布" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

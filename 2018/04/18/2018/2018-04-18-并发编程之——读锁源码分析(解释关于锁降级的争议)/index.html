@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>并发编程之——读锁源码分析(解释关于锁降级的争议) - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之——读锁源码分析(解释关于锁降级的争议)">
+<meta property="og:url" content="http://thinkinjava.cn/2018/04/18/2018/2018-04-18-并发编程之——读锁源码分析(解释关于锁降级的争议)/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="并发编程之——读锁源码分析(解释关于锁降级的争议)">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="并发编程之——读锁源码分析(解释关于锁降级的争议)" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-04-17T18:11:11.000Z">2018-04-18</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/并发编程/">并发编程</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    22 分钟 读完 (大约 3257 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                并发编程之——读锁源码分析(解释关于锁降级的争议)
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       ## 1. 前言</p>
+<p>在前面的文章 <a href="http://thinkinjava.cn/article/106">并发编程之——写锁源码分析</a>中，我们分析了 1.8 JUC 中读写锁中的<strong>写锁的获取和释放过程</strong>，今天来分析一下读锁的获取和释放过程，读锁相比较写锁要稍微复杂一点，其中还有一点有争议的地方——锁降级。</p>
+<p>今天就来解开迷雾。</p>
+<h2 id="2-获取读锁-tryAcquireShared-方法"><a href="#2-获取读锁-tryAcquireShared-方法" class="headerlink" title="2. 获取读锁 tryAcquireShared 方法"></a>2. 获取读锁 tryAcquireShared 方法</h2><p>首先说明，获取读锁的过程是获取共享锁的过程。</p>
+<p>代码加注释如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">final</span> int11 <span class="hljs-title">tryAcquireShared</span><span class="hljs-params">(<span class="hljs-keyword">int</span> unused)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    Thread current = Thread.currentThread();</span><br><span class="line">    <span class="hljs-keyword">int</span> c = getState();</span><br><span class="line">    <span class="hljs-comment">// exclusiveCount(c) != 0 ---》 用 state &amp; 65535 得到低 16 位的值。如果不是0，说明写锁别持有了。</span></span><br><span class="line">    <span class="hljs-comment">// getExclusiveOwnerThread() != current----&gt; 不是当前线程</span></span><br><span class="line">    <span class="hljs-comment">// 如果写锁被霸占了，且持有线程不是当前线程，返回 false，加入队列。获取写锁失败。</span></span><br><span class="line">    <span class="hljs-comment">// 反之，如果持有写锁的是当前线程，就可以继续获取读锁了。</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (exclusiveCount(c) != <span class="hljs-number">0</span> &amp;&amp; getExclusiveOwnerThread() != current)</span><br><span class="line">        <span class="hljs-comment">// 获取锁失败</span></span><br><span class="line">        <span class="hljs-keyword">return</span> -<span class="hljs-number">1</span>;</span><br><span class="line">    <span class="hljs-comment">// 如果写锁没有被霸占，则将高16位移到低16位。</span></span><br><span class="line">    <span class="hljs-keyword">int</span> r = sharedCount(c);<span class="hljs-comment">// c &gt;&gt;&gt; 16</span></span><br><span class="line">    <span class="hljs-comment">// !readerShouldBlock() 和写锁的逻辑一样（根据公平与否策略和队列是否含有等待节点）</span></span><br><span class="line">    <span class="hljs-comment">// 不能大于 65535，且 CAS 修改成功</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (!readerShouldBlock() &amp;&amp; r &lt; <span class="hljs-number">65535</span> &amp;&amp; compareAndSetState(c, c + <span class="hljs-number">65536</span>)) &#123;</span><br><span class="line">        <span class="hljs-comment">// 如果读锁是空闲的， 获取锁成功。</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (r == <span class="hljs-number">0</span>) &#123;</span><br><span class="line">            <span class="hljs-comment">// 将当前线程设置为第一个读锁线程</span></span><br><span class="line">            firstReader = current;</span><br><span class="line">            <span class="hljs-comment">// 计数器为1</span></span><br><span class="line">            firstReaderHoldCount = <span class="hljs-number">1</span>;</span><br><span class="line"></span><br><span class="line">        &#125;<span class="hljs-comment">// 如果读锁不是空闲的，且第一个读线程是当前线程。获取锁成功。</span></span><br><span class="line">         <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (firstReader == current) &#123;<span class="hljs-comment">// </span></span><br><span class="line">            <span class="hljs-comment">// 将计数器加一</span></span><br><span class="line">            firstReaderHoldCount++;</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> &#123;<span class="hljs-comment">// 如果不是第一个线程，获取锁成功。</span></span><br><span class="line">            <span class="hljs-comment">// cachedHoldCounter 代表的是最后一个获取读锁的线程的计数器。</span></span><br><span class="line">            HoldCounter rh = cachedHoldCounter;</span><br><span class="line">            <span class="hljs-comment">// 如果最后一个线程计数器是 null 或者不是当前线程，那么就新建一个 HoldCounter 对象</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (rh == <span class="hljs-keyword">null</span> || rh.tid != getThreadId(current))</span><br><span class="line">                <span class="hljs-comment">// 给当前线程新建一个 HoldCounter</span></span><br><span class="line">                cachedHoldCounter = rh = readHolds.get();</span><br><span class="line">            <span class="hljs-comment">// 如果不是 null，且 count 是 0，就将上个线程的 HoldCounter 覆盖本地的。</span></span><br><span class="line">            <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (rh.count == <span class="hljs-number">0</span>)</span><br><span class="line">                readHolds.set(rh);</span><br><span class="line">            <span class="hljs-comment">// 对 count 加一</span></span><br><span class="line">            rh.count++;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-comment">// 死循环获取读锁。包含锁降级策略。</span></span><br><span class="line">    <span class="hljs-keyword">return</span> fullTryAcquireShared(current);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>总结一下上面代码的逻辑吧！</p>
+<ol>
+<li>判断写锁是否空闲。</li>
+<li>如果不是空闲，且当前线程不是持有写锁的线程，则返回 -1 ，表示抢锁失败。如果是空闲的，进入第三步。如果是当前线程，进入第三步。</li>
+<li>判断持有读锁的数量是否超过 65535，然后使用 CAS 设置 int 高 16 位的值，也就是加一。</li>
+<li>如果设置成功，且是第一次获取读锁，就设置 firstReader 相关的属性（为了性能提升）。</li>
+<li>如果不是第一次，当当前线程就是第一次获取读锁的线程，对 “第一次获取读锁线程计数器” 加 1.</li>
+<li>如果都不是，则获取最后一个读锁的线程计数器，判断这个计数器是不是当前线程的。如果是，加一，如果不是，自己创建一个新计数器，并更新 “最后读取的线程计数器”（也是为了性能考虑）。最后加一。返回成功。</li>
+<li>如果上面的判断失败了（CAS 设置失败，或者队列有等待的线程（公平情况下））。就调用 fullTryAcquireShared 方法死循环执行上面的步骤。</li>
+</ol>
+<p>步骤还是有点多哈，画个图吧，更清晰一点。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-c747934c55844272.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>其实，上面的逻辑里，是有锁降级的逻辑在里面的。但我们等会放在后面说。</p>
+<p>先看看 <code>fullTryAcquireShared</code> 方法，其实这个方法和 <code>tryAcquireShared</code> 高度类似。代码加注释如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> <span class="hljs-title">fullTryAcquireShared</span><span class="hljs-params">(Thread current)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">     * 这段代码与tryAcquireShared中的代码有部分重复，但整体更简单。</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    HoldCounter rh = <span class="hljs-keyword">null</span>;</span><br><span class="line">    <span class="hljs-comment">// 死循环</span></span><br><span class="line">    <span class="hljs-keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="hljs-keyword">int</span> c = getState();</span><br><span class="line">        <span class="hljs-comment">// 如果存在写锁</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (exclusiveCount(c) != <span class="hljs-number">0</span>) &#123;</span><br><span class="line">            <span class="hljs-comment">// 并且不是当前线程，获取锁失败，反之，如果持有写锁的是当前线程，那么就会进入下面的逻辑。</span></span><br><span class="line">            <span class="hljs-comment">// 反之，如果存在写锁，但持有写锁的是当前线程。那么就继续尝试获取读锁。</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (getExclusiveOwnerThread() != current)</span><br><span class="line">                <span class="hljs-keyword">return</span> -<span class="hljs-number">1</span>;</span><br><span class="line">        <span class="hljs-comment">// 如果写锁空闲，且可以获取读锁。</span></span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (readerShouldBlock()) &#123;</span><br><span class="line">            <span class="hljs-comment">// 第一个读线程是当前线程</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (firstReader == current) &#123;</span><br><span class="line">            <span class="hljs-comment">// 如果不是当前线程</span></span><br><span class="line">            &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">                <span class="hljs-keyword">if</span> (rh == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                    rh = cachedHoldCounter;</span><br><span class="line">                    <span class="hljs-keyword">if</span> (rh == <span class="hljs-keyword">null</span> || rh.tid != getThreadId(current)) &#123;</span><br><span class="line">                        <span class="hljs-comment">// 从 ThreadLocal 中取出计数器</span></span><br><span class="line">                        rh = readHolds.get();</span><br><span class="line">                        <span class="hljs-keyword">if</span> (rh.count == <span class="hljs-number">0</span>)</span><br><span class="line">                            readHolds.remove();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="hljs-keyword">if</span> (rh.count == <span class="hljs-number">0</span>)</span><br><span class="line">                    <span class="hljs-keyword">return</span> -<span class="hljs-number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-comment">// 如果读锁次数达到 65535 ，抛出异常</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (sharedCount(c) == MAX_COUNT)</span><br><span class="line">            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Error(<span class="hljs-string">"Maximum lock count exceeded"</span>);</span><br><span class="line">        <span class="hljs-comment">// 尝试对 state 加 65536, 也就是设置读锁，实际就是对高16位加一。</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (compareAndSetState(c, c + SHARED_UNIT)) &#123;</span><br><span class="line">            <span class="hljs-comment">// 如果读锁是空闲的</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (sharedCount(c) == <span class="hljs-number">0</span>) &#123;</span><br><span class="line">                <span class="hljs-comment">// 设置第一个读锁</span></span><br><span class="line">                firstReader = current;</span><br><span class="line">                <span class="hljs-comment">// 计数器为 1</span></span><br><span class="line">                firstReaderHoldCount = <span class="hljs-number">1</span>;</span><br><span class="line">            <span class="hljs-comment">// 如果不是空闲的，查看第一个线程是否是当前线程。</span></span><br><span class="line">            &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (firstReader == current) &#123;</span><br><span class="line">                firstReaderHoldCount++;<span class="hljs-comment">// 更新计数器</span></span><br><span class="line">            &#125; <span class="hljs-keyword">else</span> &#123;<span class="hljs-comment">// 如果不是当前线程</span></span><br><span class="line">                <span class="hljs-keyword">if</span> (rh == <span class="hljs-keyword">null</span>)</span><br><span class="line">                    rh = cachedHoldCounter;</span><br><span class="line">                <span class="hljs-keyword">if</span> (rh == <span class="hljs-keyword">null</span> || rh.tid != getThreadId(current))<span class="hljs-comment">// 如果最后一个读计数器所属线程不是当前线程。</span></span><br><span class="line">                    <span class="hljs-comment">// 自己创建一个。</span></span><br><span class="line">                    rh = readHolds.get();</span><br><span class="line">                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (rh.count == <span class="hljs-number">0</span>)</span><br><span class="line">                    readHolds.set(rh);</span><br><span class="line">                <span class="hljs-comment">// 对计数器 ++</span></span><br><span class="line">                rh.count++;</span><br><span class="line">                <span class="hljs-comment">// 更新缓存计数器。</span></span><br><span class="line">                cachedHoldCounter = rh; <span class="hljs-comment">// cache for release</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这两个方法其实高度相似的。就不再解释了。</p>
+<p>到这里，其实留下了几个问题：一个是 <code>firstReader</code>和 <code>firstReaderHoldCount</code> 的作用，还有就是 <code>cachedHoldCounter</code> 的作用。最后是锁降级。</p>
+<p>解释一下：</p>
+<ul>
+<li><code>firstReader</code> 是获取读锁的第一个线程。如果只有一个线程获取读锁，很明显，使用这样一个变量速度更快。</li>
+<li><code>firstReaderHoldCount</code>是 <code>firstReader</code>的计数器。同上。<ul>
+<li><code>cachedHoldCounter</code>是最后一个获取到读锁的线程计数器，每当有新的线程获取到读锁，这个变量都会更新。这个变量的目的是：当最后一个获取读锁的线程重复获取读锁，或者释放读锁，就会直接使用这个变量，速度更快，相当于缓存。</li>
+</ul>
+</li>
+</ul>
+<p>关于锁降级，重点解释一下，毕竟是我们的标题。</p>
+<h2 id="3-锁降级的争议"><a href="#3-锁降级的争议" class="headerlink" title="3. 锁降级的争议"></a>3. 锁降级的争议</h2><p>首先，什么是锁降级？在读锁的哪个地方体现？</p>
+<p>回答第一个问题，引自 JDK 的解释：</p>
+<blockquote>
+<p>锁降级:<br>重入还允许从写入锁降级为读取锁，其实现方式是：先获取写入锁，然后获取读取锁，最后释放写入锁。但是，从读取锁升级到写入锁是不可能的。</p>
+</blockquote>
+<p>体现在读锁哪里？</p>
+<p>在 tryAcquireShared 方法和 fullTryAcquireShared 中都有体现，例如下面的判断：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">if</span> (exclusiveCount(c) != <span class="hljs-number">0</span>) &#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (getExclusiveOwnerThread() != current)</span><br><span class="line">        <span class="hljs-keyword">return</span> -<span class="hljs-number">1</span>;</span><br></pre></td></tr></table></figure>
+<p>上面的代码的意思是：当写锁被持有时，如果持有该锁的线程不是当前线程，就返回 “获取锁失败”，反之就会继续获取读锁。称之为锁降级。</p>
+<p>在很多书和文章中，对锁降级都会有类似下面的解释：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-929c163b9a89093d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>上面提到，锁降级中，读锁的获取的目的是 “为了保证数据的可见性”。而得到这个结论的依据是 “如果当前线程不获取读锁而是直接释放写锁，假设此刻另一个线程（记作线程 T）获取了写锁并修改了数据，那么当前线程无法感知线程 T 的数据更新”。</p>
+<p>这里貌似有个漏洞：如果另一个线程获取了写锁（并修改了数据），那么这个锁就被独占了，没有任何其他线程可以读到数据，更不用谈 “感知数据更新”。</p>
+<p>楼主认为，锁降级说白了就是写锁的一种特殊重入机制。通过这种重入，可以减少一步流程——释放写锁后 再次 获取读锁。</p>
+<p>使用了锁降级，就可以减去<strong>释放写锁</strong>的步骤。直接获取读锁。效率更高。而且没有线程争用。和 “可见性” 并没有关系。</p>
+<p>用一幅图来展示锁降级：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-f545a504abde8c2f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>总的来说，锁降级就是一种特殊的锁重入机制，JDK 使用 <code>先获取写入锁，然后获取读取锁，最后释放写入锁</code> 这个步骤，是为了提高获取锁的效率，而不是所谓的可见性。</p>
+<p>最后再总结一下获取锁的逻辑，首先判断写锁释放被持有了，如果被持有了，且是当前线程，使用锁降级，如果没有，读锁正常获取。</p>
+<p>获取过程中，会使用 firstReader 和 cachedHoldCounter 提高性能。</p>
+<h2 id="4-读锁的释放-tryReleaseShared-方法"><a href="#4-读锁的释放-tryReleaseShared-方法" class="headerlink" title="4. 读锁的释放 tryReleaseShared 方法"></a>4. 读锁的释放 tryReleaseShared 方法</h2><p>代码加注释如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">tryReleaseShared</span><span class="hljs-params">(<span class="hljs-keyword">int</span> unused)</span> </span>&#123;</span><br><span class="line">    Thread current = Thread.currentThread();</span><br><span class="line">    <span class="hljs-comment">// 如果是第一个线程</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (firstReader == current) &#123;</span><br><span class="line">        <span class="hljs-comment">// 如果是 1，将第一个线程设置成 null。结束。</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (firstReaderHoldCount == <span class="hljs-number">1</span>)</span><br><span class="line">            firstReader = <span class="hljs-keyword">null</span>;</span><br><span class="line">        <span class="hljs-comment">// 如果不是 1，减一操作</span></span><br><span class="line">        <span class="hljs-keyword">else</span></span><br><span class="line">            firstReaderHoldCount--;</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;<span class="hljs-comment">//如果不是当前线程</span></span><br><span class="line">        HoldCounter rh = cachedHoldCounter;</span><br><span class="line">        <span class="hljs-comment">// 如果缓存是 null 或者缓存所属线程不是当前线程，则当前线程不是最后一个读锁。</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (rh == <span class="hljs-keyword">null</span> || rh.tid != getThreadId(current))</span><br><span class="line">            <span class="hljs-comment">// 获取当前线程的计数器</span></span><br><span class="line">            rh = readHolds.get();</span><br><span class="line">        <span class="hljs-keyword">int</span> count = rh.count;</span><br><span class="line">        <span class="hljs-comment">// 如果计数器小于等于一，就直接删除计数器</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (count &lt;= <span class="hljs-number">1</span>) &#123;</span><br><span class="line">            readHolds.remove();</span><br><span class="line">            <span class="hljs-comment">// 如果计数器的值小于等于0，说明有问题了，抛出异常</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (count &lt;= <span class="hljs-number">0</span>)</span><br><span class="line">                <span class="hljs-keyword">throw</span> unmatchedUnlockException();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-comment">// 对计数器减一</span></span><br><span class="line">        --rh.count;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">for</span> (;;) &#123;<span class="hljs-comment">// 死循环使用 CAS 修改状态</span></span><br><span class="line">        <span class="hljs-keyword">int</span> c = getState();</span><br><span class="line">        <span class="hljs-comment">// c - 65536, 其实就是减去一个读锁。对高16位减一。</span></span><br><span class="line">        <span class="hljs-keyword">int</span> nextc = c - SHARED_UNIT;</span><br><span class="line">        <span class="hljs-comment">// 修改 state 状态。</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (compareAndSetState(c, nextc))</span><br><span class="line">            <span class="hljs-comment">// 修改成功后，如果是 0，表示读锁和写锁都空闲，则可以唤醒后面的等待线程</span></span><br><span class="line">            <span class="hljs-keyword">return</span> nextc == <span class="hljs-number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">`</span><br></pre></td></tr></table></figure>
+<p>释放还是很简单的，步骤如下：</p>
+<ol>
+<li>如果当前线程是第一个持有读锁的线程，则只需要操作 firstReaderHoldCount 减一。如果不是，进入第二步。</li>
+<li>获取到缓存计数器（最后一个线程的计数器），如果匹配到当前线程，就减一。如果不匹配，进入第三步。</li>
+<li>获取当前线程自己的计数器（由于每个线程都会多次获取到锁，所以，每个线程必须保存自己的计数器。）。</li>
+<li>做减一操作。</li>
+<li>死循环修改 state 变量。</li>
+</ol>
+<h2 id="5-总结"><a href="#5-总结" class="headerlink" title="5. 总结"></a>5. 总结</h2><p>“读写锁没有想象中简单” 是此次阅读源码的最大感慨。事实上，花的最多时间是锁降级，因为对这块的不理解，参照了一些书籍和博客，但还是云里雾里，我也不敢确定我说的就是全对的，但我敢说，我写的是经过我思考的。</p>
+<p>总结下读锁的获取逻辑。</p>
+<p>读锁本质上是个共享锁。</p>
+<p>但读锁对锁的获取做了很多优化，比如使用  firstReader  和 cachedHoldCounter 最第一个读锁线程和最后一个读锁线程做优化，优化点主要在释放的时候对计数器的获取。</p>
+<p>同时，如果在获取读锁的过程中写锁被持有了，JUC 并没有让所有线程痴痴的等待，而是判断入如果获取读锁的线程是正巧是持有写锁的线程，那么当前线程就可以降级获取写锁，否则就会死锁了（<strong>为什么死锁，当持有写锁的线程想获取读锁，但却无法降级，进入了等待队列，肯定会死锁</strong>）。</p>
+<p>还有一点就是性能上的优化，如果先释放写锁，再获取读锁，势必引起锁的争抢和线程上下文切换，影响性能。</p>
+<p>还有一个就是，读书的时候，要有怀疑精神，一定要思考，而不是顺着他的思路去看书，诚然，书中大部分时候都是正确的，但我们贪婪的希望，那错误的一小部分尽量不要影响到我们。</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/04/18/2018/2018-04-18-并发编程之——写锁源码分析/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">并发编程之——写锁源码分析</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/04/17/2018/2018-04-17-并发编程-——-自己写一个异步回调-API/">
+                <span class="level-item">并发编程-——-自己写一个异步回调-API</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/04/18/2018/2018-04-18-并发编程之——读锁源码分析(解释关于锁降级的争议)/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="并发编程之——读锁源码分析(解释关于锁降级的争议)" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

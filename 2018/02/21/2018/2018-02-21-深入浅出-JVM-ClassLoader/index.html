@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>深入浅出-JVM-ClassLoader - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="深入浅出-JVM-ClassLoader">
+<meta property="og:url" content="http://thinkinjava.cn/2018/02/21/2018/2018-02-21-深入浅出-JVM-ClassLoader/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入浅出-JVM-ClassLoader">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="深入浅出-JVM-ClassLoader" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-02-20T18:11:11.000Z">2018-02-21</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/JVM/">JVM</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    21 分钟 读完 (大约 3200 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                深入浅出-JVM-ClassLoader
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       <!--more-->       ## # 前言</p>
+<p>在 JVM 综述里面，我们说，JVM 做了三件事情，Java 程序的内存管理，<br>Java Class 二进制字节流的加载（ClassLoader），Java 程序的执行（执行引擎）。我们也说，我们大部分情况下只关注前2个。在前面的文章中，我们已经分析了内存关系相关的，包括运行时数据区，GC 相关。今天我们要讲的就是类加载器。</p>
+<p>在 <a href="https://www.jianshu.com/p/70154dc5a9ff" target="_blank" rel="noopener">JVM 综述</a> 里，我们已经大致分析了一些概念。而今天的文章将详细的阐述类加载器。</p>
+<p>首先，我们要了解类加载器，当然，了解的目的是为了更好的开发，通过对类加载器的解读，看看我们能不能做些什么，比如修改类加载器的加载逻辑，比如加入自定义的类加载器等等功能。</p>
+<p>让我们开始吧！</p>
+<h2 id="1-类加载器介绍"><a href="#1-类加载器介绍" class="headerlink" title="# 1.  类加载器介绍"></a># 1.  类加载器介绍</h2><p>对于 Java 虚拟机来说，Class 文件是一个重要的接口，无论使用何种语言进行软件开发，只要能将源文件编译为正确的 Class 文件，那么这种语言就可以在 Java 虚拟机上运行。可以说，Class 文件就是虚拟机的基石。</p>
+<p>如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-0462adabdf0aac40.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="各种语言都可以在 JVM 上运行"></p>
+<p>从上图可以看出，虚拟机不拘泥于 Java 语言，任何一个源文件只要能编译成 Class 文件的格式，就可以在JVM 上运行！Class 文件格式就像是一个接口，只要遵守这个接口，就能够在 JVM 上运行。</p>
+<h2 id="2-类加载器的工作流程"><a href="#2-类加载器的工作流程" class="headerlink" title="# 2. 类加载器的工作流程"></a># 2. 类加载器的工作流程</h2><p>Class 文件通常是以文件的方式存在（任何二进制流都可以是 Class 类型），但只有能被 JVM 加载后才能被使用，才能运行编译后的代码。系统装在 Class 类型可以分为加载，链接和初始化三个步骤。其中，链接也可分为验证，准备和解析3步骤。如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-b58c0180435f2e21.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Class 文件转载过程"></p>
+<p>其中，只有加载过程是程序员能够控制的，后面的几个步骤都是有虚拟机自动运行的。因此，我们的关注点主要放在加载阶段。</p>
+<h2 id="3-类加载流程中的-“加载”"><a href="#3-类加载流程中的-“加载”" class="headerlink" title="# 3.  类加载流程中的 “加载”"></a># 3.  类加载流程中的 “加载”</h2><p>上面说了，类加载器3个流程中，唯一能让程序员 “做手脚” 的就是加载过程，上面是加载过程呢？其主要作用就是从系统外部获得 Class 二进制数据流。</p>
+<p>JVM 不会无故装载 Class 文件，只有在必要的时候才装载，哪几个时候呢？</p>
+<ol>
+<li>当创建一个类的实例是，比如使用 new 关键字，或者通过反射，克隆，反序列化。</li>
+<li>当调用类的静态方法时，即当使用字节码 invokstatic 指令。</li>
+<li>当使用类或接口的静态字段时（final 常量除外），比如，使用 getstatic 或者 pustatic 指令。</li>
+<li>当时用 Java.lang.reflect 包中的方法反射类的方法时。</li>
+<li>当初始化子类，要求先初始化父类。</li>
+<li>作为启动虚拟机，含有 main（）方法的那个类。</li>
+</ol>
+<p>以上6种情况属于主动调用，主动调用会触发初始化，还有一种情况是被动调用，则不会引起初始化。</p>
+<h4 id="3-1-ClassLoader-抽象类介绍"><a href="#3-1-ClassLoader-抽象类介绍" class="headerlink" title="# 3.1 ClassLoader 抽象类介绍"></a># 3.1 ClassLoader 抽象类介绍</h4><p>Java 类加载器的具体实现就在 java.lang.ClassLoader，该类是一个抽象类，并且提供了一些重要的接口，用于自定义Class 的加载流程和加载方式。主要方法如下：</p>
+<ol>
+<li><p>public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException<br>给定一个类名，加载一个雷，返回代表这个类的 Class 实例，如果找不到类，则返回异常。</p>
+</li>
+<li><p>protected final Class&lt;?&gt; defineClass(String name, byte[] b, int off, int len) throws ClassFormatError<br>根据给定的字节码流 b 定义一个类，off 表示位置，len 表示长度。该方法只有子类可以使用。</p>
+</li>
+<li><p>protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException<br>查找一个类，也是只能子类使用，这是重载 ClassLoader 时，最重要的系统扩展点。这个方法会被 loadClass 调用，用于自定义查找类的逻辑，如果不需要修改类加载默认机制，只是想改变类加载的形式，就可以重载该方法。</p>
+</li>
+<li><p>protected final Class&lt;?&gt; findLoadedClass(String name)<br>同样的，这个方法也只有子类能够使用，他会去寻找已经加载的类，这个方法是 final 方法，无法被修改。</p>
+</li>
+</ol>
+<p>同时，在该类中，还有一个字段非常重要：parent，他也是一个 ClassLoader 的实例，这个字段所表示的 ClassLoader 也称为这个 ClassLoader 的双亲，在类加载的过程中，ClassLoader 可能会将某些请求交给自己的双亲处理。</p>
+<h4 id="3-2-类加载器的双亲委派模型"><a href="#3-2-类加载器的双亲委派模型" class="headerlink" title="# 3.2 类加载器的双亲委派模型"></a># 3.2 类加载器的双亲委派模型</h4><p>在标准的 Java 程序中，从虚拟机的角度讲，只有2种类加载器：</p>
+<ol>
+<li>启动类加载器（BootStrap ClassLoader），C++ 语言实现，虚拟机自身的一部分</li>
+<li>另一种就是所有其他的类加载器，由 Java 语言实现，独立于虚拟机外部，并且全部继承自抽身类 java.lang.ClassLoader。</li>
+</ol>
+<p>从程序员的角度讲，虚拟机会创建 3 中类加载器，分别是：Bootstrap ClassLoader(启动类加载器），Extension ClassLoader（扩展类加载器）和 APPClassLoader（应用类加载器，也称为系统类加载器）。此外，每一个应用程序还可以拥有自定义的 ClassLoader，扩展 Java 虚拟机获取 Class 数据的能力。</p>
+<p>而这 3 个类加载器有着层次关系。</p>
+<p>先来看一个著名的图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-eba420d0b83f65a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="类加载器双亲委派模型"></p>
+<p>如图所示：从 ClassLoader 的层次自顶向下为启动类加载器，扩展类加载器，应用类加载器和自定义类加载器，当系统需要适用一个类时，在判断类是否已经被加载时，会先从当前底层类加载器进行判断，但系统需要加载一个类时，会从顶层类开始加载，依次向下尝试，直到成功。</p>
+<p>注意，我们无法访问启动类加载器，当试图获取启动类加载器的时候，返回 null，因此，如果返回的是 null，并不意味没有类加载器为它服务，而是指哪个类为启动类加载器。</p>
+<p>那么这些类加载路径是哪些呢？</p>
+<ol>
+<li><p>BootStrap 类加载器负责加载 &lt;JAVA_HOME&gt;/lib 目录中的，或者别-Xbootclasspath 参数指定的路径。并且是被虚拟机识别的，如 rt.jar，名字不符合的类库即使放在 lib 目录中也不会加载。</p>
+</li>
+<li><p>扩展类加载器有 sun.misc.Launcher$ExtClassLoader 实现，负责加载 &lt;JAVA_HOME&gt;/lib/ext 目录中的。或者被 java.ext.dirs 系统变量所指定的路径中的所有类库。</p>
+</li>
+<li><p>应用类加载器由 sun.misc.Launcher$AppClassLoader 实现，由于这个类是 ClassLoader 中的 getSystemClassLoader 方法的返回值，也称为系统类加载器，负载加载用户类路径（ClassPath）上所指定的类库，开发者可以直接使用这个类加载器。一般情况下，这个就是程序中默认的类加载器。</p>
+</li>
+<li><p>自定义类加载器用于加载一些特殊途径的类，一般也是用户程序类。</p>
+</li>
+</ol>
+<p>系统中的 ClassLoader 在协同工作时，默认会使用双亲委托模式，即在类加载的时候，系统会判断当前类是否已经被加载，如果已经加载，则直接返回，否则就尝试加载，在尝试加载时，会先请求双亲处理，如果双亲查找事变，则自己加载。代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">protected</span> Class&lt;?&gt; loadClass(String name, <span class="hljs-keyword">boolean</span> resolve)</span><br><span class="line">       <span class="hljs-keyword">throws</span> ClassNotFoundException</span><br><span class="line">   &#123;</span><br><span class="line">       <span class="hljs-keyword">synchronized</span> (getClassLoadingLock(name)) &#123;</span><br><span class="line">           <span class="hljs-comment">// First, check if the class has already been loaded</span></span><br><span class="line">           Class&lt;?&gt; c = findLoadedClass(name);</span><br><span class="line">           <span class="hljs-keyword">if</span> (c == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">               <span class="hljs-keyword">long</span> t0 = System.nanoTime();</span><br><span class="line">               <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">                   <span class="hljs-keyword">if</span> (parent != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                       c = parent.loadClass(name, <span class="hljs-keyword">false</span>);</span><br><span class="line">                   &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">                       c = findBootstrapClassOrNull(name);</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125; <span class="hljs-keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">                   <span class="hljs-comment">// ClassNotFoundException thrown if class not found</span></span><br><span class="line">                   <span class="hljs-comment">// from the non-null parent class loader</span></span><br><span class="line">               &#125;</span><br><span class="line"></span><br><span class="line">               <span class="hljs-keyword">if</span> (c == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                   <span class="hljs-comment">// If still not found, then invoke findClass in order</span></span><br><span class="line">                   <span class="hljs-comment">// to find the class.</span></span><br><span class="line">                   <span class="hljs-keyword">long</span> t1 = System.nanoTime();</span><br><span class="line">                   c = findClass(name);</span><br><span class="line"></span><br><span class="line">                   <span class="hljs-comment">// this is the defining class loader; record the stats</span></span><br><span class="line">                   sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);</span><br><span class="line">                   sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);</span><br><span class="line">                   sun.misc.PerfCounter.getFindClasses().increment();</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="hljs-keyword">if</span> (resolve) &#123;</span><br><span class="line">               resolveClass(c);</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="hljs-keyword">return</span> c;</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<p>代码中，如果双亲是 null，则使用启动类加载器加载，如果事变，则使用当前类加载器加载。</p>
+<p>双亲为 null 一般有2种情况，1. 双亲是启动类加载器。2. 自己就是启动类加载器。</p>
+<p>其中加载类的逻辑有2个注意的地方。</p>
+<ol>
+<li><p>判断是否已经加载？当判断类是否需要加载时，是从底层开始判断，如果底层已经加载了，则不再请求双亲。</p>
+</li>
+<li><p>当系统准备加载一个类时。会先从双亲加载，也就是最顶层的启动类加载器，逐层向下，直到找到该类。和上面的是相反的。</p>
+</li>
+</ol>
+<h4 id="3-3-类加载器的双亲委派模型缺陷和补充"><a href="#3-3-类加载器的双亲委派模型缺陷和补充" class="headerlink" title="# 3.3 类加载器的双亲委派模型缺陷和补充"></a># 3.3 类加载器的双亲委派模型缺陷和补充</h4><p>双亲模型固然有着优点，能够让整个系统保持了类的唯一性。但在有些场合，却不适合，也就是说，顶层的启动类加载器的代码无法访问到底层的类加载器。如 rt.jar 无法中代码无法访问到应用类加载器。</p>
+<p>你肯定要问，为什么需要访问呢？</p>
+<p>在 Java 平台中，把核心类（rt.jar)中提供外部服务，可由应用层自行实现的接口，通常可以称为 Service Provider Interface，即 SPI。</p>
+<p>在 rt.jar 中的抽象类需要加载继承他们的在应用层的子类实现，但是以目前的双亲机制是无法实现的。</p>
+<p>因此 JDK 引用了一个不太优雅的设计，上下文类加载器。也就是讲类加载放在线程上下文变量中。通过     Thread.getContextClassLoader()，    Thread.setContextClassLoader(ClassLoader) 这两个方法获取和设置 ClassLoader，这样，rt.jar 中的代码就可以获取到底层的类加载了。</p>
+<h4 id="3-4-突破双亲模式"><a href="#3-4-突破双亲模式" class="headerlink" title="# 3.4 突破双亲模式"></a># 3.4 突破双亲模式</h4><p>双亲模式是虚拟机的默认行为，但并非必须这么做，通过重载 ClassLoader 可以修改该行为。事实上，很多框架和软件都修改了，比如 Tomcat，OSGI。具体实现则是通过重写 loadClass 方法，改变类的加载次序。比如先使用自定义类加载器加载，如果加载不到，则交给双亲加载。</p>
+<h2 id="4-类加载的扩展—热替换"><a href="#4-类加载的扩展—热替换" class="headerlink" title="# 4. 类加载的扩展—热替换"></a># 4. 类加载的扩展—热替换</h2><p>我们知道：由不同的 ClassLoader 加载的同名类属于不同的类型，不能相互转化和兼容。</p>
+<p>而这个特性就是我们实现热替换的关键。过程如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-dbe5357dffc7d83b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="热替换基本思路"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="# 总结"></a># 总结</h2><p>好了，到这里，基本的类加载器就介绍结束了。我们总结了类加载的工作流程，包括加载，连接，初始化。然后我们重点介绍了加载，因为加载阶段是我们程序员唯一有所作为的地方。然后介绍了加载阶段的一些细节，比如双亲委派，然后说了双亲委派的缺点和补充，然后探讨了如何修改默认的类加载方式，最后通过类加载的特性实现了热替换。当然也看了核心类 ClassLoader 的源码。不过，这肯定不是类加载器的全部。我们将在后面的文章中将类加载的其他特性一一解开。</p>
+<p>good luck！！！！</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/02/24/2018/2018-02-24-JVM-线上故障排查基本操作/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">JVM-线上故障排查基本操作</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/02/20/2018/2018-02-20-深入浅出-JVM-GC（4）常用-GC-参数介绍/">
+                <span class="level-item">深入浅出-JVM-GC（4）常用-GC-参数介绍</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/02/21/2018/2018-02-21-深入浅出-JVM-ClassLoader/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="深入浅出-JVM-ClassLoader" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>Netty-高性能之道---Recycler-对象池的复用 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Netty-高性能之道---Recycler-对象池的复用">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/22/2018/2018-03-22-Netty-高性能之道---Recycler-对象池的复用/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Netty-高性能之道---Recycler-对象池的复用">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="Netty-高性能之道---Recycler-对象池的复用" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-03-21T18:11:11.000Z">2018-03-22</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Netty/">Netty</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    23 分钟 读完 (大约 3405 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                Netty-高性能之道---Recycler-对象池的复用
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       <img src="https://upload-images.jianshu.io/upload_images/4236553-552d2878c402b15c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Recycler 设计图"></p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我们知道，Java 创建一个实例的消耗是不小的，如果没有使用栈上分配和 TLAB，那么就需要使用 CAS 在堆中创建对象。所以现在很多框架都使用对象池。Netty 也不例外，通过重用对象，能够避免频繁创建对象和销毁对象带来的损耗。</p>
+<p>来看看具体实现。</p>
+<h2 id="1-Recycler-抽象类简介"><a href="#1-Recycler-抽象类简介" class="headerlink" title="1. Recycler 抽象类简介"></a>1. Recycler 抽象类简介</h2><p>该类 doc：</p>
+<blockquote>
+<p> Light-weight object pool based on a thread-local stack.<br>基于线程局部堆栈的轻量级对象池。</p>
+</blockquote>
+<p>该类是个容器，内部主要是一个 Stack 结构。当需要使用一个实例时，就弹出，当使用完毕时，就清空后入栈。</p>
+<ul>
+<li>该类有 2 个主要方法：</li>
+</ul>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-number">1</span>. <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> T <span class="hljs-title">get</span><span class="hljs-params">()</span> <span class="hljs-comment">// 从 threadLocal 中取出 Stack 中首个 T 实例。</span></span></span><br><span class="line"><span class="hljs-function">2. <span class="hljs-keyword">protected</span> <span class="hljs-keyword">abstract</span> T <span class="hljs-title">newObject</span><span class="hljs-params">(Handle&lt;T&gt; handle)</span> <span class="hljs-comment">// 当 Stack 中没有实例的时候，创建一个实例返回。</span></span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>该类有 4 个内部接口 / 内部类：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// 定义 handler 回收实例</span></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">Handle</span>&lt;<span class="hljs-title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">recycle</span><span class="hljs-params">(T object)</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// Handle 的默认实现，可以将实例回收，放入 stack。</span></span><br><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DefaultHandle</span>&lt;<span class="hljs-title">T</span>&gt; <span class="hljs-keyword">implements</span> <span class="hljs-title">Handle</span>&lt;<span class="hljs-title">T</span>&gt;</span></span><br><span class="line"><span class="hljs-class"></span></span><br><span class="line"><span class="hljs-class">// 存储对象的数据结构。对象池的真正的 “池”</span></span><br><span class="line"><span class="hljs-class"><span class="hljs-title">static</span> <span class="hljs-title">final</span> <span class="hljs-title">class</span> <span class="hljs-title">Stack</span>&lt;<span class="hljs-title">T</span>&gt;</span></span><br><span class="line"><span class="hljs-class"></span></span><br><span class="line"><span class="hljs-class">// 多线程共享的队列</span></span><br><span class="line"><span class="hljs-class"><span class="hljs-title">private</span> <span class="hljs-title">static</span> <span class="hljs-title">final</span> <span class="hljs-title">class</span> <span class="hljs-title">WeakOrderQueue</span></span></span><br><span class="line"><span class="hljs-class"></span></span><br><span class="line"><span class="hljs-class">// 队列中的链表结构，用于存储多线程回收的实例</span></span><br><span class="line"><span class="hljs-class"><span class="hljs-title">private</span> <span class="hljs-title">static</span> <span class="hljs-title">final</span> <span class="hljs-title">class</span> <span class="hljs-title">Link</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AtomicInteger</span></span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>实现线程局部缓存的 FastThreadLocal：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> FastThreadLocal&lt;Stack&lt;T&gt;&gt; threadLocal = <span class="hljs-keyword">new</span> FastThreadLocal&lt;Stack&lt;T&gt;&gt;() &#123;</span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">protected</span> Stack&lt;T&gt; <span class="hljs-title">initialValue</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Stack&lt;T&gt;(Recycler.<span class="hljs-keyword">this</span>, Thread.currentThread(), maxCapacityPerThread, maxSharedCapacityFactor,</span><br><span class="line">                ratioMask, maxDelayedQueuesPerThread);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onRemoval</span><span class="hljs-params">(Stack&lt;T&gt; value)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (value.threadRef.get() == Thread.currentThread()) &#123;</span><br><span class="line">           <span class="hljs-keyword">if</span> (DELAYED_RECYCLED.isSet()) &#123;</span><br><span class="line">               DELAYED_RECYCLED.get().remove(value);</span><br><span class="line">           &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>核心方法 get 操作</p>
+</li>
+</ul>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> T <span class="hljs-title">get</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (maxCapacityPerThread == <span class="hljs-number">0</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> newObject((Handle&lt;T&gt;) NOOP_HANDLE);</span><br><span class="line">    &#125;</span><br><span class="line">    Stack&lt;T&gt; stack = threadLocal.get();</span><br><span class="line">    DefaultHandle&lt;T&gt; handle = stack.pop();</span><br><span class="line">    <span class="hljs-keyword">if</span> (handle == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        handle = stack.newHandle();</span><br><span class="line">        handle.value = newObject(handle);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> (T) handle.value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>核心方法 DefaultHandle 的 recycle 操作<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">recycle</span><span class="hljs-params">(Object object)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (object != value) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(<span class="hljs-string">"object does not belong to handle"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    stack.push(<span class="hljs-keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<hr>
+<h2 id="2-Netty-中的使用范例"><a href="#2-Netty-中的使用范例" class="headerlink" title="2. Netty 中的使用范例"></a>2. Netty 中的使用范例</h2><blockquote>
+<p><strong>io.netty.channel.ChannelOutboundBuffer.Entry 类</strong></p>
+</blockquote>
+<ul>
+<li>示例代码如下：</li>
+</ul>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// 实现了 Recycler 抽象类</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Recycler&lt;Entry&gt; RECYCLER = <span class="hljs-keyword">new</span> Recycler&lt;Entry&gt;() &#123;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">protected</span> Entry <span class="hljs-title">newObject</span><span class="hljs-params">(Handle&lt;Entry&gt; handle)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Entry(handle);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 创建实例</span></span><br><span class="line">Entry entry = RECYCLER.get();</span><br><span class="line"><span class="hljs-comment">// doSomeing......</span></span><br><span class="line"><span class="hljs-comment">// 归还实例</span></span><br><span class="line">entry.recycle();</span><br></pre></td></tr></table></figure>
+<p>从上面的 get 方法，我们知道，最终会从 threadLocal 取出 Stack，从 Stack 中弹出 DefaultHandle 对象（如果没有就创建一个），然后调用我们重写的 newObject 方法，将创建的对象和 handle 绑定。最后返回这个对象。</p>
+<p>当调用 entry.recycle() 方法的时候，实际会调用 DefaultHandle 的 recycle 方法。我们看看该方法实现：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">recycle</span><span class="hljs-params">(Object object)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (object != value) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(<span class="hljs-string">"object does not belong to handle"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    stack.push(<span class="hljs-keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 value 就是 get 方法中赋值的。如果不相等，就抛出异常。反之，将 handle 入栈 stack。注意：这里并没有对 value 做任何处理，只是在 Entry 内部做了清空处理。所以，这个 handle 和 handle 绑定的对象就保存在了 stack 中。</p>
+<p>下次再次调用 get 时，就可以直接从该 threadLocal 中取出 handle 和 handle 绑定的 value了。完成了一次完美的对象池的实践。也就是说，一个 handle 绑定一个实例。而这个 handle 还是比较轻量的。</p>
+<p>从这里可以看出，Stack 就是真正的 “池子”。我们就看看这个池子的内部实现。</p>
+<p>而这个 stack 对外常用的方法的 pop 和 push。我们就来看看这两个方法。</p>
+<h2 id="3-pop-方法"><a href="#3-pop-方法" class="headerlink" title="3. pop 方法"></a>3. pop 方法</h2><p>代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function">DefaultHandle&lt;T&gt; <span class="hljs-title">pop</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">int</span> size = <span class="hljs-keyword">this</span>.size;</span><br><span class="line">    <span class="hljs-keyword">if</span> (size == <span class="hljs-number">0</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (!scavenge()) &#123;</span><br><span class="line">            <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        size = <span class="hljs-keyword">this</span>.size;</span><br><span class="line">    &#125;</span><br><span class="line">    size --;</span><br><span class="line">    DefaultHandle ret = elements[size];</span><br><span class="line">    elements[size] = <span class="hljs-keyword">null</span>;</span><br><span class="line">    <span class="hljs-keyword">if</span> (ret.lastRecycledId != ret.recycleId) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalStateException(<span class="hljs-string">"recycled multiple times"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    ret.recycleId = <span class="hljs-number">0</span>;</span><br><span class="line">    ret.lastRecycledId = <span class="hljs-number">0</span>;</span><br><span class="line">    <span class="hljs-keyword">this</span>.size = size;</span><br><span class="line">    <span class="hljs-keyword">return</span> ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>逻辑如下：</p>
+<ol>
+<li>拿到这个 Stack 的长度，实际上，这个 Stack 就是一个 DefaultHandle 数组。</li>
+<li>如果这个长度是 0，没有元素了，就调用 scavenge 方法尝试从 queue 中转移一些数据到 stack 中。scavenge 方法待会详细再讲。</li>
+<li>重置 size 属性和其余两个属性。返回实例。</li>
+</ol>
+<p>这个方法除了 scavenge 之外，还是比较简单的。</p>
+<h2 id="4-push-方法"><a href="#4-push-方法" class="headerlink" title="4. push 方法"></a>4. push 方法</h2><p>代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"> <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">push</span><span class="hljs-params">(DefaultHandle&lt;?&gt; item)</span> </span>&#123;</span><br><span class="line">    Thread currentThread = Thread.currentThread();</span><br><span class="line">    <span class="hljs-keyword">if</span> (threadRef.get() == currentThread) &#123; </span><br><span class="line">        pushNow(item);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123; </span><br><span class="line">        pushLater(item, currentThread);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当一个对象使用 pop 方法取出来之后，可能会被别的线程使用，这时候，如果是你，你怎么处理呢？</p>
+<p>先看看当前线程的处理：</p>
+<p>看看 pushNow 方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">pushNow</span><span class="hljs-params">(DefaultHandle&lt;?&gt; item)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> ((item.recycleId | item.lastRecycledId) != <span class="hljs-number">0</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalStateException(<span class="hljs-string">"recycled already"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    item.recycleId = item.lastRecycledId = OWN_THREAD_ID;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">int</span> size = <span class="hljs-keyword">this</span>.size;</span><br><span class="line">    <span class="hljs-keyword">if</span> (size &gt;= maxCapacity || dropHandle(item)) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">if</span> (size == elements.length) &#123;</span><br><span class="line">        elements = Arrays.copyOf(elements, min(size &lt;&lt; <span class="hljs-number">1</span>, maxCapacity));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    elements[size] = item;</span><br><span class="line">    <span class="hljs-keyword">this</span>.size = size + <span class="hljs-number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法主要逻辑如下：</p>
+<ol>
+<li>如果 Stack 大小已经大于等于最大容量或者这个 handle 在容器里了，就不做回收了。</li>
+<li>如果数组满了，扩容一倍，最大 4096（默认）。</li>
+<li>size + 1。</li>
+</ol>
+<p>看看 dropHandle 方法的实现：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">dropHandle</span><span class="hljs-params">(DefaultHandle&lt;?&gt; handle)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 没有被回收过</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (!handle.hasBeenRecycled) &#123;</span><br><span class="line">        <span class="hljs-comment">// 第一次是 -1，++ 之后变为0，取余7。其实如果正常情况下，结果应该都是0。</span></span><br><span class="line">        <span class="hljs-comment">// 如果下面的判断不是0 的话，那么已经归还。这个对象就没有必要重复归还。</span></span><br><span class="line">        <span class="hljs-comment">// 直接丢弃。</span></span><br><span class="line">        <span class="hljs-keyword">if</span> ((++handleRecycleCount &amp; ratioMask) != <span class="hljs-number">0</span>) &#123;</span><br><span class="line">            <span class="hljs-comment">// Drop the object.</span></span><br><span class="line">            <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-comment">// 改为被回收过，下次就不会进入了</span></span><br><span class="line">        handle.hasBeenRecycled = <span class="hljs-keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-comment">// 删除失败</span></span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>已经写了注释，就不再过多解释。</p>
+<p>可以看到，pushNow 方法还是很简单的。由于在当前线程里，只需要还原到 Stack 的数组中就好了。</p>
+<p><strong>关键是：如果是其他的线程做回收操作，该怎么办？</strong></p>
+<h2 id="5-pushLater-方法（多线程回收如何操作）"><a href="#5-pushLater-方法（多线程回收如何操作）" class="headerlink" title="5. pushLater 方法（多线程回收如何操作）"></a>5. pushLater 方法（多线程回收如何操作）</h2><p>先说说 Netty 的解决办法和思路：</p>
+<ul>
+<li><p>每个线程都有一个 Stack 对象，每个线程也都有一个软引用 Map，键为 Stack，值是 queue。</p>
+</li>
+<li><p>线程每次从 local 中获取 Stack 对象，再从 Stack 中取出实例。如果取不到，尝试从 queue 取，也就是从queue 中的 Link 中取出，并销毁 Link。</p>
+</li>
+<li><p>但回收的时候，可能就不是原来的那个线程了，由于回收时使用的还是原来的 Stack，所以，需要考虑这个实例如何才能正确的回收。</p>
+</li>
+<li><p>这个时候，就需要 Map 出场了。创建一个 queue 关联这个 Stack，将数据放到这个 queue 中。等到持有这个 Stack 的线程想拿数据了，就从 Stack 对应的 queue 中取出。</p>
+</li>
+<li><p>看出来了吗？只有一个线程持有唯一的 Stack，其余的线程只持有这个 Stack 关联的 queue。因此，可以说，这个 queue 是两个线程共享的。除了 Stack 自己的线程外，其余的线程的归还都是放到 自己的queue 中。</p>
+</li>
+<li><p>这个 queue 是无界的。内部的 Link 是有界的。每个线程对应一个 queue。</p>
+</li>
+<li><p>这些线程的 queue 组成了链表。</p>
+</li>
+</ul>
+<p>具体如下图所示：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-552d2878c402b15c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Recycler 设计图"></p>
+<p>看完了设计，再看看代码实现：</p>
+<p><strong>pushLater 方法</strong><br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">pushLater</span><span class="hljs-params">(DefaultHandle&lt;?&gt; item, Thread thread)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 每个 Stack 对应一串 queue，找到当前线程的 map</span></span><br><span class="line">    Map&lt;Stack&lt;?&gt;, WeakOrderQueue&gt; delayedRecycled = DELAYED_RECYCLED.get();</span><br><span class="line">    <span class="hljs-comment">// 查看当前线程中是否含有这个 Stack 对应的队列</span></span><br><span class="line">    WeakOrderQueue queue = delayedRecycled.get(<span class="hljs-keyword">this</span>);</span><br><span class="line">    <span class="hljs-keyword">if</span> (queue == <span class="hljs-keyword">null</span>) &#123;<span class="hljs-comment">// 如果没有</span></span><br><span class="line">        <span class="hljs-comment">// 如果 map 长度已经大于最大延迟数了，则向 map 中添加一个假的队列</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (delayedRecycled.size() &gt;= maxDelayedQueues) &#123;<span class="hljs-comment">// 8</span></span><br><span class="line">            delayedRecycled.put(<span class="hljs-keyword">this</span>, WeakOrderQueue.DUMMY);</span><br><span class="line">            <span class="hljs-keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-comment">// 如果长度不大于最大延迟数，则尝试创建一个queue，链接到这个 Stack 的 head 节点前（内部创建Link）</span></span><br><span class="line">        <span class="hljs-keyword">if</span> ((queue = WeakOrderQueue.allocate(<span class="hljs-keyword">this</span>, thread)) == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">            <span class="hljs-comment">// drop object</span></span><br><span class="line">            <span class="hljs-keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        delayedRecycled.put(<span class="hljs-keyword">this</span>, queue);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (queue == WeakOrderQueue.DUMMY) &#123;</span><br><span class="line">        <span class="hljs-comment">// drop object</span></span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    queue.add(item);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>该方法步骤如下：</p>
+<ol>
+<li>从 threadLcoal 中取出当前线程的 Map，尝试从 Map 中取出 Stack 映射的 queue。</li>
+<li>如果没有，就调用 WeakOrderQueue.allocate(this, thread) 方法创建一个。然后将这个 Stack 和 queue 绑定。</li>
+<li>将实例添加到这个 queue 中。</li>
+</ol>
+<p><strong>我们主要关注如何 allocate 方法，关键方法 newQueue：</strong></p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">@<span class="hljs-number">1</span> </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">static</span> WeakOrderQueue <span class="hljs-title">newQueue</span><span class="hljs-params">(Stack&lt;?&gt; stack, Thread thread)</span> </span>&#123;</span><br><span class="line">    WeakOrderQueue queue = <span class="hljs-keyword">new</span> WeakOrderQueue(stack, thread);</span><br><span class="line">    stack.setHead(queue);</span><br><span class="line">    <span class="hljs-keyword">return</span> queue;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@<span class="hljs-number">2</span> </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-title">WeakOrderQueue</span><span class="hljs-params">(Stack&lt;?&gt; stack, Thread thread)</span> </span>&#123;</span><br><span class="line">    head = tail = <span class="hljs-keyword">new</span> Link();</span><br><span class="line">    owner = <span class="hljs-keyword">new</span> WeakReference&lt;Thread&gt;(thread);</span><br><span class="line">    availableSharedCapacity = stack.availableSharedCapacity;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@<span class="hljs-number">3</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Link</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AtomicInteger</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> DefaultHandle&lt;?&gt;[] elements = <span class="hljs-keyword">new</span> DefaultHandle[LINK_CAPACITY];</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> readIndex;</span><br><span class="line">    <span class="hljs-keyword">private</span> Link next;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@<span class="hljs-number">4</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setHead</span><span class="hljs-params">(WeakOrderQueue queue)</span> </span>&#123;</span><br><span class="line">    queue.setNext(head);</span><br><span class="line">    head = queue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>代码1，2，3，4。</p>
+<ol>
+<li>调用  WeakOrderQueue 构造方法，传入 stack 和 thread。</li>
+<li>创建一个 Link 对象，赋值给链表中的 head 和 tail。</li>
+<li>Lind 的构造函数，也是一个链表。其中包含了保存实例的 Handle 数组，默认 16.</li>
+<li>将这个新的 queue 设置为该 stack 的 head 节点。</li>
+</ol>
+<p>其中，有一个需要注意的地方就是   owner = new WeakReference<thread>(thread)，使用了弱引用，当这个线程对象被 GC 后，这个 owner 也会变为 null，就可以像 threadLoca 一样对该引用进行判 null，来检查这个线程对象是否回收了。</thread></p>
+<p>再看看如何添加进 queue 中的：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">add</span><span class="hljs-params">(DefaultHandle&lt;?&gt; handle)</span> </span>&#123;</span><br><span class="line">    handle.lastRecycledId = id;</span><br><span class="line">    Link tail = <span class="hljs-keyword">this</span>.tail;</span><br><span class="line">    <span class="hljs-keyword">int</span> writeIndex;</span><br><span class="line">    <span class="hljs-keyword">if</span> ((writeIndex = tail.get()) == LINK_CAPACITY) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (!reserveSpace(availableSharedCapacity, LINK_CAPACITY)) &#123;</span><br><span class="line">            <span class="hljs-comment">// Drop it.</span></span><br><span class="line">            <span class="hljs-keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">this</span>.tail = tail = tail.next = <span class="hljs-keyword">new</span> Link();</span><br><span class="line">        writeIndex = tail.get();</span><br><span class="line">    &#125;</span><br><span class="line">    tail.elements[writeIndex] = handle;</span><br><span class="line">    handle.stack = <span class="hljs-keyword">null</span>;</span><br><span class="line">    tail.lazySet(writeIndex + <span class="hljs-number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先，拿到这个 queue 的 tail 节点，如果这个 tiail 节点满了，查看是否还有共享空间，如果没了，就丢弃这个实例。<br>反之，则新建一个 Link，追加到 tail 节点的尾部。然后，将数据插入新 tail 的数组。然后，将这个 handle 的 stack 属性设置成 null，表示这个 handle 不属于任何 statck 了，其他 stack 都可以使用。</p>
+<p><strong>数据放进去了，怎么取出来呢？</strong></p>
+<h2 id="6-scavenge-方法"><a href="#6-scavenge-方法" class="headerlink" title="6. scavenge 方法"></a>6. scavenge 方法</h2><p>我们刚刚留了这个方法，现在可以开始讲了。代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">scavenge</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// continue an existing scavenge, if any</span></span><br><span class="line">    <span class="hljs-comment">// 清理成功后，stack 的 size 会变化</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (scavengeSome()) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// reset our scavenge cursor</span></span><br><span class="line">    prev = <span class="hljs-keyword">null</span>;</span><br><span class="line">    cursor = head;</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主要调用的是 scavengeSome 方法，返回 true 表示将 queue 中的数据转移成功。看看该方法。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">scavengeSome</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    WeakOrderQueue prev;</span><br><span class="line">    WeakOrderQueue cursor = <span class="hljs-keyword">this</span>.cursor;</span><br><span class="line">    <span class="hljs-keyword">if</span> (cursor == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        prev = <span class="hljs-keyword">null</span>;</span><br><span class="line">        cursor = head;</span><br><span class="line">        <span class="hljs-keyword">if</span> (cursor == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">            <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        prev = <span class="hljs-keyword">this</span>.prev;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">boolean</span> success = <span class="hljs-keyword">false</span>;</span><br><span class="line">    <span class="hljs-keyword">do</span> &#123;</span><br><span class="line">        <span class="hljs-comment">// 将 head queue 的实例转移到 this stack 中</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (cursor.transfer(<span class="hljs-keyword">this</span>)) &#123;</span><br><span class="line">            success = <span class="hljs-keyword">true</span>;</span><br><span class="line">            <span class="hljs-keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-comment">// 如果上面失败，找下一个节点</span></span><br><span class="line">        WeakOrderQueue next = cursor.next;</span><br><span class="line">        <span class="hljs-comment">// 如果当前线程被回收了，</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (cursor.owner.get() == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">          <span class="hljs-comment">// 只要最后一个节点还有数据，就一直转移</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (cursor.hasFinalData()) &#123;</span><br><span class="line">                <span class="hljs-keyword">for</span> (;;) &#123;</span><br><span class="line">                    <span class="hljs-keyword">if</span> (cursor.transfer(<span class="hljs-keyword">this</span>)) &#123;</span><br><span class="line">                        success = <span class="hljs-keyword">true</span>;</span><br><span class="line">                    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">                        <span class="hljs-keyword">break</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="hljs-keyword">if</span> (prev != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                prev.setNext(next);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">            prev = cursor;</span><br><span class="line">        &#125;</span><br><span class="line">        cursor = next;</span><br><span class="line">    &#125; <span class="hljs-keyword">while</span> (cursor != <span class="hljs-keyword">null</span> &amp;&amp; !success);</span><br><span class="line">    <span class="hljs-comment">// 转移成功之后，将 cursor 重置</span></span><br><span class="line">    <span class="hljs-keyword">this</span>.prev = prev;</span><br><span class="line">    <span class="hljs-keyword">this</span>.cursor = cursor;</span><br><span class="line">    <span class="hljs-keyword">return</span> success;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>方法还是挺长的。我们拆解一下：</p>
+<ol>
+<li>拿到这个 stack 的 queue，调用这个 queue 的 transfer 方法，如果成功，结束循环。</li>
+<li>如果 queue 所在的线程被回收了，就将这个线程对应的 queue 中的所有数据全部转移到 stack 中。</li>
+</ol>
+<p>可以看到，最重要的还是 transfer 方法。然而该方法更长，就不贴代码了，说说主要逻辑，有兴趣可以自己看看，逻辑如下：</p>
+<ol>
+<li>拿到这个 queue 的 head 节点，也就是 Link。如果 head 是 null，取出 next。</li>
+<li>循环 Link 中的实例，将其赋值到 stack 数组中。并将刚刚 handle 置为 null  的 stack 属性赋值。</li>
+<li>最后，将 statck 的 size 属性更新。</li>
+</ol>
+<p><strong>其中有一个疑问：为什么在其他线程插入 Link 时将 handle 的 stack 的属性置为 null？在取出时，又将 handle 的 stack 属性恢复。</strong></p>
+<p>答：因为如果 stack 被用户手动置为 null，而容器中的 handle 还持有他的引用的话，就无法回收了。同时 Map 也使用了软引用map，当 stack 没有了引用被 GC 回收时，对应的 queue 也就被回收了。避免了内存泄漏。实际上，在之前的 Recycler 版本中，确实存在内存泄漏的情况。</p>
+<p>该方法的主要目的就是将 queue 所属的 Link 中的数据转移到 stack 中。从而完成多线程的最终回收。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Netty 并没有使用第三方库实现对象池，而是自己实现了一个相对轻量的对象池。通过使用 threadLocal，避免了多线程下取数据时可能出现的线程安全问题，同时，为了实现多线程回收同一个实例，让每个线程对应一个队列，队列链接在 Stack 对象上形成链表，这样，就解决了多线程回收时的安全问题。同时，使用了软引用的map 和 软引用的 thradl 也避免了内存泄漏。</p>
+<p>在本次的源码阅读中，确实收获很大。再回顾以下 Recycler 的设计图吧。设计的真的非常好。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-0594c2f96c319a8f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Recycler 设计图"></p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/03/23/2018/2018-03-23-Netty-心跳服务之-IdleStateHandler-源码分析/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Netty-心跳服务之-IdleStateHandler-源码分析</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/03/21/2018/2018-03-21-Netty--粘包-&-拆包-&-编码-&-解码-&-序列化-介绍/">
+                <span class="level-item">Netty--粘包-&amp;-拆包-&amp;-编码-&amp;-解码-&amp;-序列化-介绍</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/03/22/2018/2018-03-22-Netty-高性能之道---Recycler-对象池的复用/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="Netty-高性能之道---Recycler-对象池的复用" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

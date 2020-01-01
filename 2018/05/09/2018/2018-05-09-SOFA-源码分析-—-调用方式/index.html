@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>SOFA-源码分析-—-调用方式 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="SOFA-源码分析-—-调用方式">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/09/2018/2018-05-09-SOFA-源码分析-—-调用方式/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SOFA-源码分析-—-调用方式">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="SOFA-源码分析-—-调用方式" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-05-08T18:11:11.000Z">2018-05-09</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/SOFA/">SOFA</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    26 分钟 读完 (大约 3838 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                SOFA-源码分析-—-调用方式
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       ## 前言</p>
+<p>SOFARPC 提供了多种调用方式满足不同的场景。 </p>
+<p>例如，同步阻塞调用；异步 future 调用，Callback 回调调用，Oneway 调用。</p>
+<p>每种调用模式都有对应的场景。类似于单进程中的调用模式。在单进程中，我们可以使用 JDK 的 Future 实现异步，可以通过观察者实现回调。</p>
+<p>那么，在 RPC 框架中，这些功能如何实现呢？</p>
+<p>我们一个个开始看。</p>
+<h2 id="同步调用-Sync"><a href="#同步调用-Sync" class="headerlink" title="同步调用 Sync"></a>同步调用 Sync</h2><p>每个 ConsumerConfig 都有一个 invokeType 属性，在 SOFA 中，对应的常量是 <code>RpcConstants.INVOKER_TYPE_SYNC</code>。</p>
+<p>直接受到这个属性影响的是 AbstractCluster 的 doSendMsg 方法。该方法会从 request 中取出 invokeType 属性，而这个值是什么时候设置进入这个 request 的呢？在 DefaultClientProxyInvoker 类中的  decorateRequest 方法里：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">if</span> (!consumerConfig.isGeneric()) &#123;</span><br><span class="line">    <span class="hljs-comment">// 找到调用类型， generic的时候类型在filter里进行判断</span></span><br><span class="line">    request.setInvokeType(consumerConfig.getMethodInvokeType(request.getMethodName()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里判断，如果不是泛型调用，则将 config 中的值设置到 request 中。</p>
+<p>回到 DefaultClientProxyInvoker 中，如果是同步调用（默认），则调用 ClientTransport 的 syncSend 方法，并等待一个 response。通过层层调用，最终会来到 BaseRemoting 类的 invokeSync 方法。</p>
+<p>该方法会创建一个 Future ，并将这个 Future 放到 Connection（和 Channel 是一对一的关系） 的里一个 Map 中，key 是一个 id， value 则是  Future，然后发送数据给服务器，当 Channel 收到服务器返回的数据时，会重 Channle 中取出对应的 Channel 中的  Connection 对象，然后取出 Connection 对象中对应 key 的 Future，这个 Key 来自服务端传递过来的，类似于 cookie。</p>
+<p>很明显，这么做能很大的提高xiaolv，例如，客户端并发使用同一个 Channel 向服务端发送数据，客户端不用串行等待数据的返回，实际上，对于 Bolt 来说，调用是异步的，每次用户调用都会传递一个 Future，Channel 发送数据完之后，不必等待数据返回，而是继续发送数据，当 Channel 收到服务端返回的数据后，便从 Channel 中取出对应的 Future（服务端传递来的 ID 标识），完成 Future 的唤醒。</p>
+<p>而对于用户来说，看起来是同步的，因为 Future 会阻塞等待结果，类似 JDK 的 Future。只是用户感知不到而已，在等待的过程中，Channel 或者说 Connection 一直在工作，例如发送数据，例如处理别的 Future 发送来的数据。</p>
+<p>而整个网络层的效率也是非常的高，不涉及任何的业务操作，写出数据是异步的，拿到数据，只需唤醒等待的线程即可。</p>
+<p>总结一下，整个同步调用的过程是：客户端发送数据的时候，会创建一个 Future，并将这个 Future 放进到 Connection 的 Map 中，key 为 Future ID，value 是 Future（一个 Connection 绑定一个  Channel），然后异步向服务端发送数据，发送完毕后 Channel 又会立即响应其他的调用。当 Channel 收到服务端的响应数据，Channle 会取出 Connection ，找到对应 ID 的 Future ，这个 ID 就是服务端和客户端的约定。找到 Future 后，便将返回值注入到 Future 的 result 中，然后唤醒阻塞等待返回值的线程。</p>
+<h2 id="异步调用-Future"><a href="#异步调用-Future" class="headerlink" title="异步调用 Future"></a>异步调用 Future</h2><p>异步调用的 invokeType 对应的常量是 <code>RpcConstants.INVOKER_TYPE_FUTURE</code>，异步调用会立即返回一个 Future，然后通过 get 方法阻塞等待返回值。使用方式是：<code>BoltResponseFuture future1 = (BoltResponseFuture) SofaResponseFuture.getFuture();</code></p>
+<p>具体源码在 AbstractCluster 类的 doSendMsg 方法中：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (RpcConstants.INVOKER_TYPE_FUTURE.equals(invokeType)) &#123;</span><br><span class="line">    <span class="hljs-comment">// 开始调用</span></span><br><span class="line">    ResponseFuture future = transport.asyncSend(request, timeout);</span><br><span class="line">    <span class="hljs-comment">// 放入线程上下文</span></span><br><span class="line">    RpcInternalContext.getContext().setFuture(future);</span><br><span class="line">    response = <span class="hljs-keyword">new</span> SofaResponse();</span><br></pre></td></tr></table></figure>
+<p>当 Bolt 返回一个 Future 后，将其设置到 ThreadLocal 中，然后返回一个空的 response。用户在使用 SofaResponseFuture 获取 Future 的时候，其实就是从 RpcInvokeContext 中获取。可以看出，不是一个上下文，这里 RpcInvokeContext  是面向业务开发者使用的，而 RpcInternalContext 则是框架使用的。在 DefaultClientProxyInvoker 的 decorateResponse 方法中，会进行上下文转换，将框架内部上下文的数据复制到业务上下文中。</p>
+<p>关键在于异步调用，在 BoltClientTransport 的 doInvokeAsync 方法中，会根据是否含有监听器判断是异步还是回调，如果没有监听器，则是异步 Future 模式，而如果是异步的话，就会转成回调模式（因为实现类似）。</p>
+<p>具体实现则是创建一个 BoltFutureInvokeCallback 对象，该对象内部有一个 onResponse 方法，该方法会在任务完成之后回调。同时也会创建一个 BoltResponseFuture 对象，该对象会有 setXXX 方法，在 Callback 的 onResponse 方法中会调用 setXXX 方法，进行结果赋值和唤醒。</p>
+<p>onResponse 会由一个 RpcInvokeCallbackListener 对象唤醒，在他的内部类 CallbackTask 的 run 方法中，会异步回调这个方法。</p>
+<p>而这个对象的创建时机在 BaseRemoting 的 invokeWithCallback 方法的第一行：调用 createInvokeFuture 方法。具体代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> InvokeFuture <span class="hljs-title">createInvokeFuture</span><span class="hljs-params">(Connection conn, RemotingCommand request, InvokeContext invokeContext, InvokeCallback invokeCallback)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> DefaultInvokeFuture(</span><br><span class="line">	    request.getId(), </span><br><span class="line">	    <span class="hljs-keyword">new</span> RpcInvokeCallbackListener( RemotingUtil.parseRemoteAddress(conn.getChannel())), </span><br><span class="line">	    invokeCallback, </span><br><span class="line">	    request.getProtocolCode().getFirstByte(), </span><br><span class="line">        <span class="hljs-keyword">this</span>.getCommandFactory(), </span><br><span class="line">        invokeContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在 RpcResponseProcessor 类中，在 doProcess 方法收到数据之后，会调用 future 的 executeInvokeCallback 方法。和同步方式不同的是，虽然都是一个 InvokeFuture 实现，同步只会调用 putResponse 赋值并唤醒。</p>
+<p>而  Future 的模式则要复杂的多，该方法会执行监听器（RpcInvokeCallbackListener）的 onResponse 方法，并传递自己。 而在监听器的 onResponse 方法中，会创建一个任务，异步执行 Future 中的任务。</p>
+<p>我们当前的 Future 任务则是拿到返回值，并唤醒阻塞线程。</p>
+<p>整体依赖和流程大概如下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-c46a87332e6472f3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>总结一下异步调用的过程：异步调用在 SOFA 内部包装成了回调的方式，使用一个 Callback 封装了  面向用户的 ResponsFuture, 再使用一个监听器封装 Callback,  监听器监听 InvokeFuture ，当 InvokeFuture 响应服务器的时候，会回调监听器，监听器再回调 Callback，Callback 再唤醒 ResponseFuture，用户就可以得到数据了。</p>
+<h2 id="单向-oneWay"><a href="#单向-oneWay" class="headerlink" title="单向 oneWay"></a>单向 oneWay</h2><p>单向的使用一般是不关心结果的，使用方式则是很简单的将 invokeType 设置成 <code>RpcConstants.INVOKER_TYPE_ONEWAY</code>，。</p>
+<p>SOFA 内部的区别处理也在 AbstractCluster 类的 doSendMsg 方法中，具体代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// 单向调用</span></span><br><span class="line"><span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (RpcConstants.INVOKER_TYPE_ONEWAY.equals(invokeType)) &#123;</span><br><span class="line">    <span class="hljs-keyword">long</span> start = RpcRuntimeContext.now();</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        transport.oneWaySend(request, timeout);</span><br><span class="line">        response = <span class="hljs-keyword">new</span> SofaResponse();</span><br><span class="line">    &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (RpcInternalContext.isAttachmentEnable()) &#123;</span><br><span class="line">            <span class="hljs-keyword">long</span> elapsed = RpcRuntimeContext.now() - start;</span><br><span class="line">            context.setAttachment(RpcConstants.INTERNAL_KEY_CLIENT_ELAPSE, elapsed);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从代码中，可以看到，这里只是返回了一个空的对象。</p>
+<p>而在 Bolt 中的实现也非常的简单，仅仅是调用了 Channel 的 writeAndFlush 方法，只有在失败的时候，才会由响应，成功是没有任何响应的。代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">oneway</span><span class="hljs-params">(<span class="hljs-keyword">final</span> Connection conn, <span class="hljs-keyword">final</span> RemotingCommand request)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        conn.getChannel().writeAndFlush(request).addListener(<span class="hljs-keyword">new</span> ChannelFutureListener() &#123;</span><br><span class="line">            <span class="hljs-meta">@Override</span></span><br><span class="line">            <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">operationComplete</span><span class="hljs-params">(ChannelFuture f)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                <span class="hljs-keyword">if</span> (!f.isSuccess()) &#123;</span><br><span class="line">                    logger.error(<span class="hljs-string">"Invoke send failed. The address is &#123;&#125;"</span>,</span><br><span class="line">                        RemotingUtil.parseRemoteAddress(conn.getChannel()), f.cause());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">null</span> == conn) &#123;</span><br><span class="line">            logger.error(<span class="hljs-string">"Conn is null"</span>);</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">            logger.error(<span class="hljs-string">"Exception caught when sending invocation. The address is &#123;&#125;"</span>,</span><br><span class="line">                RemotingUtil.parseRemoteAddress(conn.getChannel()), e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>单向调用就是这么简单。所以，如果你试图获取返回值，那么得到的永远是 Nnll。</p>
+<h2 id="回调-Callback"><a href="#回调-Callback" class="headerlink" title="回调 Callback"></a>回调 Callback</h2><p>在 SOFA 中， 有 3 种回调级别，目的是应用各种不同的场景。</p>
+<ol>
+<li>接口级别，即调用这个接口的所有方法，都会引发回调。</li>
+<li>方法级别，针对某个方法，会引发回调。</li>
+<li>调用级别，某次调用，会引发回调。</li>
+</ol>
+<h5 id="使用方式："><a href="#使用方式：" class="headerlink" title="使用方式："></a>使用方式：</h5><ol>
+<li>接口级别：只需要设置 ConsumerConfig 的 onReturn 方法即可。例如下面这样，子类实现 SofaResponseCallback 即可：</li>
+</ol>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">SofaResponseCallback sofaResponseCallbackImpl = <span class="hljs-keyword">new</span> SofaResponseCallbackImpl();</span><br><span class="line"></span><br><span class="line">ConsumerConfig&lt;HelloService&gt; consumer = <span class="hljs-keyword">new</span> ConsumerConfig&lt;HelloService&gt;()</span><br><span class="line">            .setInterfaceId(HelloService.class.getName())</span><br><span class="line">            .setInvokeType(RpcConstants.INVOKER_TYPE_CALLBACK)</span><br><span class="line">            .setOnReturn(sofaResponseCallbackImpl)</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>方法级别：需要单独创建一个 MethodConfig，然后设置到 ConsumerConfig 的 Methods 属性中：</li>
+</ol>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">SofaResponseCallback sofaResponseCallbackImpl = <span class="hljs-keyword">new</span> SofaResponseCallbackImpl();</span><br><span class="line"></span><br><span class="line">MethodConfig methodConfig = <span class="hljs-keyword">new</span> MethodConfig();</span><br><span class="line">methodConfig.setName(<span class="hljs-string">"sayHello"</span>)</span><br><span class="line">            .setInvokeType(RpcConstants.INVOKER_TYPE_CALLBACK)</span><br><span class="line">            .setOnReturn(sofaResponseCallbackImpl );</span><br><span class="line"></span><br><span class="line">ConsumerConfig&lt;HelloService&gt; consumerConfig = <span class="hljs-keyword">new</span> ConsumerConfig&lt;HelloService&gt;()</span><br><span class="line">            .setApplication(applicationConfig)</span><br><span class="line">            .setInterfaceId(HelloService.class.getName())</span><br><span class="line">            .setTimeout(<span class="hljs-number">5000</span>)</span><br><span class="line">            .setMethods(Collections.singletonList(methodConfig))</span><br><span class="line">            .setDirectUrl(<span class="hljs-string">"bolt://127.0.0.1:22222?appName=future-server"</span>);</span><br></pre></td></tr></table></figure>
+<p>只需要像上面一样，设置 sayHello 方法的回调实现，然后将方法配置设置到 ConsumerConfig 中。就可以在每次调用该方法时，引发回调。</p>
+<ol start="3">
+<li>调用级别：他的优先级最高，每次调用都会引发回调。使用方式如下：</li>
+</ol>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">SofaResponseCallback sofaResponseCallbackImpl = <span class="hljs-keyword">new</span> SofaResponseCallbackImpl();</span><br><span class="line"></span><br><span class="line">RpcInvokeContext.getContext().setResponseCallback(sofaResponseCallbackImpl);</span><br></pre></td></tr></table></figure>
+<p>可以看出，通过在上下文的设置，就能生效，每次调用都会引发回调。</p>
+<p>知道了如何使用，再来看看如何实现。</p>
+<h5 id="源码分析回调"><a href="#源码分析回调" class="headerlink" title="源码分析回调"></a>源码分析回调</h5><p>主要逻辑还是在 AbstractCluster 的 doSendMsg 中。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// Callback调用</span></span><br><span class="line"><span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (RpcConstants.INVOKER_TYPE_CALLBACK.equals(invokeType)) &#123;</span><br><span class="line">    <span class="hljs-comment">// 调用级别回调监听器</span></span><br><span class="line">    SofaResponseCallback sofaResponseCallback = request.getSofaResponseCallback();</span><br><span class="line">    <span class="hljs-keyword">if</span> (sofaResponseCallback == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        SofaResponseCallback methodResponseCallback = consumerConfig</span><br><span class="line">            .getMethodOnreturn(request.getMethodName());</span><br><span class="line">        <span class="hljs-keyword">if</span> (methodResponseCallback != <span class="hljs-keyword">null</span>) &#123; <span class="hljs-comment">// 方法的Callback</span></span><br><span class="line">            request.setSofaResponseCallback(methodResponseCallback);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    transport.asyncSend(request, timeout);</span><br><span class="line">    response = <span class="hljs-keyword">new</span> SofaResponse();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从源码中，可以看出，优先使用调用级别的回调，如果没有，才寻找方法级别的回调。而接口级别的回调则是默认机制。</p>
+<p>因此，他们的优先级排序为 调用级别 —&gt; 方法级别 —-&gt; 回调级别。</p>
+<p>request 中的回调设置在 DefaultClientProxyInvoker 的 decorateRequest 方法中，即装饰 request，具体代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">RpcInvokeContext invokeCtx = RpcInvokeContext.peekContext();</span><br><span class="line">RpcInternalContext internalContext = RpcInternalContext.getContext();</span><br><span class="line"><span class="hljs-keyword">if</span> (invokeCtx != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">    <span class="hljs-comment">// 如果用户设置了调用级别回调函数</span></span><br><span class="line">    SofaResponseCallback responseCallback = invokeCtx.getResponseCallback();</span><br><span class="line">    <span class="hljs-keyword">if</span> (responseCallback != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        request.setSofaResponseCallback(responseCallback);</span><br><span class="line">        invokeCtx.setResponseCallback(<span class="hljs-keyword">null</span>); <span class="hljs-comment">// 一次性用完</span></span><br><span class="line">        invokeCtx.put(RemotingConstants.INVOKE_CTX_IS_ASYNC_CHAIN,</span><br><span class="line">            isSendableResponseCallback(responseCallback));</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>从 RpcInvokeContext  复制到 request 中。且用完之后，立即删除，这点需要注意！！也就是说，仅仅使用一次。</p>
+<p>那么 consumerConfig.getMethodOnreturn（）方法会根据方法名获取到一个回调对对象，如何实现呢？</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * 得到方法名对应的自定义参数列表</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> methodName 方法名，不支持重载</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> method onReturn</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> SofaResponseCallback <span class="hljs-title">getMethodOnreturn</span><span class="hljs-params">(String methodName)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> (SofaResponseCallback) getMethodConfigValue(methodName, RpcConstants.CONFIG_KEY_ONRETURN,</span><br><span class="line">        getOnReturn());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * 得到方法级配置，找不到则返回默认值</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> methodName   方法名</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> configKey    配置key，例如参数</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> defaultValue 默认值</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> 配置值 method config value</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">getMethodConfigValue</span><span class="hljs-params">(String methodName, String configKey, Object defaultValue)</span> </span>&#123;</span><br><span class="line">    Object value = getMethodConfigValue(methodName, configKey);</span><br><span class="line">    <span class="hljs-keyword">return</span> value == <span class="hljs-keyword">null</span> ? defaultValue : value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> SofaResponseCallback <span class="hljs-title">getOnReturn</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> onReturn;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * 得到方法级配置，找不到则返回null</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> methodName 方法名</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> configKey  配置key，例如参数</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> 配置值 method config value</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">getMethodConfigValue</span><span class="hljs-params">(String methodName, String configKey)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (configValueCache == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    String key = buildmkey(methodName, configKey);</span><br><span class="line">    <span class="hljs-keyword">return</span> configValueCache.get(key);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上就是获取方法级回调的实现。</p>
+<p>通过获取 configValueCache 的值，如果没有，则使用接口级别的回调设置。即默认值。那么，我们好像没有设置过这个 configValueCache 的值，从哪里来的呢？</p>
+<p>在 AbstractInterfaceConfig 的 getConfigValueCache 方法中，我们能够看到从 methods Map 中转移数据到 configValueCache 中。而这个方法的调用时机则是 FilterInvoker 的构造方法中：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-title">FilterInvoker</span><span class="hljs-params">(AbstractInterfaceConfig config)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">this</span>.config = config;</span><br><span class="line">    <span class="hljs-keyword">if</span> (config != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">this</span>.configContext = config.getConfigValueCache(<span class="hljs-keyword">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>具体转移代码入下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> Map&lt;String, Object&gt; <span class="hljs-title">getConfigValueCache</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> rebuild)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (configValueCache != <span class="hljs-keyword">null</span> &amp;&amp; !rebuild) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> configValueCache;</span><br><span class="line">    &#125;</span><br><span class="line">    Map&lt;String, Object&gt; context = <span class="hljs-keyword">new</span> HashMap&lt;String, Object&gt;(<span class="hljs-number">32</span>);</span><br><span class="line">    Map&lt;String, String&gt; providerParams = getParameters();</span><br><span class="line">    <span class="hljs-keyword">if</span> (providerParams != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        context.putAll(providerParams); <span class="hljs-comment">// 复制接口的自定义参数</span></span><br><span class="line">    &#125;</span><br><span class="line">    Map&lt;String, MethodConfig&gt; methodConfigs = getMethods();</span><br><span class="line">    <span class="hljs-keyword">if</span> (CommonUtils.isNotEmpty(methodConfigs)) &#123;</span><br><span class="line">        <span class="hljs-keyword">for</span> (MethodConfig methodConfig : methodConfigs.values()) &#123;</span><br><span class="line">            String prefix = RpcConstants.HIDE_KEY_PREFIX + methodConfig.getName() + RpcConstants.HIDE_KEY_PREFIX;</span><br><span class="line">            Map&lt;String, String&gt; methodparam = methodConfig.getParameters();</span><br><span class="line">            <span class="hljs-keyword">if</span> (methodparam != <span class="hljs-keyword">null</span>) &#123; <span class="hljs-comment">// 复制方法级自定义参数</span></span><br><span class="line">                <span class="hljs-keyword">for</span> (Map.Entry&lt;String, String&gt; entry : methodparam.entrySet()) &#123;</span><br><span class="line">                    context.put(prefix + entry.getKey(), entry.getValue());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="hljs-comment">// 复制方法级参数属性</span></span><br><span class="line">            BeanUtils.copyPropertiesToMap(methodConfig, prefix, context);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-comment">// 复制接口级参数属性</span></span><br><span class="line">    BeanUtils.copyPropertiesToMap(<span class="hljs-keyword">this</span>, StringUtils.EMPTY, context);</span><br><span class="line">    configValueCache = Collections.unmodifiableMap(context);</span><br><span class="line">    <span class="hljs-keyword">return</span> configValueCache;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果 configValueCache 没有初始化或者需要重建，则执行下面的逻辑，首先拿到 methods Map，然后 for 循环到 configValueCache Map 中。</p>
+<p>那么如何使用呢？</p>
+<p>注意，此时 ，Cluster 的 doSendMsg 方法中，request 已经有回调对象了，注意，回调 Callback 和 Future 调用的是同一个方法，即 transport.asyncSend(request, timeout);</p>
+<p>在 BoltClientTransport 的 doInvokeAsync 方法中，会判断 request 中，是否含有回调，如果有，则执行回调逻辑，如果没有，则将 Future 转成回调。</p>
+<p>而回调的逻辑是，根据监听器等属性创建一个 BoltInvokerCallback 对象包装  SofaResponseCallback 对象，然后，再创建一个 RpcInvokeCallbackListener 对象包装他，再创建一个 InvokeFuture 包装监听器  发起 RPC 调用。</p>
+<p>InvokeFuture  会在 RpcResponseProcessor 类的 doProcess 方法被回调，这点逻辑和异步 Future 的逻辑类似。回调他的 putResponse 方法和 executeInvokeCallback 方法。</p>
+<p>然后，在 executeInvokeCallback 方法中，则调用 RpcInvokeCallbackListener 的 onResponse 方法。</p>
+<p>RpcInvokeCallbackListener 则创建一个 CallbackTask 任务，提交给线程池，任务内容是执行 BoltInvokerCallback  的 onResponse 方法。</p>
+<p>BoltInvokerCallback 则会调用 SofaResponseCallback 的 的 onAppXXXX 方法。完成最终用户的调用。</p>
+<p>整体设计图和流程图和异步 Future 类似（内部是 Callback 实现）。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-fd9b6b5a0d8ea83d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>可以看到，和异步 Future 唯一不同的就是面向用户的 API 不同和内部一个 Callback 不同。<br>异步 Future 面向用户的 API 是 BoltResponseFuture 。<br>回调 Callback 面向用户的是 SofaResponseCallback。</p>
+<p>但内部的原理都是一样的。都是使用  RpcInvokeCallbackListener  和 DefaultInvokeFuture 回调实现。</p>
+<p>DefaultInvokeFuture 设置在 Channel 中，当收到返回值后，便调用他的方法，接着完成这个链式返回，直到调用用户设置的 API。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>今天我们分析了 SOFA 的调用 API，包括同步，异步 Future，回调 Callback，单向 oneWay。</p>
+<p>其中单向实现最简单，同步也比较简单。</p>
+<p>异步的内部实现和回调的内部实现完全一样，只是展示给用户的 API 不同。都是通过观察者模式实现的。</p>
+<p>我们思考一下： 为什么要使用这么多层次包装呢?</p>
+<p>首先 InvokeFuture 和 RpcInvokeCallbackListener 是面向网络层的。也就是 Bolt 内部的接口。</p>
+<p>他们对于 SOFA—RPC 来讲，是统一的。</p>
+<p>而 SOFA 对于异步和回调则使用了不同的 API：<br>异步使用了 BoltResponseFuture 和 BoltFutureInovkeCallback。<br>回调使用 SofaResponseCallback 和 BoltInvokerCallback。</p>
+<p>为什么在 Bolt 层和用户层需要再加 InvokeCallback 这一层呢？</p>
+<p>InvokeCallback 这一层可以将用户层和网络层很好的解耦，如果网络层发生变化，那么，只需要变动中间层就可以了，用户层不会受到影响。</p>
+<p>好了，今天就到这里。bye！</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/05/09/2018/2018-05-09-SOFA-源码分析-—-泛化调用/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">SOFA-源码分析-—-泛化调用</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/05/08/2018/2018-05-08-SOFA-源码分析-—-连接管理器/">
+                <span class="level-item">SOFA-源码分析-—-连接管理器</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/05/09/2018/2018-05-09-SOFA-源码分析-—-调用方式/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="SOFA-源码分析-—-调用方式" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

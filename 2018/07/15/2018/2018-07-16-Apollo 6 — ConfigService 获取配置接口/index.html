@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>Apollo 6 — ConfigService 获取配置接口 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Apollo 6 — ConfigService 获取配置接口">
+<meta property="og:url" content="http://thinkinjava.cn/2018/07/15/2018/2018-07-16-Apollo 6 — ConfigService 获取配置接口/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Apollo 6 — ConfigService 获取配置接口">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="Apollo 6 — ConfigService 获取配置接口" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-07-15T07:01:01.000Z">2018-07-15</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Apollo/">Apollo</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    23 分钟 读完 (大约 3518 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                Apollo 6 — ConfigService 获取配置接口
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       ## 大纲</p>
+<p>看本文之前，建议看看 apollo 的官方文档，特别是数据库设计文档。</p>
+<ol>
+<li>主流程分析</li>
+</ol>
+<p>2.1 聊聊细节</p>
+<p>2.2 loadConfig() 加载配置</p>
+<p>2.3 auditReleases() 方法记录此次访问详情</p>
+<h2 id="1-主流程分析"><a href="#1-主流程分析" class="headerlink" title="1. 主流程分析"></a>1. 主流程分析</h2><p>具体代码在 <code>com.ctrip.framework.apollo.configservice.controller.ConfigController#queryConfig</code> 方法中。</p>
+<p>代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// 这个 . 号是防止 Spring 框架去除了 . 号后面的字符,例如 xxx.json, xxx.properties</span></span><br><span class="line"><span class="hljs-meta">@RequestMapping</span>(value = <span class="hljs-string">"/&#123;appId&#125;/&#123;clusterName&#125;/&#123;namespace:.+&#125;"</span>, method = RequestMethod.GET)</span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> ApolloConfig <span class="hljs-title">queryConfig</span><span class="hljs-params">(@PathVariable String appId, @PathVariable String clusterName,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                                @PathVariable String namespace,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                                @RequestParam(value = <span class="hljs-string">"dataCenter"</span>, required = <span class="hljs-keyword">false</span>)</span> String dataCenter,</span></span><br><span class="line"><span class="hljs-function">                                @<span class="hljs-title">RequestParam</span><span class="hljs-params">(value = <span class="hljs-string">"releaseKey"</span>, defaultValue = <span class="hljs-string">"-1"</span>)</span> String clientSideReleaseKey,<span class="hljs-comment">//20180704093033-648d208dc9c1c9be</span></span></span><br><span class="line"><span class="hljs-function">                                @<span class="hljs-title">RequestParam</span><span class="hljs-params">(value = <span class="hljs-string">"ip"</span>, required = <span class="hljs-keyword">false</span>)</span> String clientIp,</span></span><br><span class="line"><span class="hljs-function">                                @<span class="hljs-title">RequestParam</span><span class="hljs-params">(value = <span class="hljs-string">"messages"</span>, required = <span class="hljs-keyword">false</span>)</span> String messagesAsString,<span class="hljs-comment">//&#123;"details":&#123;"SampleApp+default+application":19&#125;&#125;</span></span></span><br><span class="line"><span class="hljs-function">                                HttpServletRequest request, HttpServletResponse response) <span class="hljs-keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  String originalNamespace = namespace;</span><br><span class="line">  <span class="hljs-comment">//strip out .properties suffix 剔除后缀</span></span><br><span class="line">  namespace = namespaceUtil.filterNamespaceName(namespace);</span><br><span class="line">  <span class="hljs-comment">//fix the character case issue, such as FX.apollo &lt;-&gt; fx.apollo</span></span><br><span class="line">  <span class="hljs-comment">// 改名字</span></span><br><span class="line">  namespace = namespaceUtil.normalizeNamespace(appId, namespace);</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">if</span> (Strings.isNullOrEmpty(clientIp)) &#123;</span><br><span class="line">    clientIp = tryToGetClientIp(request);<span class="hljs-comment">// 获取客户端 IP</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">// 转换成对象（目前没有地方用到？）</span></span><br><span class="line">  ApolloNotificationMessages clientMessages = transformMessages(messagesAsString);</span><br><span class="line"></span><br><span class="line">  List&lt;Release&gt; releases = Lists.newLinkedList();</span><br><span class="line"></span><br><span class="line">  String appClusterNameLoaded = clusterName;</span><br><span class="line">  <span class="hljs-comment">// appID 如果不是占位符号</span></span><br><span class="line">  <span class="hljs-keyword">if</span> (!ConfigConsts.NO_APPID_PLACEHOLDER.equalsIgnoreCase(appId)) &#123;</span><br><span class="line">    <span class="hljs-comment">// 获取发布信息</span></span><br><span class="line">    Release currentAppRelease = configService.loadConfig(appId, clientIp, appId, clusterName, namespace,</span><br><span class="line">        dataCenter, clientMessages);</span><br><span class="line">    <span class="hljs-keyword">if</span> (currentAppRelease != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">      releases.add(currentAppRelease);<span class="hljs-comment">// 添加进集合</span></span><br><span class="line">      <span class="hljs-comment">//we have cluster search process, so the cluster name might be overridden 这个解释看不懂??? 集群搜索过程指的是?</span></span><br><span class="line">      appClusterNameLoaded = currentAppRelease.getClusterName();<span class="hljs-comment">// 使用release 的集群名称.</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-comment">// 关联类型?</span></span><br><span class="line">  <span class="hljs-comment">//if namespace does not belong to this appId, should check if there is a public configuration</span></span><br><span class="line">  <span class="hljs-comment">// 如果命名空间不属于这个 appId, 那么应该检查他是否是公共配置</span></span><br><span class="line">  <span class="hljs-keyword">if</span> (!namespaceBelongsToAppId(appId, namespace)) &#123;</span><br><span class="line">    Release publicRelease = <span class="hljs-keyword">this</span>.findPublicConfig(appId, clientIp, clusterName, namespace,</span><br><span class="line">        dataCenter, clientMessages);<span class="hljs-comment">// 获取公共配置</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (!Objects.isNull(publicRelease)) &#123;</span><br><span class="line">      releases.add(publicRelease);<span class="hljs-comment">// 添加进集合</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">if</span> (releases.isEmpty()) &#123;<span class="hljs-comment">// 空的话,返回 404</span></span><br><span class="line">    response.sendError(HttpServletResponse.SC_NOT_FOUND,<span class="hljs-comment">//404</span></span><br><span class="line">        String.format(</span><br><span class="line">            <span class="hljs-string">"Could not load configurations with appId: %s, clusterName: %s, namespace: %s"</span>,</span><br><span class="line">            appId, clusterName, originalNamespace));</span><br><span class="line">    Tracer.logEvent(<span class="hljs-string">"Apollo.Config.NotFound"</span>,</span><br><span class="line">        assembleKey(appId, clusterName, originalNamespace, dataCenter));</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  auditReleases(appId, clusterName, dataCenter, clientIp, releases);<span class="hljs-comment">// 保存实例信息,(就是配置灰度规则时的ip选择列表+ 实例列表)</span></span><br><span class="line">  <span class="hljs-comment">// + 号拼接所有的 release key</span></span><br><span class="line">  String mergedReleaseKey = releases.stream().map(Release::getReleaseKey)</span><br><span class="line">          .collect(Collectors.joining(ConfigConsts.CLUSTER_NAMESPACE_SEPARATOR));</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">if</span> (mergedReleaseKey.equals(clientSideReleaseKey)) &#123;<span class="hljs-comment">// 如果客户端那边的 key 和这边的 key 一致,则 304</span></span><br><span class="line">    <span class="hljs-comment">// Client side configuration is the same with server side, return 304</span></span><br><span class="line">    response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);<span class="hljs-comment">// 返回 304</span></span><br><span class="line">    Tracer.logEvent(<span class="hljs-string">"Apollo.Config.NotModified"</span>,</span><br><span class="line">        assembleKey(appId, appClusterNameLoaded, originalNamespace, dataCenter));</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-comment">// releaseKey 不一致,则创建 config 对象返回.</span></span><br><span class="line">  ApolloConfig apolloConfig = <span class="hljs-keyword">new</span> ApolloConfig(appId, appClusterNameLoaded, originalNamespace,</span><br><span class="line">      mergedReleaseKey);</span><br><span class="line">  apolloConfig.setConfigurations(mergeReleaseConfigurations(releases));<span class="hljs-comment">// 合并所有的配置, 其中,私有配置优先公共配置</span></span><br><span class="line"></span><br><span class="line">  Tracer.logEvent(<span class="hljs-string">"Apollo.Config.Found"</span>, assembleKey(appId, appClusterNameLoaded,</span><br><span class="line">      originalNamespace, dataCenter));</span><br><span class="line">  <span class="hljs-keyword">return</span> apolloConfig;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>代码有点长，具体细节等下慢慢聊，这里说说主要逻辑：</p>
+<ol>
+<li><p>调整 namespace 的名字。获取客户端 IP（为了灰度）。</p>
+</li>
+<li><p>判断 appId 是不是占位符。如果不是，就尝试加载该 AppId 下的 Cluster 下的 namespace 的 release 配置。并添加进结果集。</p>
+</li>
+<li><p>判断是否是公共 namespac， 假设这个 namespace 不属于当前 AppId，那么就是公共配置，需要加载公共配置（通常就是管理的 namespace）。<strong>注意：这个时候，可能会有 2 个结果集：当前 AppId 发布的<code>重写公共配置的配置</code>+ 公共配置。</strong></p>
+</li>
+<li><p>如果结果集合是空，返回 404。</p>
+</li>
+<li><p>auditReleases 方法会异步的保存此次客户端获取配置的详细信息到数据库中，portal 页面就可以看到这些信息了。</p>
+</li>
+<li><p>比较服务端的 key 和客户端的 key 是否相同，因为每次发布配置都会有一个唯一的 key 生成，这里比较一下，就可以知道配置是否发生更改，如果相同，返回  304.</p>
+</li>
+<li><p>如果不同，构造一个 Config 对象返回给客户端。这里有个注意的地方: <code>mergeReleaseConfigurations</code> 方法会将 release 集合反转一下，目的是让私有的重写配置优先于公共的配置。</p>
+</li>
+</ol>
+<p>目前来看，不是很复杂，主要就是根据指定的 namespace 加载配置，并和客户端的 key 进行比较。如果不同，就返回新的配置。</p>
+<h2 id="2-1-聊聊细节"><a href="#2-1-聊聊细节" class="headerlink" title="2.1 聊聊细节"></a>2.1 聊聊细节</h2><p>步骤1，2 都是处理 namespace，大小写，后缀什么的，优先使用服务端的名称。</p>
+<p>转换了 messagesAsString 为 ApolloNotificationMessages 对象，目前没用到。</p>
+<p>可以看到，比较重要的方法就是 configService.loadConfig 方法。这个方法是获取配置的核心方法。下面的获取公共配置的 findPublicConfig 方法内部也是调用的此方法。</p>
+<p>然后还有 auditReleases 方法，这个其实就是记录此次客户端获取配置的详细信息的。</p>
+<p>然后还有一个反转方法。这个很简单，大家可以自己看看。</p>
+<p>先看看 configService.loadConfig  方法。</p>
+<h2 id="2-2-loadConfig-加载配置"><a href="#2-2-loadConfig-加载配置" class="headerlink" title="2.2 loadConfig() 加载配置"></a>2.2 loadConfig() 加载配置</h2><p>说方法之前，先看看 ConfigService 这个接口。最上层的是监听器接口，用于监听消息变化。然后是 ConfigService 接口，定义 loadConfig 方法并返回 release 对象。</p>
+<p>最下面是具体实现类，抽象类是用了模板模式，定义了获取配置的骨架，下面则有 2 个实现类，一个基于缓存，一个基于 DB。默认是 DB。具体使用哪个类要看 server_config 表里的配置，配置的 key 是 <code>config-service.cache.enabled</code>，value 要么 true 要么 false。</p>
+<p>注意，使用缓存很耗费内存，小心 OOM 哦。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-91250356549325a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>看看抽象类里 loadConfig 方法的实现：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Override</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> Release <span class="hljs-title">loadConfig</span><span class="hljs-params">(String clientAppId, String clientIp, String configAppId, String configClusterName,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">    String configNamespace, String dataCenter, ApolloNotificationMessages clientMessages)</span> </span>&#123;</span><br><span class="line">  <span class="hljs-comment">// load from specified cluster fist  如果不是默认的 cluster(私有或者灰度)</span></span><br><span class="line">  <span class="hljs-keyword">if</span> (!Objects.equals(ConfigConsts.CLUSTER_NAME_DEFAULT, configClusterName)) &#123;</span><br><span class="line">    Release clusterRelease = findRelease(clientAppId, clientIp, configAppId, configClusterName, configNamespace,</span><br><span class="line">        clientMessages);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (!Objects.isNull(clusterRelease)) &#123;</span><br><span class="line">      <span class="hljs-keyword">return</span> clusterRelease;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">// try to load via data center 试图通过数据中心获取</span></span><br><span class="line">  <span class="hljs-keyword">if</span> (!Strings.isNullOrEmpty(dataCenter) &amp;&amp; !Objects.equals(dataCenter, configClusterName)) &#123;</span><br><span class="line">    Release dataCenterRelease = findRelease(clientAppId, clientIp, configAppId, dataCenter, configNamespace,</span><br><span class="line">        clientMessages);</span><br><span class="line">    <span class="hljs-keyword">if</span> (!Objects.isNull(dataCenterRelease)) &#123;</span><br><span class="line">      <span class="hljs-keyword">return</span> dataCenterRelease;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">// fallback to default release 从默认的 cluster 获取</span></span><br><span class="line">  <span class="hljs-keyword">return</span> findRelease(clientAppId, clientIp, configAppId, ConfigConsts.CLUSTER_NAME_DEFAULT, configNamespace,</span><br><span class="line">      clientMessages);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>步骤：首先加载私有/灰度的 cluster，这个就是客户端配置文件里的 <code>apollo.cluster</code> 配置， 然后再加载 <code>server.properties</code> 配置文件的 idc 属性，最后加载默认的。</p>
+<p>他们的优先级如图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-b220502cf8731b27.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="图片来自 apollo wiki"></p>
+<p>细心的你可以发现，3 个 if 判断力都是调用的 findRelease 方法，只是第四个参数不同，这个参数就是 configClusterName —— 不同的 cluster。</p>
+<p>这个方法首先或加载灰度的，然后再加载普通的。所以，客户端的 IP 就显得重要了。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">  <span class="hljs-function"><span class="hljs-keyword">private</span> Release <span class="hljs-title">findRelease</span><span class="hljs-params">(String clientAppId, String clientIp, String configAppId, String configClusterName,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">      String configNamespace, ApolloNotificationMessages clientMessages)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 获取灰度release id, 从应用的缓存中获取规则.</span></span><br><span class="line">    Long grayReleaseId = grayReleaseRulesHolder.findReleaseIdFromGrayReleaseRule(clientAppId, clientIp, configAppId,</span><br><span class="line">        configClusterName, configNamespace);</span><br><span class="line"></span><br><span class="line">    Release release = <span class="hljs-keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (grayReleaseId != <span class="hljs-keyword">null</span>) &#123;<span class="hljs-comment">// 如果有灰度</span></span><br><span class="line"><span class="hljs-comment">//      return releaseRepository.findByIdAndIsAbandonedFalse(releaseId);// 没有放有回滚的发布</span></span><br><span class="line">      release = findActiveOne(grayReleaseId, clientMessages); <span class="hljs-comment">// 获取灰度 release</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (release == <span class="hljs-keyword">null</span>) &#123;<span class="hljs-comment">// 如果没有发布的新灰度</span></span><br><span class="line">      <span class="hljs-comment">// 获取最新的普通的发布活动</span></span><br><span class="line">      release = findLatestActiveRelease(configAppId, configClusterName, configNamespace, clientMessages);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-comment">// 灰度 --&gt; 最新的</span></span><br><span class="line">    <span class="hljs-keyword">return</span> release;</span><br><span class="line">  &#125;</span><br><span class="line">`</span><br></pre></td></tr></table></figure>
+<p>步骤：调用<code>grayReleaseRulesHolder</code>的<code>findReleaseIdFromGrayReleaseRule</code> 方法获取灰度发布 ID。当然，这也是个缓存。</p>
+<p>如果有灰度，则根据 id 获取对应的 release 信息，得到配置，release 里面包含了全量的配置信息（从数据库获取）。</p>
+<p>如果没有灰度，则获取最新的普通的发布信息（从数据库获取）。</p>
+<p>关键在于获取灰度 id。</p>
+<p>看看这个方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> Long <span class="hljs-title">findReleaseIdFromGrayReleaseRule</span><span class="hljs-params">(String clientAppId, String clientIp, String</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">    configAppId, String configCluster, String configNamespaceName)</span> </span>&#123;</span><br><span class="line">  String key = assembleGrayReleaseRuleKey(configAppId, configCluster, configNamespaceName);<span class="hljs-comment">// 组装 key</span></span><br><span class="line">  <span class="hljs-keyword">if</span> (!grayReleaseRuleCache.containsKey(key)) &#123;<span class="hljs-comment">// 从缓存中获取, 缓存是个 handler 监听器 + 定时任务</span></span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-comment">//create a new list to avoid ConcurrentModificationException 如果存在,就处理</span></span><br><span class="line">  List&lt;GrayReleaseRuleCache&gt; rules = Lists.newArrayList(grayReleaseRuleCache.get(key));</span><br><span class="line">  <span class="hljs-keyword">for</span> (GrayReleaseRuleCache rule : rules) &#123;</span><br><span class="line">    <span class="hljs-comment">//check branch status 必须是激活的状态</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (rule.getBranchStatus() != NamespaceBranchStatus.ACTIVE) &#123;</span><br><span class="line">      <span class="hljs-keyword">continue</span>;</span><br><span class="line">    &#125;<span class="hljs-comment">// 如果匹配上了 ip 和 客户端的 appId, 就返回</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (rule.matches(clientAppId, clientIp)) &#123;</span><br><span class="line">      <span class="hljs-keyword">return</span> rule.getReleaseId();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>步骤：首先用 + 号将 appId，cluster，namespace 拼接，再从缓存中获取，获取的是该 key 对应的灰度规则。</p>
+<p>而缓存由一个定时任务更新（60s） + 监听器更新。</p>
+<p>如果存在，就循环比较规则，如果规则是激活状态，且 appId 和 ip 和当前客户端匹配，那么就返回这个灰度的 release Id。</p>
+<p><strong>这个就是得到灰度 release Id 的具体逻辑，可以看到，这里是优先加载灰度的。</strong></p>
+<p>那么这个定时任务 + 监听器具体是怎么样的呢？</p>
+<p>刚刚说了，定时任务是 60 s 一次，相对于配置中心来说，及时性肯定是不够的，所以，他更多的是一种补偿措施，即监听器失效了，定时任务能够保证 60s 内配置是最新的。</p>
+<p>而监听器才是最新的配置。具体方法则是 handleMessage 方法。这个方法会得到一个发布消息，包含 appId + clusterName + namespace，有了这个信息，就可以得到 release 信息了。</p>
+<p>每当发布一个配置 ，或回滚一个配置，都会发送一个消息到数据库，ConfigService 会扫描得到这个消息，然后通知所有的监听器。执行监听器的 handlerMessage 方法。</p>
+<p>在灰度规则监听器中，会检查灰度发布规则表，根据消息的内容（<code>appId + cluster + namespace 组成的唯一 namespace key</code>）并进行处理，处理的逻辑则是更新缓存中的规则内容。</p>
+<p><strong>总结一下这个 loadConfig 方法：</strong></p>
+<blockquote>
+<p>这是 ConfigService 接口定义的方法，由 一个抽象类和 2 个派生类组成，默认使用 DB 模式的派生类，抽象类定义了 loadConfig 的方法骨架，利用模板模式，2 个子类可以根据自己的特性返回数据 —— release。loadConfig 里，在获取 release 的时候，会有一个查找顺序，首先找私有/灰度的 cluster，然后找 idc（这个一般公司用不到，携程内部的特性），最后找默认的。而他们调用的 findRelease 方法内部也会有一个查找顺序：首先根据灰度规则查找灰度发布 ID，如果没有，查找默认的最新发布 —— 也就是灰度的规则比默认的规则高。</p>
+</blockquote>
+<h2 id="2-3-auditReleases-方法记录此次访问详情"><a href="#2-3-auditReleases-方法记录此次访问详情" class="headerlink" title="2.3 auditReleases() 方法记录此次访问详情"></a>2.3 auditReleases() 方法记录此次访问详情</h2><p>这个方法主要是调用 instanceConfigAuditUtil 的 audit 方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">auditReleases</span><span class="hljs-params">(String appId, String cluster, String dataCenter, String clientIp,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                           List&lt;Release&gt; releases)</span> </span>&#123;</span><br><span class="line">  <span class="hljs-keyword">if</span> (Strings.isNullOrEmpty(clientIp)) &#123;</span><br><span class="line">    <span class="hljs-comment">//no need to audit instance config when there is no ip</span></span><br><span class="line">    <span class="hljs-keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="hljs-keyword">for</span> (Release release : releases) &#123;</span><br><span class="line">    instanceConfigAuditUtil.audit(appId, cluster, dataCenter, clientIp, release.getAppId(),</span><br><span class="line">        release.getClusterName(),</span><br><span class="line">        release.getNamespaceName(), release.getReleaseKey());</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意：这里的判断，如果没有 ip， 就不记录了。这里用的是 aduit 审计的概念，我想就是类似记录吧，方便后面进行复盘，查看啥的。</p>
+<p>而这个 audit 方法具体的内容则是：构造一个 InstanceConfigAuditModel 对象放到一个阻塞队列中，由另一个线程异步处理。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">audit</span><span class="hljs-params">(String appId, String clusterName, String dataCenter, String</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">      ip, String configAppId, String configClusterName, String configNamespace, String releaseKey)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.audits.offer(<span class="hljs-keyword">new</span> InstanceConfigAuditModel(appId, clusterName, dataCenter, ip,</span><br><span class="line">        configAppId, configClusterName, configNamespace, releaseKey));</span><br><span class="line">  &#125;</span><br><span class="line"><span class="hljs-comment">// 长度为 10000 的阻塞队列</span></span><br><span class="line"><span class="hljs-keyword">private</span> BlockingQueue&lt;InstanceConfigAuditModel&gt; audits = Queues.newLinkedBlockingQueue</span><br><span class="line">      (<span class="hljs-number">10000</span>);</span><br></pre></td></tr></table></figure>
+<p>那么异步执行的内容是怎么样的呢？</p>
+<p>当然要看队列 poll 或者 take 后做什么了.</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Override</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">afterPropertiesSet</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  auditExecutorService.submit(() -&gt; &#123;</span><br><span class="line">    <span class="hljs-keyword">while</span> (!auditStopped.get() &amp;&amp; !Thread.currentThread().isInterrupted()) &#123;</span><br><span class="line">      <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        InstanceConfigAuditModel model = audits.poll();</span><br><span class="line">        <span class="hljs-keyword">if</span> (model == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">          TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>);</span><br><span class="line">          <span class="hljs-keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        doAudit(model);</span><br><span class="line">      &#125; <span class="hljs-keyword">catch</span> (Throwable ex) &#123;</span><br><span class="line">        Tracer.logError(ex);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该类实现了 Spring 的 InitializingBean 接口，重写了 afterPropertiesSet 方法，这个方法会在属性注入完毕后执行。</p>
+<p>方法其实就是提交了一个任务，任务内容则是从队列中取出对象，然后执行 doAudit 方法。如果取出是空，休眠 1 秒。</p>
+<p>这个方法的主要内容就是更新客户端访问信息，或者创建客户端访问信息。使用 2 个缓存，存储 instanceId 和 releaseKey，这个是为了提高校验数据的性能。</p>
+<p>而这个实例在数据库是这样的：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-d4b127c8616a00d8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Instance 表"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-a9756f415935b821.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="InstanceConfig 表"></p>
+<p>从 Instance 表结构看，记录是每台机器最新访问的记录，而 InstanceConfig 则是记录的此次访问的具体 namespace 的 发布信息。</p>
+<p>对应的是控制台的实例列表：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-80cb0841855353b2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-6be410c980026a7d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>关于这个方法的具体内容我就不贴了，感兴趣的可以自己看看，主要内容就是记录 Instance 的访问信息用于后台审计查看。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>好了，apollo 客户端访问 ConfigService 获取配置的大概思路和具体细节就介绍完了。这里总结一下。</p>
+<ol>
+<li><p>获取配置的时候，可能会有 2 个结果集（关联类型），那么会将私有的优先（放到前面）。如果集合是空，返回 404 ，如果没有新的发布信息，返回 304.</p>
+</li>
+<li><p>当服务器加载配置信息的时候，有几个顺序，特别是集群的顺序：私有/灰度 cluster （apollo.cluster）—-&gt; 数据中心（server.properties 的 idc）—–&gt; 默认的 cluster。同时，加载集群内部配置的时候，也会优先加载灰度的配置（根据 IP），然后才是默认的配置。</p>
+</li>
+<li><p>最后，会记录此次访问的信息，方便后台审计。如果是 10 分钟之内访问的，即不会更新。</p>
+</li>
+</ol>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/07/16/2018/2018-07-17-Apollo 7 — ConfigService 消息扫描设计实现/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Apollo 7 — ConfigService 消息扫描设计实现</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/07/10/2018/2018-07-10-异步 Servlet 和同步 Servlet 的性能测试/">
+                <span class="level-item">异步 Servlet 和同步 Servlet 的性能测试</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/07/15/2018/2018-07-16-Apollo 6 — ConfigService 获取配置接口/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="Apollo 6 — ConfigService 获取配置接口" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

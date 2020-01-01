@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>并发编程——-LinkedTransferQueue - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程——-LinkedTransferQueue">
+<meta property="og:url" content="http://thinkinjava.cn/2018/04/22/2018/2018-04-22-并发编程——-LinkedTransferQueue/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="并发编程——-LinkedTransferQueue">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="并发编程——-LinkedTransferQueue" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-04-21T18:11:11.000Z">2018-04-22</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/并发编程/">并发编程</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    11 分钟 读完 (大约 1697 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                并发编程——-LinkedTransferQueue
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       <!--more-->       ## 1. 前言</p>
+<p>Java 中总的算起来有 8 种阻塞队列。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-e05e37fd57cd9fd3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>我们分析了：</p>
+<ul>
+<li><a href="http://thinkinjava.cn/article/95">并发编程之 SynchronousQueue 核心源码分析</a></li>
+<li><a href="http://thinkinjava.cn/article/47">并发编程之 ConcurrentLinkedQueue 源码剖析</a></li>
+<li><a href="http://thinkinjava.cn/article/45">并发编程之 LinkedBolckingQueue 源码剖析</a></li>
+<li>在  <a href="http://thinkinjava.cn/article/110">并发编程 —— ScheduledThreadPoolExecutor</a> 中顺带分析了 DelayWorkQueue。</li>
+</ul>
+<p><code>ArrayBlockingQueue</code> 数组队列，我们在 <a href="http://thinkinjava.cn/article/97">使用 ReentrantLock 和 Condition 实现一个阻塞队列</a> 看过了 JDK 写的一个例子，就是该类的基本原理和实现。楼主不准备分析了。</p>
+<p><code>LinkedBlockingDeque</code>是一个双向链表的队列。常用于 “工作窃取算法”，有机会再分析。</p>
+<p><code>DelayQueue</code> 是一个支持延时获取元素的无界阻塞队列。内部用 <code>PriorityQueue</code> 实现。有机会再分析。</p>
+<p><code>PriorityBlockingQueue</code> 是一个支持优先级的无界阻塞队列，和 <code>DelayWorkQueue</code> 类似。有机会再分析。</p>
+<p>今天要分析的是剩下的一个比较有意思的队列：<code>LinkedTransferQueue</code>。</p>
+<p>为什么说有意思呢？他可以算是 <code>LinkedBolckingQueue</code> 和 <code>SynchronousQueue</code> 和合体。</p>
+<p>我们知道 <code>SynchronousQueue</code> 内部无法存储元素，当要添加元素的时候，需要阻塞，不够完美，<code>LinkedBolckingQueue</code> 则内部使用了大量的锁，性能不高。</p>
+<p>两两结合，岂不完美？性能又高，又不阻塞。</p>
+<p>我们一起来看看。</p>
+<h2 id="2-LinkedTransferQueue-介绍"><a href="#2-LinkedTransferQueue-介绍" class="headerlink" title="2. LinkedTransferQueue 介绍"></a>2. LinkedTransferQueue 介绍</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-c6909b571f094dcf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>该类实现了一个 TransferQueue。该接口定义了几个方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">TransferQueue</span>&lt;<span class="hljs-title">E</span>&gt; <span class="hljs-keyword">extends</span> <span class="hljs-title">BlockingQueue</span>&lt;<span class="hljs-title">E</span>&gt; </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 如果可能，立即将元素转移给等待的消费者。 </span></span><br><span class="line">    <span class="hljs-comment">// 更确切地说，如果存在消费者已经等待接收它（在 take 或 timed poll（long，TimeUnit）poll）中，则立即传送指定的元素，否则返回 false。</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">tryTransfer</span><span class="hljs-params">(E e)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 将元素转移给消费者，如果需要的话等待。 </span></span><br><span class="line">    <span class="hljs-comment">// 更准确地说，如果存在一个消费者已经等待接收它（在 take 或timed poll（long，TimeUnit）poll）中，则立即传送指定的元素，否则等待直到元素由消费者接收。</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">transfer</span><span class="hljs-params">(E e)</span> <span class="hljs-keyword">throws</span> InterruptedException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 上面方法的基础上设置超时时间</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">tryTransfer</span><span class="hljs-params">(E e, <span class="hljs-keyword">long</span> timeout, TimeUnit unit)</span> <span class="hljs-keyword">throws</span> InterruptedException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 如果至少有一位消费者在等待，则返回 true</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">hasWaitingConsumer</span><span class="hljs-params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 返回等待消费者人数的估计值</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">getWaitingConsumerCount</span><span class="hljs-params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>相比较普通的阻塞队列，增加了这么几个方法。</p>
+<h2 id="3-关键源码分析"><a href="#3-关键源码分析" class="headerlink" title="3. 关键源码分析"></a>3. 关键源码分析</h2><p>阻塞队列不外乎<code>put ，take，offer ，poll</code>等方法，再加上<code>TransferQueue</code>的 几个 <code>tryTransfer</code>  方法。我们看看这几个方法的实现。</p>
+<p><code>put</code>方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">put</span><span class="hljs-params">(E e)</span> </span>&#123;</span><br><span class="line">     xfer(e, <span class="hljs-keyword">true</span>, ASYNC, <span class="hljs-number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>take</code>方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> E <span class="hljs-title">take</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    E e = xfer(<span class="hljs-keyword">null</span>, <span class="hljs-keyword">false</span>, SYNC, <span class="hljs-number">0</span>);</span><br><span class="line">    <span class="hljs-keyword">if</span> (e != <span class="hljs-keyword">null</span>)</span><br><span class="line">        <span class="hljs-keyword">return</span> e;</span><br><span class="line">    Thread.interrupted();</span><br><span class="line">    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InterruptedException();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>offer</code> 方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">offer</span><span class="hljs-params">(E e)</span> </span>&#123;</span><br><span class="line">    xfer(e, <span class="hljs-keyword">true</span>, ASYNC, <span class="hljs-number">0</span>);</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>poll</code> 方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> E <span class="hljs-title">poll</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> xfer(<span class="hljs-keyword">null</span>, <span class="hljs-keyword">false</span>, NOW, <span class="hljs-number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>tryTransfer</code> 方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">tryTransfer</span><span class="hljs-params">(E e)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> xfer(e, <span class="hljs-keyword">true</span>, NOW, <span class="hljs-number">0</span>) == <span class="hljs-keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>transfer</code> 方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">transfer</span><span class="hljs-params">(E e)</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (xfer(e, <span class="hljs-keyword">true</span>, SYNC, <span class="hljs-number">0</span>) != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        Thread.interrupted(); <span class="hljs-comment">// failure possible only due to interrupt</span></span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InterruptedException();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可怕，所有方法都指向了<code>xfer</code> 方法，只不过传入的不同的参数。</p>
+<p>第一个参数，如果是 <code>put</code> 类型，就是实际的值，反之就是 null。<br>第二个参数，是否包含数据，put 类型就是 true，take 就是 false。<br>第三个参数，执行类型，有立即返回的<code>NOW</code>，有异步的<code>ASYNC</code>，有阻塞的<code>SYNC</code>， 有带超时的 <code>TIMED</code>。<br>第四个参数，只有在 <code>TIMED</code>类型才有作用。</p>
+<p>So，这个类的关键方法就是 xfer 方法了。</p>
+<h2 id="4-xfer-方法分析"><a href="#4-xfer-方法分析" class="headerlink" title="4. xfer 方法分析"></a>4. xfer 方法分析</h2><p>源码加注释：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> E <span class="hljs-title">xfer</span><span class="hljs-params">(E e, <span class="hljs-keyword">boolean</span> haveData, <span class="hljs-keyword">int</span> how, <span class="hljs-keyword">long</span> nanos)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (haveData &amp;&amp; (e == <span class="hljs-keyword">null</span>))</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> NullPointerException();</span><br><span class="line">    Node s = <span class="hljs-keyword">null</span>;                        <span class="hljs-comment">// the node to append, if needed</span></span><br><span class="line"></span><br><span class="line">    retry:</span><br><span class="line">    <span class="hljs-keyword">for</span> (;;) &#123;                            <span class="hljs-comment">// restart on append race</span></span><br><span class="line">        <span class="hljs-comment">// 从  head 开始</span></span><br><span class="line">        <span class="hljs-keyword">for</span> (Node h = head, p = h; p != <span class="hljs-keyword">null</span>;) &#123; <span class="hljs-comment">// find &amp; match first node</span></span><br><span class="line">            <span class="hljs-comment">// head 的类型。</span></span><br><span class="line">            <span class="hljs-keyword">boolean</span> isData = p.isData;</span><br><span class="line">            <span class="hljs-comment">// head 的数据</span></span><br><span class="line">            Object item = p.item;</span><br><span class="line">            <span class="hljs-comment">// item != null 有 2 种情况,一是 put 操作, 二是 take 的 itme 被修改了(匹配成功)</span></span><br><span class="line">            <span class="hljs-comment">// (itme != null) == isData 要么表示 p 是一个 put 操作, 要么表示 p 是一个还没匹配成功的 take 操作</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (item != p &amp;&amp; (item != <span class="hljs-keyword">null</span>) == isData) &#123; </span><br><span class="line">                <span class="hljs-comment">// 如果当前操作和 head 操作相同，就没有匹配上，结束循环，进入下面的 if 块。</span></span><br><span class="line">                <span class="hljs-keyword">if</span> (isData == haveData)   <span class="hljs-comment">// can't match</span></span><br><span class="line">                    <span class="hljs-keyword">break</span>;</span><br><span class="line">                <span class="hljs-comment">// 如果操作不同,匹配成功, 尝试替换 item 成功,</span></span><br><span class="line">                <span class="hljs-keyword">if</span> (p.casItem(item, e)) &#123; <span class="hljs-comment">// match</span></span><br><span class="line">                    <span class="hljs-comment">// 更新 head</span></span><br><span class="line">                    <span class="hljs-keyword">for</span> (Node q = p; q != h;) &#123;</span><br><span class="line">                        Node n = q.next;  <span class="hljs-comment">// update by 2 unless singleton</span></span><br><span class="line">                        <span class="hljs-keyword">if</span> (head == h &amp;&amp; casHead(h, n == <span class="hljs-keyword">null</span> ? q : n)) &#123;</span><br><span class="line">                            h.forgetNext();</span><br><span class="line">                            <span class="hljs-keyword">break</span>;</span><br><span class="line">                        &#125;                 <span class="hljs-comment">// advance and retry</span></span><br><span class="line">                        <span class="hljs-keyword">if</span> ((h = head)   == <span class="hljs-keyword">null</span> ||</span><br><span class="line">                            (q = h.next) == <span class="hljs-keyword">null</span> || !q.isMatched())</span><br><span class="line">                            <span class="hljs-keyword">break</span>;        <span class="hljs-comment">// unless slack &lt; 2</span></span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="hljs-comment">// 唤醒原 head 线程.</span></span><br><span class="line">                    LockSupport.unpark(p.waiter);</span><br><span class="line">                    <span class="hljs-keyword">return</span> LinkedTransferQueue.&lt;E&gt;cast(item);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="hljs-comment">// 找下一个</span></span><br><span class="line">            Node n = p.next;</span><br><span class="line">            p = (p != n) ? n : (h = head); <span class="hljs-comment">// Use head if p offlist</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-comment">// 如果这个操作不是立刻就返回的类型    </span></span><br><span class="line">        <span class="hljs-keyword">if</span> (how != NOW) &#123;                 <span class="hljs-comment">// No matches available</span></span><br><span class="line">            <span class="hljs-comment">// 且是第一次进入这里</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (s == <span class="hljs-keyword">null</span>)</span><br><span class="line">                <span class="hljs-comment">// 创建一个 node</span></span><br><span class="line">                s = <span class="hljs-keyword">new</span> Node(e, haveData);</span><br><span class="line">            <span class="hljs-comment">// 尝试将 node 追加对队列尾部，并返回他的上一个节点。</span></span><br><span class="line">            Node pred = tryAppend(s, haveData);</span><br><span class="line">            <span class="hljs-comment">// 如果返回的是 null, 表示不能追加到 tail 节点,因为 tail 节点的模式和当前模式相反.</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (pred == <span class="hljs-keyword">null</span>)</span><br><span class="line">                <span class="hljs-comment">// 重来</span></span><br><span class="line">                <span class="hljs-keyword">continue</span> retry;           <span class="hljs-comment">// lost race vs opposite mode</span></span><br><span class="line">            <span class="hljs-comment">// 如果不是异步操作(即立刻返回结果)</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (how != ASYNC)</span><br><span class="line">                <span class="hljs-comment">// 阻塞等待匹配值</span></span><br><span class="line">                <span class="hljs-keyword">return</span> awaitMatch(s, pred, e, (how == TIMED), nanos);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">return</span> e; <span class="hljs-comment">// not waiting</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>代码有点长，其实逻辑很简单。</p>
+<p>逻辑如下:<br>找到 <code>head</code> 节点,如果 <code>head</code> 节点是匹配的操作,就直接赋值,如果不是,添加到队列中。</p>
+<p>注意：队列中永远只有一种类型的操作,要么是 <code>put</code> 类型, 要么是 <code>take</code> 类型.</p>
+<p>整个过程如下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-d60a5b0368dd8d8c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>相比较 <code>SynchronousQueue</code> 多了一个可以存储的队列，相比较 <code>LinkedBlockingQueue</code> 多了直接传递元素，少了用锁来同步。</p>
+<p>性能更高，用处更大。</p>
+<h2 id="5-总结"><a href="#5-总结" class="headerlink" title="5. 总结"></a>5. 总结</h2><p><code>LinkedTransferQueue</code>是 <code>SynchronousQueue</code> 和 <code>LinkedBlockingQueue</code> 的合体，性能比 <code>LinkedBlockingQueue</code> 更高（没有锁操作），比 <code>SynchronousQueue</code>能存储更多的元素。</p>
+<p>当 <code>put</code> 时，如果有等待的线程，就直接将元素 “交给” 等待者， 否则直接进入队列。</p>
+<p><code>put</code>和 <code>transfer</code> 方法的区别是，put 是立即返回的， transfer 是阻塞等待消费者拿到数据才返回。<code>transfer</code>方法和 <code>SynchronousQueue</code>的 put 方法类似。</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/04/23/2018/2018-04-23-蚂蚁-RPC-框架-SOFA-RPC-初体验/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">蚂蚁-RPC-框架-SOFA-RPC-初体验</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/04/21/2018/2018-04-21-并发编程-——-ScheduledThreadPoolExecutor/">
+                <span class="level-item">并发编程-——-ScheduledThreadPoolExecutor</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/04/22/2018/2018-04-22-并发编程——-LinkedTransferQueue/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="并发编程——-LinkedTransferQueue" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

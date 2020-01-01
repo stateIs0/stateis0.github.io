@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>MappedByteBuffer vs FileChannel 孰强孰弱？ - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="MappedByteBuffer vs FileChannel 孰强孰弱？">
+<meta property="og:url" content="http://thinkinjava.cn/2019/05/12/2019/05-12-java-nio/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MappedByteBuffer vs FileChannel 孰强孰弱？">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="MappedByteBuffer vs FileChannel 孰强孰弱？" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-05-11T18:01:02.000Z">2019-05-12</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Java-性能优化/">Java 性能优化</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    13 分钟 读完 (大约 1998 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                MappedByteBuffer vs FileChannel 孰强孰弱？
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>     </p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Java 在 JDK 1.4 引入了 ByteBuffer 等 NIO 相关的类，使得 Java 程序员可以抛弃基于 Stream ，从而使用基于 Block  的方式读写文件，另外，JDK 还引入了 IO 性能优化之王—— 零拷贝  sendFile 和 mmap。但他们的性能究竟怎么样？ 和 RandomAccessFile 比起来，快多少？ 什么情况下快？到底是 FileChannel 快还是 MappedByteBuffer 快……</p>
+<p>(零拷贝参考 <a href="https://www.linuxjournal.com/article/6345" target="_blank" rel="noopener">Zero Copy I: User-Mode Perspective</a>)</p>
+<p>天啊，问题太多了！！！！！！</p>
+<p>让我们慢慢分析。</p>
+<h2 id="看看善于利用-IO-零拷贝的-MQ-们"><a href="#看看善于利用-IO-零拷贝的-MQ-们" class="headerlink" title="看看善于利用 IO 零拷贝的 MQ 们"></a>看看善于利用 IO 零拷贝的 MQ 们</h2><p>我们知道，Java 世界有很多 MQ：ActiveMQ，kafka，RocketMQ，去哪儿 MQ，而他们则是 Java 世界使用 NIO 零拷贝的大户。</p>
+<p>然而，他们的性能却大相同，抛开其他的因素，例如网络传输方式，数据结构设计，文件存储方式，我们仅仅讨论 Broker 端对文件的读写，看看他们有什么不同。</p>
+<p>下图是楼主查看源码总结的各个 MQ 使用的文件读写方式。</p>
+<p><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dlo5hhwqj30er047wem.jpg" alt></p>
+<ul>
+<li>kafka：record 的读写都是基于 FileChannel。index 读写基于 MMAP（厮大提示）。</li>
+<li>RocketMQ：读盘基于 MMAP，写盘默认使用 MMAP，可通过修改配置，配置成 FileChannel，原因是作者想避免 PageCache 的锁竞争，通过两层架构实现读写分离。</li>
+<li>QMQ： 去哪儿 MQ，读盘使用 MMAP，写盘使用 FileChannel。</li>
+<li>ActiveMQ 5.15： 读写全部都是基于 RandomAccessFile，这也是我们抛弃 ActiveMQ 的原因。</li>
+</ul>
+<p>那么，到底是 MMAP 强，还是 FileChannel 强？</p>
+<p>MMAP 众所周知，基于 OS 的 mmap 的内存映射技术，通过 MMU 映射文件，使随机读写文件和读写内存相似的速度。</p>
+<p>那 FileChannel 呢？是零拷贝吗？很遗憾，不是。FileChannel 快，只是因为他是基于 block 的。</p>
+<p>接下来，benchmark everything —— 徐妈.</p>
+<h2 id="Benchmark-？"><a href="#Benchmark-？" class="headerlink" title="Benchmark ？"></a>Benchmark ？</h2><p>如何 Benchmark？ Benchmark 哪些？</p>
+<p>既然是读写文件，自然就要看读写性能，这是最基本的。但，注意，通常 MQ 会使用定时刷盘，防止数据丢失，MMAP 和 FileChannel 都有 force 方法，用于将 pageCache 的数据刷到硬盘上。force 会影响性能吗？ 答案是会。影响到什么程度呢？ 不知道。每次写入的数据大小会影响性能吗，毫无疑问会，但规则是什么呢？FileOutputStream 真的一无是处吗？答案是不一定。</p>
+<p>一直以来，文件调优都是艺术，因为影响性能的因素太多，首先，SSD 的出现，已经让传统基于 B+ tree 的树形结构产生了自我疑问，第二，每个文件系统的性能不同，Linux ext3 和 ext4 性能天壤之别（删除文件的性能差距在 20 倍左右）。而 Max OS 的 HFS+  系统被 Linus 称之为“有史以来最垃圾的文件系统”，幸运的是，苹果终于在 2017 年推送了 macOS High Sierra 和  iOS 10.3  系统，这个两个系统都抛弃了 HFS+，换成了性能更高的 APFS。而每个文件系统又可以设置不同的调度算法，另外，还有虚拟内存缺页中断带来的性能毛刺……. </p>
+<p>（tips：良心的 RocketMQ 提供了 Linux IO 调优的脚本，这点做的不错 ：）</p>
+<p>跑题了。</p>
+<p>楼主写了一个小项目，用于测试 Java MappedByteBuffer &amp; FileChannel &amp; RandomAccessFile  &amp;  FileXXXputStream 的读写性能。大家也可以在自己的机器上跑跑看。</p>
+<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>CPU：intel i7 4核8线程  4.2GHz<br>内存：40GB DDR4<br>磁盘：SSD 读写 2GB/s 左右<br>JDK1.8<br>OS：Mac OS 10.13.6<br>虚拟内存： 未关闭，大小 9GB</p>
+<p>测试注意点：</p>
+<ol>
+<li>为了防止 PageCache 缓存的影响，每次都生成一个新的文件进行读取。</li>
+<li>为了测试不同数据包对性能的影响，需要使用不同大小的数据包进行多次测试。</li>
+<li>force 对性能影响很大，应该单独测试。</li>
+<li>使用 1GB 文件进行测试（小文件没有参考意义，大文件 mmap 无法映射）</li>
+</ol>
+<h2 id="纯粹读测试"><a href="#纯粹读测试" class="headerlink" title="纯粹读测试"></a>纯粹读测试</h2><p>1GB 文件：</p>
+<p>测试 MappedByteBuffer &amp; FileChannel &amp; RandomAccessFile &amp; FileInputStream.</p>
+<p><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3c6kfhqykj317q0o6q4a.jpg" alt></p>
+<p>从这张图里，我们看到，mmap   性能完胜，特别是在小数据量的情况下。其他的流，只有在4kb 的情况下，才开始反杀 mmap。<strong>因此，读 4kb 以下的数据，请使用 mmap。</strong></p>
+<p>再放大看看 mmap 和 FileChannel 的比较：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-5a8085205bae036f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="缩放图"></p>
+<p>根据上图，我们看到，在写入数据包大于 4kb 以上的情况下，FileChannel 等一众非零拷贝，基本完胜 mmap，除了那个一次读 1G 文件的 BT 测试。</p>
+<p><strong>因此，如果你的数据包大于 4kb，请使用 FileChannel</strong>。</p>
+<h2 id="纯粹写测试"><a href="#纯粹写测试" class="headerlink" title="纯粹写测试"></a>纯粹写测试</h2><p>1GB 文件：</p>
+<p>测试 MappedByteBuffer &amp; FileChannel &amp; RandomAccessFile &amp; FileInputStream.</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-21b0ba80242f83e7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="大图"></p>
+<p>从上图，我们可以看出，mmap 性能还是一样的稳定。FileChannel 也不差，但是在 32 字节数据量的情况下，还差点意思。</p>
+<p>再看缩略图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-330395fb35b08687.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="写缩略图"></p>
+<p>我们看到，64字节 是 FileChannel 和 mmap 性能的分水岭，从  64字节开始，FileChannel 一路反杀，直到 BT 1GB 文件稍稍输了一丢丢。</p>
+<p>因此，我们建议：<strong>如果你的数据包大小在 64 字节以上，请使用 FileChannel 写入。</strong></p>
+<h2 id="异步-force-测试"><a href="#异步-force-测试" class="headerlink" title="异步 force 测试"></a>异步 force 测试</h2><p>我们知道，RocketMQ 使用异步刷盘，那么异步 force 对性能有没有影响呢？benchmark everything。我们使用异步线程，每 16kb 刷盘一次，看看性能如何。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-4b77af1d279f3427.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="异步刷盘"></p>
+<p>mmap 一直落后，且性能很差，除了在 2048 字节那里有一点点抖动，基本维持 在 4000 左右，而没有 force 的情况下，则在 1500 左右。而 FileChannel 则完全不受 force 的影响。在我的测试中，1GB 的文件，一次 force 需要 800 毫秒左右。buffer 越大，时间越多，反之则越小。</p>
+<p>说个题外话，Kafka 一直不建议使用 force，大概也有这个原因。当然，Kafka 还有自己的多副本策略保证数据安全。</p>
+<p><strong>这里，我们得出结论，如果你需要经常执行 force，即使是异步的，也请一定不要使用 mmap，请使用 FileChannel。</strong></p>
+<h2 id="总结。"><a href="#总结。" class="headerlink" title="总结。"></a>总结。</h2><p>基于以上测试，我们得出一张图表：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-31e313b87612dde2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>假设，我们的系统的数据包在 1024 - 2048 左右，我们应该使用什么策略？</p>
+<p>答：读使用 mmap，仅仅写使用 FileChannel。</p>
+<p>再回过头看看 MQ 的实现者们，似乎只有 QMQ 是 这么做的。当然，RocketMQ 也提供了 FileChannel 的写选项。但默认  mmap 写加异步刷盘，应该是 broker busy 的元凶吧。</p>
+<p>而 Kafka，因为默认不 force，也是使用 FileChannel 进行写入的，为什么使用 FileChannel 读呢？大概是因为消息的大小在 4kb 以上吧。</p>
+<p>这样一揣测，这些 MQ 的设计似乎都非常合理。</p>
+<p>最后，能不用 force 就别用 force。如果要用 force ，就请使用 FileChannel。</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2019/05/26/2019/2019-05-27-dulisikao/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">如何独立思考？这里有一份全指南(转载)</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/05/08/2019/2019-05-09-rmq-busy-exp/">
+                <span class="level-item">RocketMQ 异常分析 [TIMEOUT_CLEAN_QUEUE]broker Busy, Start Flow Control for a Whil</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2019/05/12/2019/05-12-java-nio/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="MappedByteBuffer vs FileChannel 孰强孰弱？" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

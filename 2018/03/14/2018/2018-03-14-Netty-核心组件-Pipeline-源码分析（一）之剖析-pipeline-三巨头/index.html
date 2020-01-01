@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>Netty-核心组件-Pipeline-源码分析（一）之剖析-Pipeline-三巨头 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Netty-核心组件-Pipeline-源码分析（一）之剖析-Pipeline-三巨头">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/14/2018/2018-03-14-Netty-核心组件-Pipeline-源码分析（一）之剖析-pipeline-三巨头/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Netty-核心组件-Pipeline-源码分析（一）之剖析-Pipeline-三巨头">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="Netty-核心组件-Pipeline-源码分析（一）之剖析-Pipeline-三巨头" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-03-13T18:11:11.000Z">2018-03-14</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Netty/">Netty</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    41 分钟 读完 (大约 6096 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                Netty-核心组件-Pipeline-源码分析（一）之剖析-Pipeline-三巨头
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       <!--more-->目录大纲：</p>
+<ol start="0">
+<li>前言</li>
+<li>ChannelPipeline | ChannelHandler | ChannelHandlerContext 三巨头介绍</li>
+<li>三巨头编织过程（创建过程）</li>
+<li>ChannelPipeline 是如何调度 handler 的</li>
+<li>总结</li>
+</ol>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>相信对 Netty 熟悉的同学对 pipeline 都非常的熟悉，肯定也有不熟悉的，不管怎样，楼主今天的目的就是将 pipeline 从头撸到尾，彻彻底底的理解 pipeline 的每一步操作。</p>
+<p>当然，文章还是一如既往的长。请非战斗人员尽快撤离！！！！</p>
+<p>让我们开始吧！</p>
+<h2 id="1-ChannelPipeline-ChannelHandler-ChannelHandlerContext-三巨头介绍"><a href="#1-ChannelPipeline-ChannelHandler-ChannelHandlerContext-三巨头介绍" class="headerlink" title="1.  ChannelPipeline | ChannelHandler | ChannelHandlerContext 三巨头介绍"></a>1.  ChannelPipeline | ChannelHandler | ChannelHandlerContext 三巨头介绍</h2><p>如果把 Netty 比作一个人类的话，那么 EventLoop 就是这个人的大脑，负责这个人的所有操作。而 pipeline 就是这个的肠道，负责将这个人吃进去的东西进行消化然后处理。这个比喻可能不是很恰当，当然这也是为了加深理解。</p>
+<p>当然，我说的 pipelie 是一个广义的概念，pipeline 包括很多东西，就像我们标题说的三巨头，下面我们就来好好说说他们的关系。</p>
+<h4 id="1-0三者关系"><a href="#1-0三者关系" class="headerlink" title="1.0三者关系"></a>1.0三者关系</h4><p>我们在之前的文章中知道，每当 ServerSocket 创建一个新的连接，就会创建一个 Socket，对应的就是目标客户端。而每一个新创建的 Socket 都将会分配一个全新的 ChannelPipeline（以下简称 pipeline），他们的关系是永久不变的；而每一个 ChannelPipeline 内部都含有多个 ChannelHandlerContext（以下简称 Context），他们一起组成了双向链表，这些 Context 用于包装我们调用 addLast 方法时添加的 ChannelHandler（以下简称 handler）。</p>
+<p>所以说，他们的关系是这样的：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-3c1e4da3ceaf3559.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>上图中：ChannelSocket 和 ChannelPipeline 是一对一的关联关系，而 pipeline 内部的多个 Context 形成了链表，Context 只是对 Handler 的封装。</p>
+<p>为什么需要对 Handler 进行封装呢？想象一下：当你  A handler 要调 B handler 方法的时候，如果没有 Context，那么就直接调用了，如果有一些需要在调用前后通用的逻辑就需要在每个 handler 地方都写，这样会导致代码重复，而且紧耦合，不符合设计原则。</p>
+<p>总的来说，当一个请求进来的时候，会进入 Socket 对应的 pipeline，并流经 pipeline 所有的 handler，对，就是设计模式中的过滤器模式，可以说是最佳实践。用过滤器处理网络数据的不止 netty，还有 tomcat，相信大家对 tomcat 的 filter（应该是 servlet 的 filter） 都非常的熟悉吧。</p>
+<p>知道了他们的概念，我们继续深入看看他们的设计。</p>
+<h4 id="1-1-ChannelPipeline-作用及设计"><a href="#1-1-ChannelPipeline-作用及设计" class="headerlink" title="1.1 ChannelPipeline 作用及设计"></a>1.1 ChannelPipeline 作用及设计</h4><p>首先看 pipeline 的接口设计：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-c179e6a51e6d0896.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">ChannelPipeline</span></span></span><br><span class="line"><span class="hljs-class">    <span class="hljs-keyword">extends</span> <span class="hljs-title">ChannelInboundInvoker</span>, <span class="hljs-title">ChannelOutboundInvoker</span>, <span class="hljs-title">Iterable</span>&lt;<span class="hljs-title">Entry</span>&lt;<span class="hljs-title">String</span>, <span class="hljs-title">ChannelHandler</span>&gt;&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-function">ChannelPipeline <span class="hljs-title">addFirst</span><span class="hljs-params">(String name, ChannelHandler handler)</span></span>;</span><br><span class="line">  <span class="hljs-function">ChannelPipeline <span class="hljs-title">addAfter</span><span class="hljs-params">(String baseName, String name, ChannelHandler handler)</span></span>;</span><br><span class="line">  <span class="hljs-function">ChannelPipeline <span class="hljs-title">addBefore</span><span class="hljs-params">(String baseName, String name, ChannelHandler handler)</span></span>;</span><br><span class="line">  <span class="hljs-function">ChannelPipeline <span class="hljs-title">addLast</span><span class="hljs-params">(ChannelHandler... handlers)</span></span>;</span><br><span class="line">  <span class="hljs-function">Channel <span class="hljs-title">channel</span><span class="hljs-params">()</span></span>;</span><br><span class="line">  <span class="hljs-function">ChannelHandlerContext <span class="hljs-title">context</span><span class="hljs-params">(ChannelHandler handler)</span></span>;</span><br><span class="line">  <span class="hljs-function">ChannelPipeline <span class="hljs-title">remove</span><span class="hljs-params">(ChannelHandler handler)</span></span>;</span><br><span class="line">  <span class="hljs-function">ChannelPipeline <span class="hljs-title">replace</span><span class="hljs-params">(ChannelHandler oldHandler, String newName, ChannelHandler newHandler)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过 UML 图，可以看到该接口继承了 inBound，outBound，Iterable 接口，表示他可以调用当数据出站的方法和入站的方法，同时也能遍历内部的链表。</p>
+<p>再看看他的几个具有代表性的方法，基本上都是针对 handler 链表的插入，追加，删除，替换操作，甚至，我们可以想象他就是一个 LinkedList。同时，他也能返回 channel（也就是 socket）。</p>
+<p>在 pipeline 的接口文档上，作者写了很多注释并且画了一幅图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-180e212b5357414f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p><strong>文档大致意思是：</strong></p>
+<p> 这是一个 handler 的 list，handler 用于处理或拦截入站事件和出站事件，pipeline 实现了过滤器的高级形式，以便用户完全控制事件如何处理以及 handler 在 pipeline 中如何交互。</p>
+<p>上图描述了一个典型的  handler 在 pipeline 中处理 I/O 事件的方式，IO 事件由 inboundHandler 或者 outBoundHandler 处理，并通过调用 ChannelHandlerContext.fireChannelRead 方法转发给其最近的处理程序 。</p>
+<p>入站事件由入站处理程序以自下而上的方向处理，如图所示。入站处理程序通常处理由图底部的I / O线程生成入站数据。入站数据通常从如 SocketChannel.read(ByteBuffer) 获取。如果入站事件超出顶层入站处理程序，它将被静默放弃，或者在需要您关注时进行记录。</p>
+<p>通常一个 pipeline 有多个 handler，例如，一个典型的服务器在每个通道的管道中都会有以下处理程序，但是您的里程可能会因协议和业务逻辑的复杂性和特征而异：</p>
+<ol>
+<li>协议解码器 - 将二进制数据（例如 ByteBuf 在io.netty.buffer中的类)）转换为Java对象。</li>
+<li>协议编码器 - 将Java对象转换为二进制数据。</li>
+<li>业务逻辑处理程序 - 执行实际业务逻辑（例如数据库访问）。</li>
+</ol>
+<p>注意：你的业务程序不能将线程阻塞，他将会影响 IO 的速度，进而影响整个 Netty 程序的性能。如果你的业务程序很快，就可以放在 IO 线程中，反之，你需要异步执行。或者在添加 handler 的时候添加一个线程池，例如：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// 下面这个任务执行的时候，将不会阻塞 IO 线程，执行的线程来自 group 线程池</span></span><br><span class="line"> pipeline.addLast（group，“handler”，<span class="hljs-keyword">new</span> MyBusinessLogicHandler（））;</span><br></pre></td></tr></table></figure>
+<p>好，关于 pipeline 的设计就介绍到这里。我们再看看我们常见的 ChannelHandler。</p>
+<h4 id="1-2-ChannelHandler-作用及设计"><a href="#1-2-ChannelHandler-作用及设计" class="headerlink" title="1.2 ChannelHandler  作用及设计"></a>1.2 ChannelHandler  作用及设计</h4><p>关于 ChannelHanderl 我们都非常的熟悉吧，在每个最初认识 Netty 的人都知道他的 demo 程序中会添加 handler 并自己实现 handler，通常，我们说 handler 指的就是 ChannelHandler。</p>
+<p>ChannelHandler 是一个顶级接口，没有继承任何接口：<br><img src="https://upload-images.jianshu.io/upload_images/4236553-4efe995fcd157b4e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>定义了 3 个方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">ChannelHandler</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 当把 ChannelHandler 添加到 pipeline 时被调用</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">handlerAdded</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-comment">// 当从 pipeline 中移除时调用</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">handlerRemoved</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-comment">// 当处理过程中在 pipeline 发生异常时调用</span></span><br><span class="line">    <span class="hljs-meta">@Deprecated</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">exceptionCaught</span><span class="hljs-params">(ChannelHandlerContext ctx, Throwable cause)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>总的来说，ChannelHandler 的作用就是处理 IO 事件或拦截 IO 事件，并将其转发给下一个处理程序 ChannelHandler。</p>
+<p>从上面的代码中，可以看到，ChannelHandler 并没有提供很多的方法，因为 Handler 处理事件时分入站和出站的，两个方向的操作都是不同的，因此，Netty 定义了两个子接口继承 ChannelHandler。</p>
+<p><strong>1. ChannelInboundHandler 入站事件接口</strong></p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">ChannelInboundHandler</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ChannelHandler</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">channelRegistered</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">channelUnregistered</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">channelActive</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">channelInactive</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">channelRead</span><span class="hljs-params">(ChannelHandlerContext ctx, Object msg)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">channelReadComplete</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">userEventTriggered</span><span class="hljs-params">(ChannelHandlerContext ctx, Object evt)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">channelWritabilityChanged</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">exceptionCaught</span><span class="hljs-params">(ChannelHandlerContext ctx, Throwable cause)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果你经常使用 Netty 程序，你会非常的熟悉这些方法，比如 channelActive 用于当 Channel 处于活动状态时被调用；channelRead —— 当从Channel 读取数据时被调用等等方法。通常我们需要重写一些方法，当发生关注的事件，我们需要在方法中实现我们的业务逻辑，因为当事件发生时，Netty 会回调对应的方法。</p>
+<p>注意：当你重写了上面的 channelRead 方法时，你需要显示的释放与池化的 ByteBuf 实例相关的内存。Netty 为此提供了了一个使用方法 ReferenceCountUtil.release().</p>
+<p><strong>2. ChannelOutboundHandler 出站事件接口</strong></p>
+<p>ChannelOutboundHandler  负责出站操作和处理出站数据。接口方法如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">ChannelOutboundHandler</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ChannelHandler</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">bind</span><span class="hljs-params">(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">connect</span><span class="hljs-params">(</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">            ChannelHandlerContext ctx, SocketAddress remoteAddress,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">            SocketAddress localAddress, ChannelPromise promise)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">disconnect</span><span class="hljs-params">(ChannelHandlerContext ctx, ChannelPromise promise)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">close</span><span class="hljs-params">(ChannelHandlerContext ctx, ChannelPromise promise)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">deregister</span><span class="hljs-params">(ChannelHandlerContext ctx, ChannelPromise promise)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">read</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">write</span><span class="hljs-params">(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">flush</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>大家可以熟悉熟悉这个接口，比如 bind 方法，当请求将 Channel 绑定到本地地址时调用，close 方法，当请求关闭 Channel 时调用等等，总的来说，出站操作都是一些连接和写出数据类似的方法。和入站操作有很大的不同。</p>
+<p>总之，我们要区别入站方法和出站方法，这在 pipeline 中将会起很大的作用。</p>
+<p><strong>3. ChannelDuplexHandler 处理出站和入站事件</strong></p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ChannelDuplexHandler</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ChannelInboundHandlerAdapter</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">ChannelOutboundHandler</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">bind</span><span class="hljs-params">(ChannelHandlerContext ctx, SocketAddress localAddress,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                     ChannelPromise promise)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ctx.bind(localAddress, promise);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">connect</span><span class="hljs-params">(ChannelHandlerContext ctx, SocketAddress remoteAddress,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                        SocketAddress localAddress, ChannelPromise promise)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ctx.connect(remoteAddress, localAddress, promise);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">disconnect</span><span class="hljs-params">(ChannelHandlerContext ctx, ChannelPromise promise)</span></span></span><br><span class="line"><span class="hljs-function">            <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ctx.disconnect(promise);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">close</span><span class="hljs-params">(ChannelHandlerContext ctx, ChannelPromise promise)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ctx.close(promise);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">deregister</span><span class="hljs-params">(ChannelHandlerContext ctx, ChannelPromise promise)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ctx.deregister(promise);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">read</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ctx.read();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">write</span><span class="hljs-params">(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ctx.write(msg, promise);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">flush</span><span class="hljs-params">(ChannelHandlerContext ctx)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ctx.flush();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上面的代码中可以看出 ChannelDuplexHandler 间接实现了入站接口并直接实现了出站接口。是一个通用的能够同时处理入站事件和出站事件的类。</p>
+<p>介绍了完了  ChannelHandler 的设计，我们再来看看 ChannelHandlerContext 。</p>
+<h4 id="1-3-ChannelHandlerContext-作用及设计"><a href="#1-3-ChannelHandlerContext-作用及设计" class="headerlink" title="1.3 ChannelHandlerContext 作用及设计"></a>1.3 ChannelHandlerContext 作用及设计</h4><p>实际上，从上面的代码中，我们已经看到了 Context 的用处，在 ChannelDuplexHandler 中，cxt 无处不在。事实上，以read 方法为例：调用 handler 的 read 方法，如果你不处理，就会调用 context 的 read 方法，context 再调用下一个 context 的 handler 的 read 方法。</p>
+<p>我们看看 ChannelHandlerContext 的接口 UML :</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-8adb03da878b19de.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>ChannelHandlerContext  继承了出站方法调用接口和入站方法调用接口。那么， ChannelInboundInvoker 和 ChannelOutboundInvoker 又有哪些方法呢？</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-e3c5145d0a288528.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="ChannelInboundInvoker 入站方法调用器"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-94cd030d6ee81d4e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="ChannelOutboundInvoker 出站方法调用器"></p>
+<p>可以看到，这两个 invoker 就是针对入站或出站方法来的，就是再 入站或出站 handler 的外层再包装一层，达到在方法前后拦截并做一些特定操作的目的。</p>
+<p>而 ChannelHandlerContext 不仅仅时继承了他们两个的方法，同时也定义了一些自己的方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">ChannelHandlerContext</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AttributeMap</span>, <span class="hljs-title">ChannelInboundInvoker</span>, <span class="hljs-title">ChannelOutboundInvoker</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function">Channel <span class="hljs-title">channel</span><span class="hljs-params">()</span></span>;</span><br><span class="line">    <span class="hljs-function">EventExecutor <span class="hljs-title">executor</span><span class="hljs-params">()</span></span>;</span><br><span class="line">    <span class="hljs-function">String <span class="hljs-title">name</span><span class="hljs-params">()</span></span>;</span><br><span class="line">    <span class="hljs-function">ChannelHandler <span class="hljs-title">handler</span><span class="hljs-params">()</span></span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">isRemoved</span><span class="hljs-params">()</span></span>;</span><br><span class="line">    <span class="hljs-function">ChannelPipeline <span class="hljs-title">pipeline</span><span class="hljs-params">()</span></span>;</span><br><span class="line">    <span class="hljs-function">ByteBufAllocator <span class="hljs-title">alloc</span><span class="hljs-params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这些方法能够获取 Context 上下文环境中对应的比如 channel，executor，handler ，pipeline，内存分配器，关联的 handler 是否被删除。</p>
+<p>我们可以认为，Context 就是包装了 handler 相关的一切，以方便 Context 可以在 pipeline 方便的操作 handler 相关的资源和行为。</p>
+<h2 id="2-三巨头编织过程（创建过程）"><a href="#2-三巨头编织过程（创建过程）" class="headerlink" title="2. 三巨头编织过程（创建过程）"></a>2. 三巨头编织过程（创建过程）</h2><p>介绍完了 “三巨头” 的接口设计和一些方法，那么我们就看看，他们是如何编制在一起的。</p>
+<p>在文章前面，我们说：</p>
+<blockquote>
+<p> 每当 ServerSocket 创建一个新的连接，就会创建一个 Socket，对应的就是目标客户端。而每一个新创建的 Socket 都将会分配一个全新的 ChannelPipeline（以下简称 pipeline），他们的关系是永久不变的；而每一个 ChannelPipeline 内部都含有多个 ChannelHandlerContext（以下简称 Context），他们一起组成了双向链表，这些 Context 用于包装我们调用 addLast 方法时添加的 ChannelHandler（以下简称 handler）。</p>
+</blockquote>
+<p>我们可以分为3个步骤来看编织的过程：</p>
+<ol>
+<li>任何一个 ChannelSocket 创建的同时都会创建 一个 pipeline。</li>
+<li>当用户或系统内部调用 pipeline 的 add*** 方法添加 handler 时，都会创建一个包装这 handler 的 Context。</li>
+<li>这些 Context 在 pipeline 中组成了双向链表。</li>
+</ol>
+<p>让我们从代码层面看看他们的编织过程。</p>
+<p><strong>1. Socket 创建的时候创建 pipeline：</strong><br>在 SocketChannel 的抽象父类 AbstractChannel 的构造方法中：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-5ffe2d2322b8bdb7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>从 newChannelPipeline 方法中获取一个 pipeline，这个方法的标准实现如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-fca694d4f6501b7f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>创建一个 DefaultChannelPipeline 对象，并传入 channel 对象。这个 DefaultChannelPipeline 是 ChannelPipeline 接口的标准实现。</p>
+<p>我们看看他的创建过程：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-58a46fc579e66ad0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<ol>
+<li>将 channel 赋值给 channel 字段，用于 pipeline 操作 channel。</li>
+<li>创建一个 future 和 promise，用于异步回调使用。</li>
+<li>创建一个 inbound  的 tailContext，创建一个既是 inbound 类型又是 outbound 类型的 headContext.</li>
+<li>最后，将两个 Context 互相连接，形成双向链表。</li>
+</ol>
+<p>注意: tailContext 和 HeadContext 非常的重要，所有 pipeline 中的事件都会流经他们，所以我们重点关注 tailContext 和 headContext。</p>
+<p>首先看看 TailContext 的设计：一个属于 DefaultChannelPipeline 的内部类。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-16f165c9fe98a42a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>UML 继承图如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-840ba6dd1ea987c6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="UML"></p>
+<p>从上图中可以看出， TailContext 是一个处理入站事件的 handler。</p>
+<p>构造方法如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">  <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> String TAIL_NAME = generateName0(TailContext.class);</span><br><span class="line"></span><br><span class="line">  TailContext(DefaultChannelPipeline pipeline) &#123;</span><br><span class="line">        <span class="hljs-keyword">super</span>(pipeline, <span class="hljs-keyword">null</span>, TAIL_NAME, <span class="hljs-keyword">true</span>, <span class="hljs-keyword">false</span>);</span><br><span class="line">        setAddComplete();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">AbstractChannelHandlerContext(DefaultChannelPipeline pipeline, EventExecutor executor, String name,</span><br><span class="line">                              <span class="hljs-keyword">boolean</span> inbound, <span class="hljs-keyword">boolean</span> outbound) &#123;</span><br><span class="line">    <span class="hljs-keyword">this</span>.name = ObjectUtil.checkNotNull(name, <span class="hljs-string">"name"</span>);</span><br><span class="line">    <span class="hljs-keyword">this</span>.pipeline = pipeline;</span><br><span class="line">    <span class="hljs-keyword">this</span>.executor = executor;</span><br><span class="line">    <span class="hljs-keyword">this</span>.inbound = inbound;</span><br><span class="line">    <span class="hljs-keyword">this</span>.outbound = outbound;</span><br><span class="line">    ordered = executor == <span class="hljs-keyword">null</span> || executor <span class="hljs-keyword">instanceof</span> OrderedEventExecutor;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上面的构造方法中可以看出来，Context 果然就是 Context ，囊括了 Channel 所包含的一切，这里说一下 name 是 简单类名+#0 的形式。pipeline 就是当前的 pipeline，executor 是 null，inbound 属性是 true，outbound 属性是 fasle。说明他是一个入站处理器。当有入站事件时，会调用 tailContext。</p>
+<p>说完 TailContext ，再看看 HeadContext。</p>
+<p>HeadContext 同样时 DefaultChannelPipeline 的内部类，UML 继承图如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-232e3b5ef1b90f87.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>从上图中，可以看出来 HeadContext 非常的全能，既是入站处理器也是出站处理器，任何事件都逃不过他的眼睛。</p>
+<p>他的构造方法和 tail 有些许的不同：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">HeadContext(DefaultChannelPipeline pipeline) &#123;</span><br><span class="line">    <span class="hljs-keyword">super</span>(pipeline, <span class="hljs-keyword">null</span>, HEAD_NAME, <span class="hljs-keyword">false</span>, <span class="hljs-keyword">true</span>);</span><br><span class="line">    unsafe = pipeline.channel().unsafe();</span><br><span class="line">    setAddComplete();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">AbstractChannelHandlerContext(DefaultChannelPipeline pipeline, EventExecutor executor, String name,</span><br><span class="line">                              <span class="hljs-keyword">boolean</span> inbound, <span class="hljs-keyword">boolean</span> outbound) &#123;</span><br><span class="line">    <span class="hljs-keyword">this</span>.name = ObjectUtil.checkNotNull(name, <span class="hljs-string">"name"</span>);</span><br><span class="line">    <span class="hljs-keyword">this</span>.pipeline = pipeline;</span><br><span class="line">    <span class="hljs-keyword">this</span>.executor = executor;</span><br><span class="line">    <span class="hljs-keyword">this</span>.inbound = inbound;</span><br><span class="line">    <span class="hljs-keyword">this</span>.outbound = outbound;</span><br><span class="line">    ordered = executor == <span class="hljs-keyword">null</span> || executor <span class="hljs-keyword">instanceof</span> OrderedEventExecutor;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从构造方法上看，唯一的区别就是比 tailContext 多了一个属性 unsafe，而这个属性来自于 pipeline 所属的 channel 的 unsafe，如果大家有印象的话，会记得 channel 初始化的时候，也会初始化一个 unsafe，这个我们今天先不细说，只需要知道他是一个 Netty 中一个直接处理的类，每个类型的 Socket 都有不同的实现。而为什么 head 需要这样一个属性呢？因为 head 需要处理出站数据，还记得出站接口时怎么定义的吗？</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-2d69485554e4ea54.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="出站处理器定义的方法"></p>
+<p>出站接口中都是针对数据的操作，比如 read，write，flush 等操作，所以需要 unsafe 这个能够处理数据的工具实例。</p>
+<p>为什么 tail 不需要呢？我想你应该知道了，tail 虽然是入站 handler，入站 handler 定义的方法没有需要直接处理数据的，比如 read，write，flush等：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-4a4d17c32d934c57.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="入站处理器定义的方法"></p>
+<p>理解这两个处理器的定义很重要，因为每种类型的处理器定义的的任务都是不同的。</p>
+<p><strong>2. 在 add**</strong> 添加处理器的时候创建 Context**</p>
+<p>我们看看 DefaultChannelPipeline 的 addLast 方法如何创建的 Context，代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Override</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> ChannelPipeline <span class="hljs-title">addLast</span><span class="hljs-params">(EventExecutorGroup executor, ChannelHandler... handlers)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">for</span> (ChannelHandler h: handlers) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (h == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">            <span class="hljs-keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        addLast(executor, <span class="hljs-keyword">null</span>, h);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意，addLast 是个重载方法，你可以选择传入一个线程池，作用是什么呢？当你的业务 handler 非常耗时，甚至阻塞线程，那么 Netty 建议你异步执行该任务，否则将会影响 Netty 的性能。而这个线程池就是用来执行这个 handler 的耗时任务的。</p>
+<p>什么时候会返回这个线程池呢？</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-1781d82635ae101d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>当你调用类似 ChannelActive 方法的时候，会需要 Cotext 的 executor，方法如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-ff849ec873cc383f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>如果你没有定义 handler 自己的 executor，那么就使用 channel 的 线程，也就是 IO 线程。你需要十分确定你的业务不会阻塞线程。</p>
+<p>再看看 addLast 方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Override</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> ChannelPipeline <span class="hljs-title">addLast</span><span class="hljs-params">(EventExecutorGroup group, String name, ChannelHandler handler)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">final</span> AbstractChannelHandlerContext newCtx;</span><br><span class="line">    <span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) &#123;</span><br><span class="line">        checkMultiplicity(handler);</span><br><span class="line"></span><br><span class="line">        newCtx = newContext(group, filterName(name, handler), handler);</span><br><span class="line"></span><br><span class="line">        addLast0(newCtx);</span><br><span class="line">        <span class="hljs-keyword">if</span> (!registered) &#123;</span><br><span class="line">            newCtx.setAddPending();</span><br><span class="line">            callHandlerCallbackLater(newCtx, <span class="hljs-keyword">true</span>);</span><br><span class="line">            <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        EventExecutor executor = newCtx.executor();</span><br><span class="line">        <span class="hljs-keyword">if</span> (!executor.inEventLoop()) &#123;</span><br><span class="line">            newCtx.setAddPending();</span><br><span class="line">            executor.execute(<span class="hljs-keyword">new</span> Runnable() &#123;</span><br><span class="line">                <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">                    callHandlerAdded0(newCtx);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">            <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    callHandlerAdded0(newCtx);</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>向 pipeline 添加 handler，参数是线程池，name 是null， handler 是我们或者系统传入的handler。Netty 为了防止多个线程导致安全问题，同步了这段代码，步骤如下：</p>
+<ol>
+<li>检查这个 handler 实例是否是共享（Sharable 注解）的，如果不是，并且已经被别的 pipeline 使用了，则抛出异常。</li>
+<li>调用 newContext(group, filterName(name, handler), handler) 方法，创建一个 Context。从这里可以看出来了，每次添加一个 handler 都会创建一个关联 Context。</li>
+<li>调用 addLast 方法，将 Context 追加到链表中。</li>
+<li>如果这个通道还没有注册到 selecor 上，就将这个 Context 添加到这个 pipeline 的待办任务中。当注册好了以后，就会调用 callHandlerAdded0 方法（默认是什么都不做，用户可以实现这个方法）。</li>
+</ol>
+<p>我们重点看看第 2 步和第 3 步：<br>newContext 方法代码如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-16920e97964168f8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="创建默认的 DefaultChannelHandlerContext 实例"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-1ed0ae84617fd8a7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="构造方法"></p>
+<p>这里的 super 构造方法和 head  tail 一样，没什么不同，有 2 个方法需要注意一下 isInbound 和 isOutbound 方法。这两个方法是辨别这个 handler 是 inbound 还是 outbound 。如果是你，你怎么写？我们还是看看 Netty 是怎么写的吧：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isInbound</span><span class="hljs-params">(ChannelHandler handler)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> handler <span class="hljs-keyword">instanceof</span> ChannelInboundHandler;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isOutbound</span><span class="hljs-params">(ChannelHandler handler)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> handler <span class="hljs-keyword">instanceof</span> ChannelOutboundHandler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>很简单，通过 instanceof 关键字判断。哈哈。</p>
+<p>再看看第 3 步，如何将这个新创建的 Context 插入到链表中：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-6f9bc53d9ccb4253.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="插入链表"></p>
+<p>也很简单，一个标准的双向链表实现。将新的 Context 的 prev 指向 tail 之前的 prev，将新的 Context 的 next 指向 tail，将 tail 之前的 prev 的 next 指向新的 Context， 将 tail 现在的 prev 指向新的 Context。成功插入到 tail 的前面，所以，这里的 addLast 不是真正的 last，而是除了 tail 的 last，因为 tail 是系统的节点，需要做一些系统工作。</p>
+<p>好了，到这里，针对三巨头的创建过程，我们就了解的差不多了，就和我们最初说的一样，每当创建 ChannelSocket 的时候都会创建一个绑定的 pipeline，一对一的关系，同时也创建一个 pipeline，创建 pipeline 的时候也会创建 tail 节点和 head 节点，形成最初的链表。tail 是入站 inbound 类型的 handler，  head 既是 inbound 也是 outbound 类型的 handler。在调用 pipeline 的 addLast 方法的时候，会根据给定的 handler 创建一个 Context，然后，将这个 Context 插入到链表的尾端（tail 前面）。这样，整个三巨头就连接起来了，就能为后面的请求进行流式处理了。</p>
+<h2 id="3-ChannelPipeline-是如何调度-handler-的"><a href="#3-ChannelPipeline-是如何调度-handler-的" class="headerlink" title="3. ChannelPipeline 是如何调度 handler 的"></a>3. ChannelPipeline 是如何调度 handler 的</h2><p>说了这么多，那么当一个请求进来的时候，ChannelPipeline 是如何调用内部的这些 handler 的呢？我们一起来看看。</p>
+<p>首先，当一个请求进来的时候，会第一个调用 pipeline 的 相关方法，如果是入站事件，这些方法由 fire 开头，表示开始管道的流动。让后面的 handler 继续处理。</p>
+<p>我们看看 DefaultChannelPipeline 是如何实现这些 fire 方法的。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-fb950aae1682ce47.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>从上图中可以看出来，这些方法都是 inbound 的方法，也就是入站事件，调用静态方法传入的也是 inbound 的类型 head handler。这些静态方法则会调用 head 的  ChannelInboundInvoker 接口的方法，再然后调用 handler 的真正方法。</p>
+<p>再看看 piepline 的 outbound 的 fire 方法实现：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-ca0c316eeb94acc9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>和 inbound 类似，这些都是出站的实现，但是调用的是 outbound 类型的 tail handler 来进行处理，因为这些都是 outbound 事件。</p>
+<p>为什么出站是 tail 开始，入站从 head 开始呢？因为出站是从内部外面写，从tail 开始，能够让前面的 handler 进行处理，防止由 handler 被遗漏，比如编码。反之，入站当然是从 head 往内部输入，让后面的 handler 能够处理这些输入的数据。比如解码。</p>
+<p>这也解释了虽然 head 也实现了 outbound 接口，但不是从 head 开始执行出站任务。</p>
+<p>关于如何调度，请让我用一张图来表示：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-e441911aa953368a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>pipeline 首先会调用 Context 的静态方法 fireXXX，并传入 Context，然后，静态方法调用 Context 的 invoker  方法，而 invoker 方法内部会调用该 Context 所包含的 Handler 的真正的 XXX 方法，调用结束后，如果还需要继续向后传递，就调用 Context 的 fireXXX2 方法，循环往复。</p>
+<p>我们将在下一篇文章中详细的解析一个请求在 pipeline 中的流动过程。这幅图仅作抛砖引玉。</p>
+<p>好，到这里，关于这三巨头的介绍就差不多了，下面，外面来做一下总结。</p>
+<h2 id="4-总结"><a href="#4-总结" class="headerlink" title="4. 总结"></a>4. 总结</h2><p>这是我们 Netty 系列关于 pipeline 的第一篇文章，讲述了关于 pipeline ，Context，Handler 错综复杂的关系，实际上，还是很清晰的。Context 包装 handler，多个 Context 在 pipeline 中形成了双向链表，入站方向叫 inbound，由 head 节点开始，出站方法叫 outbound ，由 tail 节点开始。而节点中间的传递通过  AbstractChannelHandlerContext 类内部的 fire 系列方法，找到当前节点的下一个节点不断的循环传播。是一个完美的过滤器高级形式。</p>
+<p>下一篇，将和大家一起在 pipeline 的管道中游走一趟。</p>
+<p>good luck！！！！</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/03/15/2018/2018-03-15-Netty-核心组件-Pipeline-源码分析（二）一个请求的-pipeline-之旅/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Netty-核心组件-Pipeline-源码分析（二）一个请求的-Pipeline-之旅</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/03/12/2018/2018-03-12-Netty-高性能之道-FastThreadLocal-源码分析（快且安全）/">
+                <span class="level-item">Netty-高性能之道-FastThreadLocal-源码分析（快且安全）</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/03/14/2018/2018-03-14-Netty-核心组件-Pipeline-源码分析（一）之剖析-pipeline-三巨头/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="Netty-核心组件-Pipeline-源码分析（一）之剖析-Pipeline-三巨头" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

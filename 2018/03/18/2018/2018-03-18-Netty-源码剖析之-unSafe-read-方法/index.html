@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>Netty-源码剖析之-unSafe-Read-方法 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Netty-源码剖析之-unSafe-Read-方法">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/18/2018/2018-03-18-Netty-源码剖析之-unSafe-read-方法/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Netty-源码剖析之-unSafe-Read-方法">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="Netty-源码剖析之-unSafe-Read-方法" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-03-17T18:11:11.000Z">2018-03-18</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Netty/">Netty</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    28 分钟 读完 (大约 4265 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                Netty-源码剖析之-unSafe-Read-方法
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       目录：</p>
+<ol>
+<li>NioSocketChannel$NioSocketChannelUnsafe 的 read 方法</li>
+<li>首先看 ByteBufAllocator</li>
+<li>再看 RecvByteBufAllocator.Handle</li>
+<li>两者如何配合进行内存分配</li>
+<li>如何读取到 ByteBuf</li>
+<li>总结</li>
+</ol>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前的文章 <a href="https://www.jianshu.com/p/9c1925e24e95" target="_blank" rel="noopener">Netty 核心组件 Pipeline 源码分析（二）一个请求的 pipeline 之旅</a>中，我们知道了当客户端请求进来的时候，boss 线程会将 Socket 包装后交给 worker 线程，worker 线程会将这个 Socket 注册 selector  的读事件，当读事件进来的时候，会调用 unsafe 的 read 方法，这个方法的主要作用是读取 Socket 缓冲区的内存，并包装成 Netty 的 ByteBuf 对象，最后传递进 pipeline 中的所有节点完成处理。</p>
+<p>今天，我们就要好好的看看这个 read方法的实现。</p>
+<h2 id="1-NioSocketChannel-NioSocketChannelUnsafe-的-read-方法"><a href="#1-NioSocketChannel-NioSocketChannelUnsafe-的-read-方法" class="headerlink" title="1. NioSocketChannel$NioSocketChannelUnsafe 的 read 方法"></a>1. NioSocketChannel$NioSocketChannelUnsafe 的 read 方法</h2><p>源码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">read</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">final</span> ChannelConfig config = config();</span><br><span class="line">    <span class="hljs-keyword">final</span> ChannelPipeline pipeline = pipeline();</span><br><span class="line">    <span class="hljs-comment">// 用来处理内存的分配:池化或者非池化 UnpooledByteBufAllocator</span></span><br><span class="line">    <span class="hljs-keyword">final</span> ByteBufAllocator allocator = config.getAllocator();</span><br><span class="line">    <span class="hljs-comment">// 用来计算此次读循环应该分配多少内存 AdaptiveRecvByteBufAllocator 自适应计算缓冲分配</span></span><br><span class="line">    <span class="hljs-keyword">final</span> RecvByteBufAllocator.Handle allocHandle = recvBufAllocHandle();</span><br><span class="line">    allocHandle.reset(config);<span class="hljs-comment">// 重置为0</span></span><br><span class="line"></span><br><span class="line">    ByteBuf byteBuf = <span class="hljs-keyword">null</span>;</span><br><span class="line">    <span class="hljs-keyword">boolean</span> close = <span class="hljs-keyword">false</span>;</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">do</span> &#123;</span><br><span class="line">            byteBuf = allocHandle.allocate(allocator);</span><br><span class="line">            allocHandle.lastBytesRead(doReadBytes(byteBuf));</span><br><span class="line">            <span class="hljs-keyword">if</span> (allocHandle.lastBytesRead() &lt;= <span class="hljs-number">0</span>) &#123;<span class="hljs-comment">// 如果上一次读到的字节数小于等于0，清理引用和跳出循环</span></span><br><span class="line">                <span class="hljs-comment">// nothing was read. release the buffer.</span></span><br><span class="line">                byteBuf.release();<span class="hljs-comment">// 引用 -1</span></span><br><span class="line">                byteBuf = <span class="hljs-keyword">null</span>;</span><br><span class="line">                close = allocHandle.lastBytesRead() &lt; <span class="hljs-number">0</span>;<span class="hljs-comment">// 如果远程已经关闭连接</span></span><br><span class="line">                <span class="hljs-keyword">if</span> (close) &#123;</span><br><span class="line">                    <span class="hljs-comment">// There is nothing left to read as we received an EOF.</span></span><br><span class="line">                    readPending = <span class="hljs-keyword">false</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="hljs-keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            allocHandle.incMessagesRead(<span class="hljs-number">1</span>);<span class="hljs-comment">//  totalMessages += amt;</span></span><br><span class="line">            readPending = <span class="hljs-keyword">false</span>;</span><br><span class="line">            pipeline.fireChannelRead(byteBuf);</span><br><span class="line">            byteBuf = <span class="hljs-keyword">null</span>;</span><br><span class="line">        &#125; <span class="hljs-keyword">while</span> (allocHandle.continueReading());</span><br><span class="line"></span><br><span class="line">        allocHandle.readComplete();</span><br><span class="line">        pipeline.fireChannelReadComplete();</span><br><span class="line"></span><br><span class="line">        <span class="hljs-keyword">if</span> (close) &#123;</span><br><span class="line">            closeOnRead(pipeline);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        handleReadException(pipeline, byteBuf, t, close, allocHandle);</span><br><span class="line">    &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (!readPending &amp;&amp; !config.isAutoRead()) &#123;</span><br><span class="line">            removeReadOp();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>代码很长，怎么办呢？当然是拆解，然后逐个击破。步骤如下：</p>
+<ol>
+<li>获取到 Channel 的 config 对象，并从该对象中获取内存分配器，还有”计算内存分配器”。</li>
+<li>将 <code>计算内存分配器</code> 重置。</li>
+<li>进入一个循环，循环体的作用是：使用内存分配器获取数据容器—–ByteBuf，调用 doReadBytes 方法将数据读取到容器中，如果这次读取什么都没有或远程连接关闭，则跳出循环。还有，如果满足了跳出推荐，也要结束循环，不能无限循环，默认16 次，默认参数来自 AbstractNioByteChannel 的 属性 ChannelMetadata 类型的 METADATA 实例。每读取一次就调用 pipeline 的 channelRead 方法，为什么呢？因为由于 TCP 传输如果包过大的话，丢失的风险会更大，导致重传，所以，大的数据流会分成多次传输。而 channelRead 方法也会被调用多次，因此，使用 channelRead 方法的时候需要注意，如果数据量大，最好将数据放入到缓存中，读取完毕后，再进行处理。</li>
+<li>跳出循环后，调用 <code>allocHandle</code> 的 readComplete 方法，表示读取已完成，并记录读取记录，用于下次分配合理内存。</li>
+<li>调用 pipeline 的方法。</li>
+</ol>
+<p>接下来就一步步看。</p>
+<h2 id="2-首先看-ByteBufAllocator"><a href="#2-首先看-ByteBufAllocator" class="headerlink" title="2. 首先看 ByteBufAllocator"></a>2. 首先看 ByteBufAllocator</h2><p>首先看看这个节点的定义：</p>
+<blockquote>
+<p>  Implementations are responsible to allocate buffers. Implementations of this interface are expected to be hread-safe.<br>实现负责分配缓冲区。这个接口的实现应该是线程安全的。</p>
+</blockquote>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-34d07961151497cb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="定义了如上方法"></p>
+<p>通过这个接口，可以看出来，主要作用是创建 ByteBuf，这个 ByteBuf 是 Netty 用来替代 NIO 的 ByteBuffer 的，是存储数据的缓存区。其中，这个接口有一个默认实现  ByteBufUtil.DEFAULT_ALLOCATOR ：该实现根据配置创建一个 池化或非池化的缓存区分配器。该参数是 <code>io.netty.allocator.type</code>。</p>
+<p>同时，由于很多方法都是重载的，那就说说上面的主要方法作用：<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">buffer() <span class="hljs-comment">// 返回一个 ByteBuf 对象，默认直接内存。如果平台不支持，返回堆内存。</span></span><br><span class="line">heapBuffer（）<span class="hljs-comment">// 返回堆内存缓存区</span></span><br><span class="line">directBuffer（）<span class="hljs-comment">// 返回直接内存缓冲区</span></span><br><span class="line">compositeBuffer（） <span class="hljs-comment">// 返回一个复合缓冲区。可能同时包含堆内存和直接内存。</span></span><br><span class="line">ioBuffer（） <span class="hljs-comment">// 当当支持 Unsafe 时，返回直接内存的 Bytebuf，否则返回返回基于堆内存，当使用 PreferHeapByteBufAllocator 时返回堆内存</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="3-再看-RecvByteBufAllocator-Handle"><a href="#3-再看-RecvByteBufAllocator-Handle" class="headerlink" title="3. 再看 RecvByteBufAllocator.Handle"></a>3. 再看 RecvByteBufAllocator.Handle</h2><p>首先看这个接口：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-f6f18e4fac080d3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>上图中， Handle 是 RecvByteBufAllocator 的内部接口。而 RecvByteBufAllocator 是如何定义的呢？</p>
+<blockquote>
+<p> Creates a new handle.  The handle provides the actual operations and keeps the internal information which is required for predicting an optimal buffer capacity.<br>创建一个新的句柄。句柄提供了实际操作，并保留了用于预测最佳缓冲区容量所需的内部信息。</p>
+</blockquote>
+<p>该接口只定义了一个方法：newHandle（）。</p>
+<p>而 handle 的作用是什么呢？</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="hljs-function">ByteBuf <span class="hljs-title">allocate</span><span class="hljs-params">(ByteBufAllocator alloc)</span></span>;<span class="hljs-comment">//创建一个新的接收缓冲区，其容量可能大到足以读取所有入站数据和小到数据足够不浪费它的空间。</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">guess</span><span class="hljs-params">()</span></span>;<span class="hljs-comment">// 猜测所需的缓冲区大小，不进行实际的分配</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">reset</span><span class="hljs-params">(ChannelConfig config)</span></span>;<span class="hljs-comment">// 每次开始读循环之前，重置相关属性</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">incMessagesRead</span><span class="hljs-params">(<span class="hljs-keyword">int</span> numMessages)</span></span>;<span class="hljs-comment">// 增加本地读循环的次数</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">lastBytesRead</span><span class="hljs-params">(<span class="hljs-keyword">int</span> bytes)</span></span>; <span class="hljs-comment">// 设置最后一次读到的字节数</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">lastBytesRead</span><span class="hljs-params">()</span></span>; <span class="hljs-comment">// 最后一次读到的字节数</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">attemptedBytesRead</span><span class="hljs-params">(<span class="hljs-keyword">int</span> bytes)</span></span>; <span class="hljs-comment">// 设置读操作尝试读取的字节数</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">attemptedBytesRead</span><span class="hljs-params">()</span></span>; <span class="hljs-comment">// 获取尝试读取的字节数</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">continueReading</span><span class="hljs-params">()</span></span>; <span class="hljs-comment">// 判断是否需要继续读</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">readComplete</span><span class="hljs-params">()</span></span>; <span class="hljs-comment">// 读结束后调用</span></span><br></pre></td></tr></table></figure>
+<p>从上面的方法中，可以看出，该接口的主要作用就是计算字节数，如同 RecvByteBufAllocator 的文档说的那样，根据预测和计算最佳大小的缓存区，确保不浪费。</p>
+<h2 id="4-两者如何配合进行内存分配"><a href="#4-两者如何配合进行内存分配" class="headerlink" title="4. 两者如何配合进行内存分配"></a>4. 两者如何配合进行内存分配</h2><p>在默认的 config （NioSocketChannelConfig）中，allocator 来自 ByteBufAllocator 接口的默认实例，allocHandle 来自 AdaptiveRecvByteBufAllocator 自适应循环缓存分配器 的内部类 HandleImpl。</p>
+<p>好，知道了他们的默认实现，我们一个方法看看。</p>
+<p>首先看 reset 方法：<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">reset</span><span class="hljs-params">(ChannelConfig config)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">this</span>.config = config;</span><br><span class="line">    maxMessagePerRead = maxMessagesPerRead();</span><br><span class="line">    totalMessages = totalBytesRead = <span class="hljs-number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>设置了上次获取的最大消息读取次数（默认16），将之前计算的读取消息总数归零。该方法如同他的名字，归零重置。</p>
+<p>再看看 allocHandle.allocate(allocator) 方法的实现。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> ByteBuf <span class="hljs-title">allocate</span><span class="hljs-params">(ByteBufAllocator alloc)</span> </span>&#123;</span><br><span class="line">	<span class="hljs-keyword">return</span> alloc.ioBuffer(guess());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们刚刚说的 ioBuffer 方法，该方法默认返回直接内存缓冲区。而 guess() 方法返回一个猜测的大小，一个 nextReceiveBufferSize 属性，默认 1024，也就是说，默认创建一个 1024 大小的直接内存缓冲区。这个值的设定来自 HandleImpl 的构造方法，存储在一个 SIZE_TABLE 的数组中。</p>
+<p>我们还是看看 RecvByteBufAllocator 的实现类 AdaptiveRecvByteBufAllocator 的具体内容吧</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DEFAULT_MINIMUM = <span class="hljs-number">64</span>; <span class="hljs-comment">// 缓存区最小值</span></span><br><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DEFAULT_INITIAL = <span class="hljs-number">1024</span>; <span class="hljs-comment">// 缓冲区初始值</span></span><br><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DEFAULT_MAXIMUM = <span class="hljs-number">65536</span>; <span class="hljs-comment">// 缓冲区最大值</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> INDEX_INCREMENT = <span class="hljs-number">4</span>;<span class="hljs-comment">// 当发现缓存过小，数组下标自增值</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> INDEX_DECREMENT = <span class="hljs-number">1</span>;<span class="hljs-comment">// 当发现缓冲区过大，数组下标自减值</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>[] SIZE_TABLE;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">static</span> &#123;</span><br><span class="line">    List&lt;Integer&gt; sizeTable = <span class="hljs-keyword">new</span> ArrayList&lt;Integer&gt;();</span><br><span class="line">    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">16</span>; i &lt; <span class="hljs-number">512</span>; i += <span class="hljs-number">16</span>) &#123;</span><br><span class="line">        sizeTable.add(i);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">512</span>; i &gt; <span class="hljs-number">0</span>; i &lt;&lt;= <span class="hljs-number">1</span>) &#123;</span><br><span class="line">        sizeTable.add(i);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    SIZE_TABLE = <span class="hljs-keyword">new</span> <span class="hljs-keyword">int</span>[sizeTable.size()];</span><br><span class="line">    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; SIZE_TABLE.length; i ++) &#123;</span><br><span class="line">        SIZE_TABLE[i] = sizeTable.get(i);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>楼主在上面的代码中写了注释，这个 SIZE_TABLE 的作用是存储缓存区大小的一个 int 数组，从 static 块中可以看到，这个数组从16开始，同时递增16，直到值到了 512，也就是下标 31 的地方，递增策略变为了 每次 * 2，直到溢出。最终的数组长度为 53。而对应的值接近 int 最大值。</p>
+<p>好，回到 allocate 方法中，进入到 ioBuffer 方法查看：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> ByteBuf <span class="hljs-title">ioBuffer</span><span class="hljs-params">(<span class="hljs-keyword">int</span> initialCapacity)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (PlatformDependent.hasUnsafe()) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> directBuffer(initialCapacity);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> heapBuffer(initialCapacity);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>判断，如果平台支持 unSafe，就使用直接内存，否则使用堆内存，初始大小就是我们刚刚说的 1024。而这个判断的标准是：如果尝试获取 Unsafe 的时候有异常了，则赋值给一个  UNSAFE_UNAVAILABILITY_CAUSE 对象，否则赋值为 null，Netty 通过这个判 Null 确认平台是否支持 Unsafe。</p>
+<p>我们继续看看 directBuffer 方法的实现：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> ByteBuf <span class="hljs-title">directBuffer</span><span class="hljs-params">(<span class="hljs-keyword">int</span> initialCapacity)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> directBuffer(initialCapacity, DEFAULT_MAX_CAPACITY);</span><br><span class="line">&#125;</span><br><span class="line"><span class="hljs-comment">// </span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> ByteBuf <span class="hljs-title">directBuffer</span><span class="hljs-params">(<span class="hljs-keyword">int</span> initialCapacity, <span class="hljs-keyword">int</span> maxCapacity)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (initialCapacity == <span class="hljs-number">0</span> &amp;&amp; maxCapacity == <span class="hljs-number">0</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> emptyBuf;</span><br><span class="line">    &#125;</span><br><span class="line">    validate(initialCapacity, maxCapacity);</span><br><span class="line">    <span class="hljs-keyword">return</span> newDirectBuffer(initialCapacity, maxCapacity);</span><br><span class="line">&#125;</span><br><span class="line"><span class="hljs-comment">// </span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> ByteBuf <span class="hljs-title">newDirectBuffer</span><span class="hljs-params">(<span class="hljs-keyword">int</span> initialCapacity, <span class="hljs-keyword">int</span> maxCapacity)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">final</span> ByteBuf buf;</span><br><span class="line">    <span class="hljs-keyword">if</span> (PlatformDependent.hasUnsafe()) &#123;</span><br><span class="line">        buf = noCleaner ? <span class="hljs-keyword">new</span> InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf(<span class="hljs-keyword">this</span>, initialCapacity, maxCapacity) :</span><br><span class="line">                <span class="hljs-keyword">new</span> InstrumentedUnpooledUnsafeDirectByteBuf(<span class="hljs-keyword">this</span>, initialCapacity, maxCapacity);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        buf = <span class="hljs-keyword">new</span> InstrumentedUnpooledDirectByteBuf(<span class="hljs-keyword">this</span>, initialCapacity, maxCapacity);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> disableLeakDetector ? buf : toLeakAwareBuffer(buf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由于方法层层递进，楼主将代码合在一起，最终调用的是 newDirectBuffer，根据 noCleaner 参数决定创建一个 ByteBuf，这个属性怎么来的呢？当 unsafe 不是 null 的时候，会尝试获取 DirectByteBuffer 的构造器，如果成功获取，则 noCleaner 属性为 true。</p>
+<p>这个 noCleaner  属性的详细介绍请看这里<a href="https://www.jianshu.com/p/5b0395d513fc" target="_blank" rel="noopener">Netty 内存回收之 noCleaner 策略</a>.</p>
+<p>默认情况下就是 true，那么，也就是创建了一个 InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf 对象，该对象构造如下:</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">@<span class="hljs-number">1</span></span><br><span class="line">InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf(</span><br><span class="line">        UnpooledByteBufAllocator alloc, <span class="hljs-keyword">int</span> initialCapacity, <span class="hljs-keyword">int</span> maxCapacity) &#123;</span><br><span class="line">    <span class="hljs-keyword">super</span>(alloc, initialCapacity, maxCapacity);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@<span class="hljs-number">2</span></span><br><span class="line">UnpooledUnsafeNoCleanerDirectByteBuf(ByteBufAllocator alloc, <span class="hljs-keyword">int</span> initialCapacity, <span class="hljs-keyword">int</span> maxCapacity) &#123;</span><br><span class="line">    <span class="hljs-keyword">super</span>(alloc, initialCapacity, maxCapacity);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@<span class="hljs-number">3</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">UnpooledUnsafeDirectByteBuf</span><span class="hljs-params">(ByteBufAllocator alloc, <span class="hljs-keyword">int</span> initialCapacity, <span class="hljs-keyword">int</span> maxCapacity)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">super</span>(maxCapacity);</span><br><span class="line">    <span class="hljs-keyword">if</span> (alloc == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> NullPointerException(<span class="hljs-string">"alloc"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">if</span> (initialCapacity &lt; <span class="hljs-number">0</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(<span class="hljs-string">"initialCapacity: "</span> + initialCapacity);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">if</span> (maxCapacity &lt; <span class="hljs-number">0</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(<span class="hljs-string">"maxCapacity: "</span> + maxCapacity);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">if</span> (initialCapacity &gt; maxCapacity) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(String.format(</span><br><span class="line">                <span class="hljs-string">"initialCapacity(%d) &gt; maxCapacity(%d)"</span>, initialCapacity, maxCapacity));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">this</span>.alloc = alloc;</span><br><span class="line">    setByteBuffer(allocateDirect(initialCapacity), <span class="hljs-keyword">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@<span class="hljs-number">4</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">static</span> ByteBuffer <span class="hljs-title">newDirectBuffer</span><span class="hljs-params">(<span class="hljs-keyword">long</span> address, <span class="hljs-keyword">int</span> capacity)</span> </span>&#123;</span><br><span class="line">    ObjectUtil.checkPositiveOrZero(capacity, <span class="hljs-string">"capacity"</span>);</span><br><span class="line">    <span class="hljs-keyword">return</span> (ByteBuffer) DIRECT_BUFFER_CONSTRUCTOR.newInstance(address, capacity);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最终使用了 DirectByteBuffer  的构造器进行反射创建。而这个构造器是没有默认的 new 创建的 Cleaner 对象的。因此称为 noCleaner。</p>
+<p>创建完毕后，调用 setByteBuffer ，将这个 DirectByteBuffer  包装一下。</p>
+<p>回到 newDirectBuffer 方法。</p>
+<p>最后根据 disableLeakDetector 属性判断释放进行自动内存回收（也就是当你忘记回收的时候，帮你回收），原理这里简单的说一下，使用虚引用进行跟踪。 FastThreadLocal 的内存回收类似。我们将在以后的文章中详细说明此策略。</p>
+<p>到这里，创建 ByteBuf 的过程就结束了。</p>
+<p>可以说，大部分工作都是 allocator 做的，allocHandle 的作用就是提供了如何分配一个合理的内存的策略。</p>
+<h2 id="5-如何读取到-ByteBuf"><a href="#5-如何读取到-ByteBuf" class="headerlink" title="5. 如何读取到 ByteBuf"></a>5. 如何读取到 ByteBuf</h2><p>回到 read 方法，doReadBytes(byteBuf) 就是将 Channel 的内容读取到容器中，并返回一个读取到的字节数。</p>
+<p>代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">int</span> <span class="hljs-title">doReadBytes</span><span class="hljs-params">(ByteBuf byteBuf)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">final</span> RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();</span><br><span class="line">    allocHandle.attemptedBytesRead(byteBuf.writableBytes());</span><br><span class="line">    <span class="hljs-keyword">return</span> byteBuf.writeBytes(javaChannel(), allocHandle.attemptedBytesRead());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>获取到 <code>内存预估器</code>，设置一个 attemptedBytesRead 属性为 ByteBuf 的可写字节数。这个参数可用于后面分配内存时的一些考量。</p>
+<p>然后调用 byteBuf.writeBytes（）方法。传入了 NIO 的 channel，还有刚刚的可写字节数。进入到该方法查看：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">@<span class="hljs-number">1</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">writeBytes</span><span class="hljs-params">(ScatteringByteChannel in, <span class="hljs-keyword">int</span> length)</span> <span class="hljs-keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    ensureWritable(length);</span><br><span class="line">    <span class="hljs-keyword">int</span> writtenBytes = setBytes(writerIndex, in, length);</span><br><span class="line">    <span class="hljs-keyword">if</span> (writtenBytes &gt; <span class="hljs-number">0</span>) &#123;</span><br><span class="line">        writerIndex += writtenBytes;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> writtenBytes;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先对长度进行校验，确保可写长度大于0，如果被并发了导致容量不够，将这个底层的 ByteBuffer 的容量增加传入的长度。</p>
+<p>关于 ByteBuf 的 wirteIndex ，如下图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-db077a19e426423e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>回到 writeBytes 方法，调用 setBytes 方法，将流中输入写入到缓冲区。方法如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">setBytes</span><span class="hljs-params">(<span class="hljs-keyword">int</span> index, ScatteringByteChannel in, <span class="hljs-keyword">int</span> length)</span> <span class="hljs-keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    ensureAccessible();</span><br><span class="line">    ByteBuffer tmpBuf = internalNioBuffer();</span><br><span class="line">    tmpBuf.clear().position(index).limit(index + length);</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> in.read(tmpBuf);</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (ClosedChannelException ignored) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> -<span class="hljs-number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>非常熟悉的 NIO 操作。</p>
+<p>首先获取到内部 ByteBuffer 的共享缓冲区，赋值给临时的 tmpNioBuf 属性。然后返回这个引用。将这个引用清空，并将指针移动到给定 index 为止，然后 limit 方法设置缓存区大小。</p>
+<p>最后调用 Channel 的 read 方法，将Channel 数据读入到 ByteBuffer 中。读的过程时线程安全的，内部使用了 synchronized 关键字控制写入 buffer 的过程。返回了读到的字节数。</p>
+<p>回到 writeBytes 方法，得到字节数之后，将这个字节数追加到 writerIndex 属性，表示可写字节变小了。</p>
+<p>回到 read 方法。allocHandle 得到读取到的字节数，调用 lastBytesRead 方法，该方法的作用时调整下一次分配内存的大小。进入到该方法查看：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">lastBytesRead</span><span class="hljs-params">(<span class="hljs-keyword">int</span> bytes)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// If we read as much as we asked for we should check if we need to ramp up the size of our next guess.</span></span><br><span class="line">    <span class="hljs-comment">// This helps adjust more quickly when large amounts of data is pending and can avoid going back to</span></span><br><span class="line">    <span class="hljs-comment">// the selector to check for more data. Going back to the selector can add significant latency for large</span></span><br><span class="line">    <span class="hljs-comment">// data transfers.</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (bytes == attemptedBytesRead()) &#123;</span><br><span class="line">        record(bytes);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">super</span>.lastBytesRead(bytes);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Netty 写了注释：</p>
+<blockquote>
+<p>如果我们读的内容和我们要求的一样多，我们应该检查一下是否需要增加下一个猜测的大小。<br>这有助于在等待大量数据时更快地进行调整，并且可以避免返回选择器以检查更多数据。回到选择器可以为大型数据传输添加显著的延迟。</p>
+</blockquote>
+<p>当获取的字节数和预估的一样大，则需要进行扩容。看看 record 方法实现：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">record</span><span class="hljs-params">(<span class="hljs-keyword">int</span> actualReadBytes)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (actualReadBytes &lt;= SIZE_TABLE[max(<span class="hljs-number">0</span>, index - INDEX_DECREMENT - <span class="hljs-number">1</span>)]) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (decreaseNow) &#123;</span><br><span class="line">            index = max(index - INDEX_DECREMENT, minIndex);</span><br><span class="line">            nextReceiveBufferSize = SIZE_TABLE[index];</span><br><span class="line">            decreaseNow = <span class="hljs-keyword">false</span>;</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">            decreaseNow = <span class="hljs-keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (actualReadBytes &gt;= nextReceiveBufferSize) &#123;</span><br><span class="line">        index = min(index + INDEX_INCREMENT, maxIndex);</span><br><span class="line">        nextReceiveBufferSize = SIZE_TABLE[index];</span><br><span class="line">        decreaseNow = <span class="hljs-keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果实际读取到的字节数小于等于预估的字节 下标 - 2（排除2以下），则将容量缩小一个下标。如果实际读取到的字节数大于等于预估的。则将下标增加 4，下次创建的 Buffer 容量也相应增加。如果不满足这两个条件，什么都不做。</p>
+<p>回答 lastBytesRead 方法，该方法记录了读取到的总字节数并且更新了最后一次的读取字节数。总字节数会用来判断是否可以结束读取循环。如果什么都没有读到，将最多持续到读 16（默认） 次。</p>
+<p>回到 read 方法。</p>
+<p>如果最后一次读取到字节数小于等于0，跳出循环，不做 channelRead 操作。<br>反之，将 totalMessages 加1，这个就是用来记录循环次数，判断不能超过 16次。</p>
+<p>调用 fireChannelRead 方法，方法结束后，将这个 Buffer 的引用置为null，</p>
+<p>判断是否需要继续读取，带入如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">continueReading</span><span class="hljs-params">(UncheckedBooleanSupplier maybeMoreDataSupplier)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> config.isAutoRead() &amp;&amp;</span><br><span class="line">           (!respectMaybeMoreData || maybeMoreDataSupplier.get()) &amp;&amp;</span><br><span class="line">           totalMessages &lt; maxMessagePerRead &amp;&amp;</span><br><span class="line">           totalBytesRead &gt; <span class="hljs-number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>几个条件：</p>
+<ol>
+<li>首先是否自动读取。</li>
+<li>且猜测是否还有更多数据，如果实际读取的和预估的一致，说明可能还有数据没读，需要再次循环。</li>
+<li>如果读取次数为达到 16 次，继续读取。</li>
+<li>如果读取到的总数大于0，说明有数据，继续读取。</li>
+</ol>
+<p>这里的循环的主要原因就像我们刚刚说的，TCP 传输过大数据容易丢包（带宽限制），因此会将大包分好几次传输，还有就是可能预估的缓冲区不够大，没有充分读取 Channel 的内容。</p>
+<h2 id="6-总结"><a href="#6-总结" class="headerlink" title="6. 总结"></a>6. 总结</h2><p>从 <code>NioSocketChannel$NioSocketChannelUnsafe</code> 的实现看 read 方法。每个 ByteBuf 都会由一个 Config 实例中的 ByteBufAllocator 对象创建，池化或非池化，直接内存或堆内存，这些都根据系统是否支持或参数设置，底层使用的是 NIO 的 API。今天我们看的是非池化的直接内存。同时，为了节省内存，为每个 ByteBufAllocator  配置了一个 handle，用于计算和预估缓冲区大小。</p>
+<p>还有一个需要注意的地方就是 noCleaner 策略。这是 Netty 的一个优化。针对默认的直接内存创建和销毁做了优化——–不使用 JDK 的 cleaner 策略。</p>
+<p>最终读取数据到封装了 NIO ByteBuffer 实例的 Netty 的 ByteBuf 中，其中，如果数据量超过 1024，则会读取超过两次，但最多不超过 16 次， 这个次数可以设置，也就是说，可能会调用超过2次 fireChannelRead 方法，使用的时候需要注意（存起来一起在 ChannelReadComplete 使用之类的方法）。</p>
+<p>好，关于 Netty 读取 Socket 数据到容器中的逻辑，就到这里。</p>
+<p>good luck！！！</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/03/18/2018/2018-03-18-Netty-内存回收之-noCleaner-策略/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Netty-内存回收之-noCleaner-策略</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/03/16/2018/2018-03-16-Netty-源码阅读的思考------耗时业务到底该如何处理/">
+                <span class="level-item">Netty-源码阅读的思考------耗时业务到底该如何处理</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/03/18/2018/2018-03-18-Netty-源码剖析之-unSafe-read-方法/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="Netty-源码剖析之-unSafe-Read-方法" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

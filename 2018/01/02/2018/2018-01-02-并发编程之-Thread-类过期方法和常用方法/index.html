@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>并发编程之-Thread-类过期方法和常用方法 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之-Thread-类过期方法和常用方法">
+<meta property="og:url" content="http://thinkinjava.cn/2018/01/02/2018/2018-01-02-并发编程之-Thread-类过期方法和常用方法/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="并发编程之-Thread-类过期方法和常用方法">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="并发编程之-Thread-类过期方法和常用方法" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-01-01T18:11:11.000Z">2018-01-02</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/并发编程/">并发编程</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    21 分钟 读完 (大约 3125 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                并发编程之-Thread-类过期方法和常用方法
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       在 Java 刚诞生时，Thread 类就已经有了很多方法，但这些方法由于一些原因（有一些明显的bug或者设计不合理）有些已经废弃了，但是他们的方法名却是非常的好，真的是浪费。我们在进行并发必编程的时候一定要注意这些。</p>
+<ol>
+<li>过期方法1—– stop 方法</li>
+<li>过期方法2——suspend 方法和 resume 方法</li>
+<li>常用方法1——线程中断方法 interrupt，isInterrupted，static interrupted </li>
+<li>常用方法2——等待线程结束 join 方法</li>
+<li>常用方法3——线程让出时间片 yield 方法</li>
+</ol>
+<h2 id="1-过期方法1—–-stop-方法"><a href="#1-过期方法1—–-stop-方法" class="headerlink" title="1. 过期方法1—– stop 方法"></a>1. 过期方法1—– stop 方法</h2><p>JDK 源码：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-cd0cc34e4bbf0260.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>该方法被定义了 @Deprecated 注解，并在注释中说明了为什么废弃：</p>
+<blockquote>
+<p>该方法具有固有的不安全性。用 Thread.stop 来终止线程将释放它已经锁定的所有监视器（作为沿堆栈向上传播的未检查 ThreadDeath 异常的一个自然后果）。如果以前受这些监视器保护的任何对象都处于一种不一致的状态，则损坏的对象将对其他线程可见，这有可能导致任意的行为。stop 的许多使用都应由只修改某些变量以指示目标线程应该停止运行的代码来取代。目标线程应定期检查该变量，并且如果该变量指示它要停止运行，则从其运行方法依次返回。如果目标线程等待很长时间（例如基于一个条件变量），则应使用 interrupt 方法来中断该等待。</p>
+</blockquote>
+<p>很官方对不对？还是用楼主的话来解释一下吧。最重要的原因就i是 stop 太粗鲁了，强行把执行到一半的线程终止，引起数据不一致。比如有些数据处理到一半，该方法就强行停止线程，导致数据不一致。</p>
+<p>可使用一个条件判断来代替此功能，比如设置一个变量，如果这个变量是ture 则跳出循环，结束线程的执行。反正不要使用该方法就对了。</p>
+<h2 id="2-过期方法2——suspend-方法和-resume-方法"><a href="#2-过期方法2——suspend-方法和-resume-方法" class="headerlink" title="2. 过期方法2——suspend 方法和 resume 方法"></a>2. 过期方法2——suspend 方法和 resume 方法</h2><p>JDK 源码：<br><img src="http://upload-images.jianshu.io/upload_images/4236553-f427201ddec26aea.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="suspend 方法 "></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-f9a6cba2c26e9331.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="resume 方法 "></p>
+<p>这两个方法都被标注为过期，楼主解释一下为什么不能使用。</p>
+<p>suspend 方法的作用是挂起方法，而 resume 方法的作用是继续执行，可以说这两个方法是对应的，先挂起，然后继续执行。这两个动作是相反的。但是为什么不建议使用呢？原因就似乎 suspend 方法在导致线程暂停的同时，并不会释放任何锁资源。此时，其他任何线程想要访问被他暂用的锁时，都会被牵连，导致无法正常运行。知道对应的 resume 方法被调用，被挂起的线程才能继续。但是，请注意，这里严格要求 resume 方法在 suspend 方法后面执行，如果 resume 方法意外的在suspend 方法之前执行了，就会导致死锁，该线程拥有不会恢复。</p>
+<p>最坑的是，当产生死锁的时候，你肯定会使用 jps 命令和 jstack 命令去查看死锁。但是你会发现你根本找不到，因为这个线程的状态是 Rannable。你根本无法判断是哪个线程被挂起了，所以，该方法一定要废弃。</p>
+<p>比如楼主写了一个例子：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">package</span> cn.think.in.java.two;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BadSuspend</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">static</span> Object u = <span class="hljs-keyword">new</span> Object();</span><br><span class="line">  <span class="hljs-keyword">static</span> ChangeObjectThread t1 = <span class="hljs-keyword">new</span> ChangeObjectThread(<span class="hljs-string">"t1"</span>);</span><br><span class="line">  <span class="hljs-keyword">static</span> ChangeObjectThread t2 = <span class="hljs-keyword">new</span> ChangeObjectThread(<span class="hljs-string">"t2"</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ChangeObjectThread</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Thread</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">ChangeObjectThread</span><span class="hljs-params">(String name)</span> </span>&#123;</span><br><span class="line">      <span class="hljs-keyword">super</span>.setName(name);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">      <span class="hljs-keyword">synchronized</span> (u) &#123;</span><br><span class="line">        System.out.println(<span class="hljs-string">"in "</span> + getName());</span><br><span class="line">        <span class="hljs-comment">// 暂停</span></span><br><span class="line">        Thread.currentThread().suspend();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    t1.start();</span><br><span class="line">    Thread.sleep(<span class="hljs-number">100</span>);</span><br><span class="line">    <span class="hljs-comment">// 此时 t1 已经暂停</span></span><br><span class="line">    t2.start();</span><br><span class="line">    <span class="hljs-comment">// t1 恢复</span></span><br><span class="line">    t1.resume();</span><br><span class="line">    <span class="hljs-comment">// t2 这时恢复，但是 t2在恢复之后进入了暂停，导致死锁。</span></span><br><span class="line">    <span class="hljs-comment">// 除非使用 sleep 让 t2 先暂停就可以。</span></span><br><span class="line"><span class="hljs-comment">//    Thread.sleep(100);</span></span><br><span class="line">    t2.resume();</span><br><span class="line">    t1.join();</span><br><span class="line">    t2.join();</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法会发生死锁。然而我们在命令行中使用 jstack 命令查看时，会发现该线程状态是  Rannable。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-393876f58c61921f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="死锁 状态 却是 Rannable "></p>
+<p>因此在以后的并发编程一定不要使用该方法。</p>
+<h2 id="3-常用方法1——线程中断方法-interrupt，isInterrupted，static-interrupted"><a href="#3-常用方法1——线程中断方法-interrupt，isInterrupted，static-interrupted" class="headerlink" title="3. 常用方法1——线程中断方法 interrupt，isInterrupted，static interrupted"></a>3. 常用方法1——线程中断方法 interrupt，isInterrupted，static interrupted</h2><p>关于线程中断还有3个方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">interrupt</span><span class="hljs-params">()</span> </span></span><br><span class="line"><span class="hljs-function"></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isInterrupted</span><span class="hljs-params">()</span></span></span><br><span class="line"><span class="hljs-function"></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">interrupted</span><span class="hljs-params">()</span></span></span><br></pre></td></tr></table></figure>
+<p>public void interrupt()  作用：中断线程，也就是设置中断标记，注意，是设置标记，不会中断。<br>public boolean isInterrupted() 作用：判断线程是否中断<br>static boolean Thread interrupted 作用：判断是否中断，并清除当前中断状态。</p>
+<p>我们解释解释这三个方法： 在 java 中，线程中断是一种重要的线程协作机制。可以用来代替 stop方法，严格来讲， 线程中断并不会使线程立即退出，  而是给线程发一个通知，告知目标线程，有人希望你退出了。而什么时候退出，完全由线程自己自行决定，避免了stop 的问题。但是该方法只是设置标记，所以需要自己判断状态然后跳出循环之类的结束线程运行。</p>
+<p>那么我们怎么使用这三个方法进行并发编程呢？下面楼主写了一个例子：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">  Thread t1 = <span class="hljs-keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">    <span class="hljs-keyword">for</span> (; ; ) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">  t1.start();</span><br><span class="line">  Thread.sleep(<span class="hljs-number">2000</span>);</span><br><span class="line">  <span class="hljs-comment">// 不会起任何作用，所以需要判断他的中断位状态</span></span><br><span class="line">  t1.interrupt();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该测试方法在死循环了一个线程，然后启动 interrupt 方法，根本不会起任何作用，所以各位不要这样使用该方法。那么如何使用呢？示例代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">  Thread t1 = <span class="hljs-keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">    <span class="hljs-keyword">for</span> (; ; ) &#123;</span><br><span class="line">      <span class="hljs-keyword">if</span> (Thread.currentThread().isInterrupted()) &#123;</span><br><span class="line">        System.out.println(<span class="hljs-string">"interrupt"</span>);</span><br><span class="line">        <span class="hljs-keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      Thread.yield();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">  t1.start();</span><br><span class="line">  Thread.sleep(<span class="hljs-number">2000</span>);</span><br><span class="line">  t1.interrupt();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用 isInterrupted 方法进行判断，如果返回 ture ，表示有中断标记，那么则 break 循环。结束运行。</p>
+<p>还有一个需要注意的地方就是，如果线程在 sleep 或者 wait 状态，如果你调用  interrput 方法就会导致InterruptedException 异常，但是，抛出异常时会清除中断标记，因此，线程也就中断不了了，如果你想在异常后仍然中断线程，那么你需要在 catch 中 继续设置状态，也就是调用 interrupt 方法。我们来个例子看看：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    Thread t1 = <span class="hljs-keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">      <span class="hljs-keyword">for</span> (; ; ) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (Thread.currentThread().isInterrupted()) &#123;</span><br><span class="line">          System.out.println(<span class="hljs-string">"interrupt"</span>);</span><br><span class="line">          <span class="hljs-keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">          Thread.sleep(<span class="hljs-number">2000</span>);</span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">          System.err.println(<span class="hljs-string">"Interrupt When Sleep"</span>);</span><br><span class="line">          <span class="hljs-comment">// 由于在 sleep 之间中断线程导致抛出异常，此时，他会清楚中断位，所以需要在这里重新设置中断位，下次循环则会直接判断中断标记，从而break。</span></span><br><span class="line">          Thread.currentThread().interrupt();</span><br><span class="line">          <span class="hljs-comment">// 该方法会清除中断状态，导致上面的一行代码失效</span></span><br><span class="line"><span class="hljs-comment">//          boolean isInterrupt = Thread.interrupted();</span></span><br><span class="line"><span class="hljs-comment">//          System.out.println(isInterrupt);</span></span><br><span class="line">        &#125;</span><br><span class="line">        Thread.yield();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    t1.start();</span><br><span class="line">    Thread.sleep(<span class="hljs-number">1000</span>);</span><br><span class="line">    t1.interrupt();</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果：</p>
+<blockquote>
+<p>interrupt<br>Interrupt When Sleep</p>
+</blockquote>
+<p>该测试方法中，在线程中调用了 sleep 方法，并在 main 线程中调用了 interrupt 方法，因此导致该线程异常，但是，如果我们不在 catch 中重新设置中断位，该线程永远不会停止。这个时需要注意的。</p>
+<p>还有一个静态方法，Thread.interrupted()，其实我们上面的例子也测试了，该方法会返回线程是否中断，并且会清除状态，使用的时候需要注意。</p>
+<h2 id="4-常用方法2——等待线程结束-join-方法"><a href="#4-常用方法2——等待线程结束-join-方法" class="headerlink" title="4. 常用方法2——等待线程结束 join 方法"></a>4. 常用方法2——等待线程结束 join 方法</h2><p>JDK 源码：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-4accfeb4d9b49b81.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="join 方法 "></p>
+<p>该方法注释写到：等待该线程直到死。。。。还真是痴情啊。说正经的的。该方法实际上时等待线程结束。说明意思呢？</p>
+<p>假如你有2个线程，A线程在算 1+1 ，而B线程需要 A线程算出的结果，那么B线程就需要等待A线程，那么这时候，B线程就需要调用 A线程的 join 方法，调用该方法后， B线程就会被挂起，直到A线程死亡，B线程才会被唤醒。实际上，如果看 join 的源码，会发现内部调用了A线程的 wait 方法。也就是说，B 线程 wait 在了 A 线程上。A 线程执行完毕会调用 notifyAll 方法，唤醒B线程。</p>
+<p>我们写个demo：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">package</span> cn.think.in.java.two;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">JoinTest</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> i;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    AddThread addThread = <span class="hljs-keyword">new</span> AddThread();</span><br><span class="line">    addThread.start();</span><br><span class="line">    <span class="hljs-comment">// 主函数等待 addThread</span></span><br><span class="line">    <span class="hljs-comment">// join 的本质是调用了 wait方法，让调用线程 wait 在当前线程对象实例上。也就是main线程 wait 在 addThread 线程实例上。</span></span><br><span class="line">    <span class="hljs-comment">// 当 addThread 执行结束后，会调用 notifyAll 方法，注意，不要再程序中调用线程的 wait 或者 notify 方法，</span></span><br><span class="line">    <span class="hljs-comment">// 可能会影响系统API 的工作。</span></span><br><span class="line">    addThread.join();<span class="hljs-comment">// 重载方法 join（long） 如果达到给定的毫秒数，则不等了</span></span><br><span class="line">    System.out.println(i);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AddThread</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Thread</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">      <span class="hljs-keyword">for</span> (; i &lt; <span class="hljs-number">10000000</span>; i++) &#123;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该测试方法运行了一个对变量 i 自增运算的线程，并且主线程在等待  addThread 线程执行完才打印 i 的结果。如果不使用 join ， 那么 ，打印 i 的值永远会小于10000。</p>
+<p>而 join 的内部实现，我们刚刚说了，使用 wait 方法，我们看看该方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title">join</span><span class="hljs-params">(<span class="hljs-keyword">long</span> millis)</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">long</span> base = System.currentTimeMillis();</span><br><span class="line">    <span class="hljs-keyword">long</span> now = <span class="hljs-number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (millis &lt; <span class="hljs-number">0</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(<span class="hljs-string">"timeout value is negative"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (millis == <span class="hljs-number">0</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">while</span> (isAlive()) &#123;</span><br><span class="line">            wait(<span class="hljs-number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">while</span> (isAlive()) &#123;</span><br><span class="line">            <span class="hljs-keyword">long</span> delay = millis - now;</span><br><span class="line">            <span class="hljs-keyword">if</span> (delay &lt;= <span class="hljs-number">0</span>) &#123;</span><br><span class="line">                <span class="hljs-keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            wait(delay);</span><br><span class="line">            now = System.currentTimeMillis() - base;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法时同步的，同时内部调用了自身的 wait 方法。注意：我们最好不要调用线程的 wait 方法和 notify 方法，可能会导致系统 api 出现问题。</p>
+<h2 id="5-常用方法3——线程让出时间片-yield-方法"><a href="#5-常用方法3——线程让出时间片-yield-方法" class="headerlink" title="5. 常用方法3——线程让出时间片 yield 方法"></a>5. 常用方法3——线程让出时间片 yield 方法</h2><p>这个方法就比较简单了。这是一个静态方法，yield 谦让出CPU时间片；</p>
+<p> yieid 会让出时间片，但是是随机的。如果你觉得一个线程不是很重要，那就可以适当的调用该方法，给予其他线程更多的机会。</p>
+<h2 id="拾遗"><a href="#拾遗" class="headerlink" title="拾遗"></a>拾遗</h2><h5 id="sleep-方法"><a href="#sleep-方法" class="headerlink" title="sleep 方法"></a>sleep 方法</h5><p>虽然用的很多，但有必要说一下，该方法不会释放当前线程的锁。面试中常有该问题，wait 方法和 sleep 方法有什么不同，<strong>wait 方法会释放锁，sleep 方法不会释放锁。</strong></p>
+<h5 id="holdsLock-方法："><a href="#holdsLock-方法：" class="headerlink" title="holdsLock 方法："></a>holdsLock 方法：</h5><p>仅当当前线程在指定的对象上保持监视器锁时，才返回  true。该方法旨在使程序能够断言当前线程已经保持一个指定的锁。<br><strong>参数：</strong><br>obj - 用于测试锁所属权的对象<br><strong>返回：</strong><br>如果当前线程在指定的对象上保持监视器锁，则返回 true。</p>
+<h5 id="setContextClassLoader-方法："><a href="#setContextClassLoader-方法：" class="headerlink" title="setContextClassLoader 方法："></a>setContextClassLoader 方法：</h5><p>设置该线程的上下文 ClassLoader。上下文 ClassLoader 可以在创建线程设置，并允许创建者在加载类和资源时向该线程中运行的代码提供适当的类加载器。<br>首先，如果有安全管理器，则通过 RuntimePermission(“setContextClassLoader”) 权限调用其 checkPermission`方法，查看是否可以设置上下文 ClassLoader。该方法在违反 JDK 默认的类加载模型时能起到很大作用。</p>
+<p><strong>参数：</strong><br>该线程的上下文 ClassLoader</p>
+<p><strong>抛出：</strong><br>SecurityException - 如果当前线程无法设置上下文 ClassLoader。</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/01/03/2018/2018-01-03-并发编程之-Java-三把锁/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">并发编程之-Java-三把锁</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/01/01/2018/2018-01-01-并发编程之-wait-notify-方法剖析/">
+                <span class="level-item">并发编程之-Wait-Notify-方法剖析</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/01/02/2018/2018-01-02-并发编程之-Thread-类过期方法和常用方法/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="并发编程之-Thread-类过期方法和常用方法" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

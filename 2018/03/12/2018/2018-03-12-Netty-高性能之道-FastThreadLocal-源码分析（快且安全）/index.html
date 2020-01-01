@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>Netty-高性能之道-FastThreadLocal-源码分析（快且安全） - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Netty-高性能之道-FastThreadLocal-源码分析（快且安全）">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/12/2018/2018-03-12-Netty-高性能之道-FastThreadLocal-源码分析（快且安全）/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Netty-高性能之道-FastThreadLocal-源码分析（快且安全）">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="Netty-高性能之道-FastThreadLocal-源码分析（快且安全）" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-03-11T18:11:11.000Z">2018-03-12</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Netty/">Netty</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    30 分钟 读完 (大约 4434 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                Netty-高性能之道-FastThreadLocal-源码分析（快且安全）
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       ## 前言</p>
+<p>Netty 作为高性能框架，对 JDK 中的很多类都进行了封装了和优化，例如 Thread 类，Netty 使用了 FastThreadLocalRunnable 对所有 DefaultThreadFactory 创建出来的 Runnable 都进行了包装。包装的目的是 run 方法的不同，看代码：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        runnable.run();</span><br><span class="line">    &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">        FastThreadLocal.removeAll();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，多了一行  FastThreadLocal.removeAll()，众所周知，JDK 中自带的 ThreadLocal 在线程池使用环境中，有内存泄漏的风险，很明显，Netty 为了避免这个 bug，重新进行了封装，而且这个封装线程的名字叫做 FastThreadLocalRunnable，语义很明显：快速的 ThreadLocal！意思说 JDK 自带的慢喽？那我们今天就来看看到底快在哪里？对 ThreadLocal 内存泄漏不清楚或者对 ThreadLoca 不清楚的可以移步 <a href="https://www.jianshu.com/p/80284438bb97" target="_blank" rel="noopener">并发编程之 ThreadLocal 源码剖析</a>。</p>
+<h2 id="1-如何使用？"><a href="#1-如何使用？" class="headerlink" title="1. 如何使用？"></a>1. 如何使用？</h2><p><img src="http://upload-images.jianshu.io/upload_images/4236553-12c253f98742f4b2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="测试用例"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-7ec7f64c3cbf86f8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="运行结果"></p>
+<h2 id="2-构造方法解析"><a href="#2-构造方法解析" class="headerlink" title="2. 构造方法解析"></a>2. 构造方法解析</h2><p><img src="http://upload-images.jianshu.io/upload_images/4236553-852af1ffc45a7a99.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="构造方法"></p>
+<p>构造方法中定义了两个变量。 index 和 cleanerFlagIndex，这两个变量且都是 int final 的。且都是通过<br>InternalThreadLocalMap.nextVariableIndex() 方法而来。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-266a99ac72429da7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="InternalThreadLocalMap.nextVariableIndex() 方法"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-5cdca30965ae3c19.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="nextIndex 变量"></p>
+<p>该方法通过一个原子 int 变量自增得到。也就是说，cleanerFlagIndex 变量比 index 大1，这两个变量的作用稍后我们会看到他们如何使用。这里暂且不表。</p>
+<h2 id="3-set-方法解析"><a href="#3-set-方法解析" class="headerlink" title="3. set 方法解析"></a>3. set 方法解析</h2><p><img src="http://upload-images.jianshu.io/upload_images/4236553-30ec041c29b4c55d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="set（） 方法"></p>
+<p>该方法步骤如下：</p>
+<ol>
+<li>判断设置的 value 值是否是缺省值，如果是，则调用 remove 方法。</li>
+<li>如果不是，则获取道当前线程的 InternalThreadLocalMap。然后将该 FastThreadLocal 对应的 index 下标的 value 替换成新的 value。老的 value 设置成缺省值。</li>
+</ol>
+<p><strong>小小的一个 set 方法，内部可是非常的复杂，非战斗人员请尽快撤离！</strong></p>
+<p>实际上，这里调用了4个方法：</p>
+<ol>
+<li>InternalThreadLocalMap.get()；</li>
+<li>setKnownNotUnset(threadLocalMap, value);</li>
+<li>registerCleaner(threadLocalMap);</li>
+<li>remove();</li>
+</ol>
+<p>让我们慢慢说道说道。</p>
+<h4 id="1-InternalThreadLocalMap-get-；"><a href="#1-InternalThreadLocalMap-get-；" class="headerlink" title="1. InternalThreadLocalMap.get()；"></a>1. InternalThreadLocalMap.get()；</h4><p>代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> InternalThreadLocalMap <span class="hljs-title">get</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    Thread thread = Thread.currentThread();</span><br><span class="line">    <span class="hljs-keyword">if</span> (thread <span class="hljs-keyword">instanceof</span> FastThreadLocalThread) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> fastGet((FastThreadLocalThread) thread);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> slowGet();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先是 InternalThreadLocalMap 的静态方法，方法逻辑很简单，主要是根据当前线程是否是 Netty 的 FastThreadLocalThread 来调用不同的方法，一个是 fast 的，一个 是 slow 的（不是 Netty 的线程就是 slow 的）。哈哈哈，Netty 的作者命名还真是犀利。那我们就看看 fastGet 方法是什么？</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> InternalThreadLocalMap <span class="hljs-title">fastGet</span><span class="hljs-params">(FastThreadLocalThread thread)</span> </span>&#123;</span><br><span class="line">    InternalThreadLocalMap threadLocalMap = thread.threadLocalMap();</span><br><span class="line">    <span class="hljs-keyword">if</span> (threadLocalMap == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        thread.setThreadLocalMap(threadLocalMap = <span class="hljs-keyword">new</span> InternalThreadLocalMap());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> threadLocalMap;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>逻辑很简单，获取当前线程的 InternalThreadLocalMap，如果没有，就创建一个。我们看看他的构造方法。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Object UNSET = <span class="hljs-keyword">new</span> Object();</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-title">InternalThreadLocalMap</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">super</span>(newIndexedVariableTable());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> Object[] newIndexedVariableTable() &#123;</span><br><span class="line">    Object[] array = <span class="hljs-keyword">new</span> Object[<span class="hljs-number">32</span>];</span><br><span class="line">    Arrays.fill(array, UNSET);</span><br><span class="line">    <span class="hljs-keyword">return</span> array;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">UnpaddedInternalThreadLocalMap(Object[] indexedVariables) &#123;</span><br><span class="line">    <span class="hljs-keyword">this</span>.indexedVariables = indexedVariables;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>楼主将 3 个关联的方法都放在一起了，方便查看，首先，InternalThreadLocalMap 调用的父类 UnpaddedInternalThreadLocalMap 的构造方法，并传入了一个数组，而这个数组默认大小是 32，里面填充32 个空对象的引用。</p>
+<p>那 slowGet 方法又是什么样子的呢？代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> ThreadLocal&lt;InternalThreadLocalMap&gt; slowThreadLocalMap = <span class="hljs-keyword">new</span> ThreadLocal&lt;InternalThreadLocalMap&gt;();</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> InternalThreadLocalMap <span class="hljs-title">slowGet</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    ThreadLocal&lt;InternalThreadLocalMap&gt; slowThreadLocalMap = UnpaddedInternalThreadLocalMap.slowThreadLocalMap;</span><br><span class="line">    InternalThreadLocalMap ret = slowThreadLocalMap.get();</span><br><span class="line">    <span class="hljs-keyword">if</span> (ret == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        ret = <span class="hljs-keyword">new</span> InternalThreadLocalMap();</span><br><span class="line">        slowThreadLocalMap.set(ret);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>代码还是很简单的，我们分析一下：首先使用 JDK 的 ThreadLocal 获取一个 Netty 的 InternalThreadLocalMap，如果没有就创建一个，并将这个 InternalThreadLocalMap 设置到 JDK 的 ThreadLocal 中，然后返回这个 InternalThreadLocalMap。从这里可以看出，为了提高性能，Netty 还是避免使用了JDK 的 threadLocalMap，他的方式是曲线救国：在JDK 的 threadLocal 中设置 Netty 的 InternalThreadLocalMap ，然后，这个 InternalThreadLocalMap 中设置 Netty 的 FastThreadLcoal。</p>
+<p>好，到这里，我们的 InternalThreadLocalMap.get() 方法就看完了，主要是获取当前线程的 InternalThreadLocalMap，如果没有，就创建一个，这个 Map 内部维护的是一个数组，和 JDK 不同，JDK<br>维护的是一个使用线性探测法的 Map，可见，从底层数据结构上，JDK 就已经输了，他们的读取速度相差很大，特别是当数据量很大的时候，Netty 的数据结构速度依然不变，而 JDK 由于使用线性探测法，速度会相应的下降。</p>
+<h4 id="2-setKnownNotUnset-threadLocalMap-value"><a href="#2-setKnownNotUnset-threadLocalMap-value" class="headerlink" title="2. setKnownNotUnset(threadLocalMap, value);"></a>2. setKnownNotUnset(threadLocalMap, value);</h4><p>当 InternalThreadLocalMap.get() 返回了 一个 InternalThreadLocalMap，这个时候调用 setKnownNotUnset(threadLocalMap, value); 方法进行操作。代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">setKnownNotUnset</span><span class="hljs-params">(InternalThreadLocalMap threadLocalMap, V value)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (threadLocalMap.setIndexedVariable(index, value)) &#123;</span><br><span class="line">        addToVariablesToRemove(threadLocalMap, <span class="hljs-keyword">this</span>);</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看方法名称，是设置一个值，但不是 unset，也就是那个空对象。通过 threadLocalMap.setIndexedVariable(index, value) 进行设置。如果返回 true，则调用 addToVariablesToRemove(threadLocalMap, this) 。这两个方法，我们一起看看。先看第一个：</p>
+<p>setIndexedVariable 方法<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">setIndexedVariable</span><span class="hljs-params">(<span class="hljs-keyword">int</span> index, Object value)</span> </span>&#123;</span><br><span class="line">    Object[] lookup = indexedVariables;</span><br><span class="line">    <span class="hljs-keyword">if</span> (index &lt; lookup.length) &#123;</span><br><span class="line">        Object oldValue = lookup[index];</span><br><span class="line">        lookup[index] = value;</span><br><span class="line">        <span class="hljs-keyword">return</span> oldValue == UNSET;</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        expandIndexedVariableTableAndSet(index, value);</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>首先，拿到那个 32 长度的数组，如果 FastThreadLocal 的 index 属性小于数组长度，则将值设定到指定槽位。将原来槽位的值设置为空对象。如果原来的对象也是空对象，则返回 true，否则返回 false。</p>
+<p>如果不够呢？调用 expandIndexedVariableTableAndSet(index, value) 方法。进入该方法查看。看方法名称是扩大索引并设置值。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">expandIndexedVariableTableAndSet</span><span class="hljs-params">(<span class="hljs-keyword">int</span> index, Object value)</span> </span>&#123;</span><br><span class="line">    Object[] oldArray = indexedVariables;</span><br><span class="line">    <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> oldCapacity = oldArray.length;</span><br><span class="line">    <span class="hljs-keyword">int</span> newCapacity = index;</span><br><span class="line">    newCapacity |= newCapacity &gt;&gt;&gt;  <span class="hljs-number">1</span>;</span><br><span class="line">    newCapacity |= newCapacity &gt;&gt;&gt;  <span class="hljs-number">2</span>;</span><br><span class="line">    newCapacity |= newCapacity &gt;&gt;&gt;  <span class="hljs-number">4</span>;</span><br><span class="line">    newCapacity |= newCapacity &gt;&gt;&gt;  <span class="hljs-number">8</span>;</span><br><span class="line">    newCapacity |= newCapacity &gt;&gt;&gt; <span class="hljs-number">16</span>;</span><br><span class="line">    newCapacity ++;</span><br><span class="line"></span><br><span class="line">    Object[] newArray = Arrays.copyOf(oldArray, newCapacity);</span><br><span class="line">    Arrays.fill(newArray, oldCapacity, newArray.length, UNSET);</span><br><span class="line">    newArray[index] = value;</span><br><span class="line">    indexedVariables = newArray;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里代码很熟悉，HashMap 中也有这样的代码，我们去看看：<br><img src="https://upload-images.jianshu.io/upload_images/4236553-bb4c10b59073c4f7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="HashMap 中的 tableSizeFor 方法"></p>
+<p>这段代码的作用就是按原来的容量扩容2倍。并且保证结果是2的幂次方。这里 Netty 的做法和 HashMap 一样，按照原来的容量扩容到最近的 2 的幂次方大小，比如原来32，就扩容到64，然后，将原来数组的内容填充到新数组中，剩余的填充<code>空对象</code>，然后将新数组赋值给成员变量 indexedVariables。完成了一次扩容。</p>
+<p>回到 setKnownNotUnset 方法中，setIndexedVariable 方法什么情况下会返回 ture 呢？扩容了，或者没扩容，但插入的对象没有替换掉别的对象，也就是原槽位是空对象。换句话说，只有更新了对象才会返回 false。</p>
+<p>也就是说，当新增了对象的时候，会调用 addToVariablesToRemove 方法，如同方法名，添加变量然后删除。我们看看 addToVariablesToRemove(threadLocalMap, this) 方法逻辑：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">addToVariablesToRemove</span><span class="hljs-params">(InternalThreadLocalMap threadLocalMap, FastThreadLocal&lt;?&gt; variable)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 该变量是 static final 的，因此通常是 0</span></span><br><span class="line">    Object v = threadLocalMap.indexedVariable(variablesToRemoveIndex);</span><br><span class="line">    Set&lt;FastThreadLocal&lt;?&gt;&gt; variablesToRemove;</span><br><span class="line">    <span class="hljs-keyword">if</span> (v == InternalThreadLocalMap.UNSET || v == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        <span class="hljs-comment">// 创建一个基于 IdentityHashMap 的 Set，泛型是 FastThreadLocal</span></span><br><span class="line">        variablesToRemove = Collections.newSetFromMap(<span class="hljs-keyword">new</span> IdentityHashMap&lt;FastThreadLocal&lt;?&gt;, Boolean&gt;());</span><br><span class="line">        <span class="hljs-comment">// 将这个 Set 放到这个 Map 数组的下标 0 处</span></span><br><span class="line">        threadLocalMap.setIndexedVariable(variablesToRemoveIndex, variablesToRemove);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-comment">// 如果拿到的不是 UNSET ，说明这是第二次操作了，因此可以强转为 Set</span></span><br><span class="line">        variablesToRemove = (Set&lt;FastThreadLocal&lt;?&gt;&gt;) v;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 最后的目的就是将 FastThreadLocal 放置到 Set 中</span></span><br><span class="line">    variablesToRemove.add(variable);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法的目的是将 FastThreadLocal 对象保存到一个 Set 中，因为 Netty 的 Map 只是一个数组，没有键，所以保存到一个 Set 中，这样就可以判断是否 set 过这个 map，例如 Netty 的 isSet 方法就是根据这个判断的。</p>
+<p>说完了 setKnownNotUnset 方法，我们再说说 registerCleaner 方法。</p>
+<h4 id="3-registerCleaner-threadLocalMap"><a href="#3-registerCleaner-threadLocalMap" class="headerlink" title="3. registerCleaner(threadLocalMap);"></a>3. registerCleaner(threadLocalMap);</h4><p>这个方法可以说有点复杂了，请耐住性子，这里是 ftl（FastThreadLocal） 的精髓。</p>
+<p>首先说下该方法的作用：将这个 ftl 注册到一个 <code>清理线程</code> 中，当 thread 对象被 gc 的时候，则会自动清理掉 ftl，防止 JDK 的内存泄漏问题。</p>
+<p>让我们进入该方法查看：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">registerCleaner</span><span class="hljs-params">(<span class="hljs-keyword">final</span> InternalThreadLocalMap threadLocalMap)</span> </span>&#123;</span><br><span class="line">    Thread current = Thread.currentThread();</span><br><span class="line">    <span class="hljs-keyword">if</span> (FastThreadLocalThread.willCleanupFastThreadLocals(current) ||</span><br><span class="line">        threadLocalMap.indexedVariable(cleanerFlagIndex) != InternalThreadLocalMap.UNSET) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    threadLocalMap.setIndexedVariable(cleanerFlagIndex, Boolean.TRUE);</span><br><span class="line">    ObjectCleaner.register(current, <span class="hljs-keyword">new</span> Runnable() &#123;</span><br><span class="line">        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">            remove(threadLocalMap);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>楼主删除了源码中的注释，我们来好好说说这个方法：</p>
+<ol>
+<li><p>获取当前线程，如果当前线程是 FastThreadLocalThread 类型 且 cleanupFastThreadLocals 是 true，则返回 true，直接return。也就是说，Netty 线程池里面创建的线程都符合这条件，只有用户自定义的线程池不符合。<br>当然还有一个条件：如果这个 ftl 的 index + 1 在 map 中的值不是空对象，则已经注册过了，也直接 return，不再重复注册。</p>
+</li>
+<li><p>当不符合上面的条件的时候，将 Map 中对应的 ftl 的 index  + 1 位置的值设置为 TRUE。根据上面的判断，防止重复注册。</p>
+</li>
+<li><p>调用 ObjectCleaner 的 register 方法，注册一个任务，任务的内容就是调用 remove 方法，删除 ftl 在 map 中的对象和相应的内容。</p>
+</li>
+</ol>
+<p>问题来了，怎么注册的呢？为什么还带着一个 current 当前线程呢？</p>
+<p>我们看看源码：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">register</span><span class="hljs-params">(Object object, Runnable cleanupTask)</span> </span>&#123;</span><br><span class="line">    AutomaticCleanerReference reference = <span class="hljs-keyword">new</span> AutomaticCleanerReference(object,</span><br><span class="line">            ObjectUtil.checkNotNull(cleanupTask, <span class="hljs-string">"cleanupTask"</span>));</span><br><span class="line">    LIVE_SET.add(reference);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// Check if there is already a cleaner running.</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (CLEANER_RUNNING.compareAndSet(<span class="hljs-keyword">false</span>, <span class="hljs-keyword">true</span>)) &#123;</span><br><span class="line">        <span class="hljs-keyword">final</span> Thread cleanupThread = <span class="hljs-keyword">new</span> FastThreadLocalThread(CLEANER_TASK);</span><br><span class="line">        cleanupThread.setPriority(Thread.MIN_PRIORITY);</span><br><span class="line">        AccessController.doPrivileged(<span class="hljs-keyword">new</span> PrivilegedAction&lt;Void&gt;() &#123;</span><br><span class="line">            <span class="hljs-function"><span class="hljs-keyword">public</span> Void <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">                cleanupThread.setContextClassLoader(<span class="hljs-keyword">null</span>);</span><br><span class="line">                <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        cleanupThread.setName(CLEANER_THREAD_NAME);</span><br><span class="line">        cleanupThread.setDaemon(<span class="hljs-keyword">true</span>);</span><br><span class="line">        cleanupThread.start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先创建一个 AutomaticCleanerReference 自动清洁对象，继承了 WeakReference，先不看他的构造方法，先看下面，将这个构造好的实例放入到 LIVE_SET 中，实际上，这是一个 Netty 封装的 ConcurrentSet，然后判断清除线程是否在运行。如果没有，并且CAS改状态成功。就创建一个线程，任务是 定义好的 CLEANER_TASK，线程优先级是最低，上下位类加载器是null，名字是 objectCleanerThread，并且是后台线程。然后启动这个线程。运行 CLEANER_TASK。</p>
+<p>一步一步来看看。</p>
+<p>首先 AutomaticCleanerReference  的构造方法如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> ReferenceQueue&lt;Object&gt; REFERENCE_QUEUE = <span class="hljs-keyword">new</span> ReferenceQueue&lt;Object&gt;();</span><br><span class="line"></span><br><span class="line">AutomaticCleanerReference(Object referent, Runnable cleanupTask) &#123;</span><br><span class="line">    <span class="hljs-keyword">super</span>(referent, REFERENCE_QUEUE);</span><br><span class="line">    <span class="hljs-keyword">this</span>.cleanupTask = cleanupTask;</span><br><span class="line">&#125;	</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">cleanup</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">   cleanupTask.run();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>ReferenceQueue 的作用是，当对象被回收的时候，会将这个对象添加进这个队列，就可以跟踪这个对象。设置可以复活这个对象。也就是说，当这个 Thread 对象被回收的时候，会将这个对象放进这个引用队列，放进入干嘛呢？什么时候取出来呢？我们看看什么时候取出来：</p>
+<p>代码如下：<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Runnable CLEANER_TASK = <span class="hljs-keyword">new</span> Runnable() &#123;</span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">for</span> (;;) &#123;</span><br><span class="line">            <span class="hljs-keyword">while</span> (!LIVE_SET.isEmpty()) &#123;</span><br><span class="line">                <span class="hljs-keyword">final</span> AutomaticCleanerReference reference = (AutomaticCleanerReference) REFERENCE_QUEUE.remove(REFERENCE_QUEUE_POLL_TIMEOUT_MS);</span><br><span class="line">               </span><br><span class="line">                <span class="hljs-keyword">if</span> (reference != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">                        reference.cleanup();</span><br><span class="line">                    &#125; <span class="hljs-keyword">catch</span> (Throwable ignored) &#123;</span><br><span class="line">                    &#125;</span><br><span class="line">                    LIVE_SET.remove(reference);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            CLEANER_RUNNING.set(<span class="hljs-keyword">false</span>);</span><br><span class="line">            <span class="hljs-keyword">if</span> (LIVE_SET.isEmpty() || !CLEANER_RUNNING.compareAndSet(<span class="hljs-keyword">false</span>, <span class="hljs-keyword">true</span>)) &#123;</span><br><span class="line">                <span class="hljs-keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>巧了 ！！！！正是 CLEANER_TASK 在使用这个 ReferenceQueue！！！！别激动，我们还是慢慢看看这个任务到底是做什么的：</p>
+<ol>
+<li>死循环，如果 ConcurrentSet 不是空（还记得我们将 AutomaticCleanerReference 放进这里吗），尝试从 REFERENCE_QUEUE 中取出 AutomaticCleanerReference，也就是我们刚刚放进入的。这是标准的跟踪 GC 对象的做法。因为当一个对象被 GC 时，会将保证这个对象的 Reference 放进指定的引用队列，这是 JVM 做的。</li>
+<li>如果不是空，就调用应用的 cleanUp 方法，也就是我们传进去的任务，什么任务？就是那个调用 ftl 的 remove 方法的任务。随后从 Set 中删除这个引用。</li>
+<li>如果 Set 是空的话，将清理线程状态（原子变量） 设置成 fasle。</li>
+<li>继续判断，如果Set 还是空，或者 Set 不是空 且 设置 CAS 设置状态为true 失败（说明其他线程改了这个状态）则跳出循环，结束线程。</li>
+</ol>
+<p>有点懵？那我们就好好总结这里为什么这么做：</p>
+<blockquote>
+<p>当我们在一个非 Netty 线程池创建的线程中使用 ftl 的时候，Netty 会注册一个垃圾清理线程（因为 Netty 线程池创建的线程最终都会执行 removeAll 方法，不会出现内存泄漏） ，用于清理这个线程这个 ftl 变量，从上面的代码中，我们知道，非 Netty 线程如果使用 ftl，Netty 仍然会借助 JDK 的 ThreadLocal，只是只借用一个槽位，放置 Netty 的 Map， Map 中再放置 Netty 的 ftl 。所以，在使用线程池的情况下可能会出现内存泄漏。<strong>Netty 为了解决这个问题，在每次使用新的 ftl 的时候，都将这个 ftl 注册到和线程对象绑定到一个 GC 引用上， 当这个线程对象被回收的时候，也会顺便清理掉他的 Map 中的 所有 ftl，解决了该问题，就像解决 JDK Nio bug 一样。</strong></p>
+</blockquote>
+<p>好，到这里，Netty 的 FastThreadLocal 的精华我们基本就全部吸取了。ftl 不仅快，而且安全。快在使用数组代替线性探测法的 Map，安全在每次线程回收的时候都清理 ftl，不用担心内存泄漏。</p>
+<p>剩下的方法都是很简单的。我们一起看完吧</p>
+<h4 id="4-remove"><a href="#4-remove" class="headerlink" title="4. remove();"></a>4. remove();</h4><p>每次 Set 一个空对象的时候，就是调用remove 方法，我们看看该方法，源码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">remove</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">     remove(InternalThreadLocalMap.getIfSet());</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> InternalThreadLocalMap <span class="hljs-title">getIfSet</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">     Thread thread = Thread.currentThread();</span><br><span class="line">     <span class="hljs-keyword">if</span> (thread <span class="hljs-keyword">instanceof</span> FastThreadLocalThread) &#123;</span><br><span class="line">         <span class="hljs-keyword">return</span> ((FastThreadLocalThread) thread).threadLocalMap();</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="hljs-keyword">return</span> slowThreadLocalMap.get();</span><br><span class="line"></span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">remove</span><span class="hljs-params">(InternalThreadLocalMap threadLocalMap)</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">if</span> (threadLocalMap == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">         <span class="hljs-keyword">return</span>;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="hljs-comment">// 删除并返回 Map 数组中当前 ThreadLocal index 对应的 value</span></span><br><span class="line">     Object v = threadLocalMap.removeIndexedVariable(index);</span><br><span class="line">     <span class="hljs-comment">// 从 Map 数组下标 0 的位置取出 Set ，并删除当前的 ThreadLocal</span></span><br><span class="line">     removeFromVariablesToRemove(threadLocalMap, <span class="hljs-keyword">this</span>);</span><br><span class="line"></span><br><span class="line">     <span class="hljs-keyword">if</span> (v != InternalThreadLocalMap.UNSET) &#123;</span><br><span class="line">         <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">             <span class="hljs-comment">// 默认啥也不做，用户可以继承 FastThreadLocal 重定义这个方法。</span></span><br><span class="line">             onRemoval((V) v);</span><br><span class="line">         &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;</span><br><span class="line">             PlatformDependent.throwException(e);</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>楼主将这3个方法都合并在一起了，首先获取当前线程的 threadLocalMap，然后就像注释中写的：删除 ftl 对应下标中 map 的 value，然后删除 map 下标0 处 Set 中的 ftl。防止 isSet 方法误判。最后，如果用户重写了 onRemoval 方法，就调用，默认是个空方法。用户可以重写 onRemoval 方法和 initialize 方法。</p>
+<h2 id="4-get-方法解析"><a href="#4-get-方法解析" class="headerlink" title="4. get 方法解析"></a>4. get 方法解析</h2><p>get 方法就更简单了，代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> V <span class="hljs-title">get</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.get();</span><br><span class="line">    Object v = threadLocalMap.indexedVariable(index);</span><br><span class="line">    <span class="hljs-keyword">if</span> (v != InternalThreadLocalMap.UNSET) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> (V) v;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    V value = initialize(threadLocalMap);</span><br><span class="line">    registerCleaner(threadLocalMap);</span><br><span class="line">    <span class="hljs-keyword">return</span> value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先获取当前线程的map，然后根据 ftl 的 index 获取 value，然后返回，如果是空对象，也就是没有设置，则通过 initialize 返回，initialize 方法会将返回值设置到 map 的槽位中，并放进 Set 中。最后，尝试注册一个清洁器。</p>
+<h2 id="5-remove-All方法解析"><a href="#5-remove-All方法解析" class="headerlink" title="5. remove All方法解析"></a>5. remove All方法解析</h2><p>这个方法在 Netty 的默认线程的 finally 块中调用。代码如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">removeAll</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.getIfSet();</span><br><span class="line">    <span class="hljs-keyword">if</span> (threadLocalMap == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        Object v = threadLocalMap.indexedVariable(variablesToRemoveIndex);</span><br><span class="line">        <span class="hljs-keyword">if</span> (v != <span class="hljs-keyword">null</span> &amp;&amp; v != InternalThreadLocalMap.UNSET) &#123;</span><br><span class="line">            <span class="hljs-meta">@SuppressWarnings</span>(<span class="hljs-string">"unchecked"</span>)</span><br><span class="line">            Set&lt;FastThreadLocal&lt;?&gt;&gt; variablesToRemove = (Set&lt;FastThreadLocal&lt;?&gt;&gt;) v;</span><br><span class="line">            FastThreadLocal&lt;?&gt;[] variablesToRemoveArray =</span><br><span class="line">                    variablesToRemove.toArray(<span class="hljs-keyword">new</span> FastThreadLocal[variablesToRemove.size()]);</span><br><span class="line">            <span class="hljs-keyword">for</span> (FastThreadLocal&lt;?&gt; tlv: variablesToRemoveArray) &#123;</span><br><span class="line">                tlv.remove(threadLocalMap);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">        InternalThreadLocalMap.remove();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>非常简单，首先获取当前线程map，然后获取 Set，将 Set 转成数组，遍历数组，调用 ftl 的 remove 方法。最后，删除线程中 的 map 属性。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>现在我们来总结一下 FastThreadLocal 。</p>
+<p>之所以称之为 Fast，因为没有使用 JDK 的使用线性探测法的 Map，如果你使用的是Netty 线程池工厂创建的线程，搭配 Netty 的 ftl，性能非常好，如果你使用自定义的线程，搭配 ftl，性能也会比 JDK 的好，注意： ftl 没有 JDK 的内存泄露的风险。</p>
+<p>但做到这些不是没有代价的，由于每一个 ftl 都是一个唯一的下标，而这个下标是每次创建一个 ftl 对象都是递增 2，当你的下标很大，你的线程中的 Map 相应的也要增大，可以想象，如果创建了海量的 ftl 对象，这个数组的浪费是非常客观的。很明显，这是一种空间换时间的做法。</p>
+<p>通常，ftl 都是静态对象，所以不会有我们假设的那么多。如果使用不当，确实会浪费大量内存。</p>
+<p>但这个风险带来的好处是明显的，在楼主的机器上测试，ftl 的读取性能是 JDK 的 5 倍左右，写入的速度也要快 20% 左右。</p>
+<p>FastThreadLocal 人如其名，快且安全！</p>
+<p>今天就到这里，good luck！！！！</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/03/14/2018/2018-03-14-Netty-核心组件-Pipeline-源码分析（一）之剖析-pipeline-三巨头/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Netty-核心组件-Pipeline-源码分析（一）之剖析-Pipeline-三巨头</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/03/11/2018/2018-03-11-Netty-核心组件-EventLoop-源码解析/">
+                <span class="level-item">Netty-核心组件-EventLoop-源码解析</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/03/12/2018/2018-03-12-Netty-高性能之道-FastThreadLocal-源码分析（快且安全）/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="Netty-高性能之道-FastThreadLocal-源码分析（快且安全）" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

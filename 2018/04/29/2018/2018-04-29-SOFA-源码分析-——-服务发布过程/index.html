@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>SOFA-源码分析-——-服务发布过程 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="SOFA-源码分析-——-服务发布过程">
+<meta property="og:url" content="http://thinkinjava.cn/2018/04/29/2018/2018-04-29-SOFA-源码分析-——-服务发布过程/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SOFA-源码分析-——-服务发布过程">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="SOFA-源码分析-——-服务发布过程" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-04-28T18:11:11.000Z">2018-04-29</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/SOFA/">SOFA</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    18 分钟 读完 (大约 2741 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                SOFA-源码分析-——-服务发布过程
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       ## 前言</p>
+<p>SOFA 包含了 RPC 框架，底层通信框架是 bolt ，基于 Netty 4，今天将通过 SOFA—RPC 源码中的例子，看看他是如何发布一个服务的。</p>
+<h2 id="示例代码"><a href="#示例代码" class="headerlink" title="示例代码"></a>示例代码</h2><p>下面的代码在 <code>com.alipay.sofa.rpc.quickstart.QuickStartServer</code> 类下。  </p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">ServerConfig serverConfig = <span class="hljs-keyword">new</span> ServerConfig()</span><br><span class="line">    .setProtocol(<span class="hljs-string">"bolt"</span>) <span class="hljs-comment">// 设置一个协议，默认bolt</span></span><br><span class="line">    .setPort(<span class="hljs-number">9696</span>) <span class="hljs-comment">// 设置一个端口，默认12200</span></span><br><span class="line">    .setDaemon(<span class="hljs-keyword">false</span>); <span class="hljs-comment">// 非守护线程</span></span><br><span class="line"></span><br><span class="line">ProviderConfig&lt;HelloService&gt; providerConfig = <span class="hljs-keyword">new</span> ProviderConfig&lt;HelloService&gt;()</span><br><span class="line">    .setInterfaceId(HelloService.class.getName()) <span class="hljs-comment">// 指定接口</span></span><br><span class="line">    .setRef(<span class="hljs-keyword">new</span> HelloServiceImpl()) <span class="hljs-comment">// 指定实现</span></span><br><span class="line">    .setServer(serverConfig); <span class="hljs-comment">// 指定服务端</span></span><br><span class="line"></span><br><span class="line">providerConfig.export(); <span class="hljs-comment">// 发布服务</span></span><br></pre></td></tr></table></figure>
+<p>首先，创建一个 ServerConfig  ，包含了端口，协议等基础信息，当然，这些都是手动设定的，在该类加载的时候，会自动加载很多配置文件中的服务器默认配置。比如 RpcConfigs 类，RpcRuntimeContext 上下文等。</p>
+<p>然后呢，创建一个 ProviderConfig，也是个 config，不过多继承了一个 AbstractInterfaceConfig 抽象类，该类是接口级别的配置，而 ServerConfig 是 服务器级别的配置。虽然都继承了 AbstractIdConfig。</p>
+<p>ProviderConfig 包含了接口名称，接口指定实现类，还有服务器的配置。</p>
+<p>最后，ProviderConfig 调用 export 发布服务。</p>
+<p>展示给我的 API 很简单，但内部是如何实现的呢？</p>
+<p>在看源码之前，我们思考一下：如果我们自己来实现，怎么弄？</p>
+<p>RPC 框架简单一点来说，就是使用动态代理和 Socket。</p>
+<p>SOFA 使用 Netty 来做网络通信框架，我们之前也写过一个简单的 Netty RPC，主要是通过  handler 的 channelRead 方法来实现。</p>
+<p>SOFA 是这么操作的吗？</p>
+<p>一起来看看。</p>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="# 源码分析"></a># 源码分析</h2><p>上面的示例代码其实就是 3 个步骤，创建 ServerConfig，创建 ProviderConfig，调用 export 方法。</p>
+<p>先看第一步，还是有点意思的。</p>
+<p>虽然是空构造方法，但 ServerConfig 的属性都是自动初始化的，而他的父类 AbstractIdConfig 更有意思了，父类有 1 个地方值得注意：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">static</span> &#123;</span><br><span class="line">    RpcRuntimeContext.now();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>熟悉类加载的同学都知道，这是为了主动加载 RpcRuntimeContext ，看名字是 RPC 运行时上下文，所谓上下文，大约就是我们人类聊天中的 “老地方” 的意思。</p>
+<p>这个上下文会在静态块中加载 Module（基于扩展点实现），注册 JVM 关闭钩子（类似 Tomcat）。还有很多配置信息。</p>
+<p>然后呢？创建  ProviderConfig 对象。这个类比上面的那个类多继承了一个 AbstractInterfaceConfig，接口级别的配置。比如有些方法我不想发布啊，比如权重啊，比如超时啊，比如具体的实现类啊等等，当然还需要一个 ServerConfig 的属性（注册到 Server 中啊喂）。</p>
+<p><strong>最后就是发布了。export 方法。</strong></p>
+<p>ProviderCofing 拥有一个 export 方法，但并不是直接就在这里发布的，因为他是一个 config，不适合在config 里面做这些事情，违背单一职责。</p>
+<p>SOFA 使用了一个 Bootstrap 类来进行操作。和大部分服务器类似，这里就是启动服务器的地方。因为这个类会多线程使用，比如并发的发布服务。而不是一个一个慢慢的发布服务。所以他不是单例的，而是和 Config 一起使用的，并缓存在 map 中。</p>
+<p>ProviderBootstrap 目前有 3 个实现：Rest，Bolt，Dubbo。Bolt 是他的默认实现。</p>
+<p>export 方法默认有个实现（Dubbo 的话就要重写了）。主要逻辑是执行 doExport 方法，其中包括延迟加载逻辑。</p>
+<p>而 doExport 方法中，就是 SOFA 发布服务的逻辑所在了。</p>
+<p>楼主将方法的异常处理逻辑去除，整体如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">doExport</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">       <span class="hljs-keyword">if</span> (exported) &#123;</span><br><span class="line">           <span class="hljs-keyword">return</span>;</span><br><span class="line">       &#125;</span><br><span class="line">       String key = providerConfig.buildKey();</span><br><span class="line">       String appName = providerConfig.getAppName();</span><br><span class="line">       <span class="hljs-comment">// 检查参数</span></span><br><span class="line">       checkParameters();</span><br><span class="line">       <span class="hljs-comment">// 注意同一interface，同一uniqleId，不同server情况</span></span><br><span class="line">       AtomicInteger cnt = EXPORTED_KEYS.get(key); <span class="hljs-comment">// 计数器</span></span><br><span class="line">       <span class="hljs-keyword">if</span> (cnt == <span class="hljs-keyword">null</span>) &#123; <span class="hljs-comment">// 没有发布过</span></span><br><span class="line">           cnt = CommonUtils.putToConcurrentMap(EXPORTED_KEYS, key, <span class="hljs-keyword">new</span> AtomicInteger(<span class="hljs-number">0</span>));</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="hljs-keyword">int</span> c = cnt.incrementAndGet();</span><br><span class="line">       <span class="hljs-keyword">int</span> maxProxyCount = providerConfig.getRepeatedExportLimit();</span><br><span class="line">       <span class="hljs-keyword">if</span> (maxProxyCount &gt; <span class="hljs-number">0</span>) &#123;</span><br><span class="line">         <span class="hljs-comment">// 超过最大数量，直接抛出异常</span></span><br><span class="line">       &#125;</span><br><span class="line">       <span class="hljs-comment">// 构造请求调用器</span></span><br><span class="line">       providerProxyInvoker = <span class="hljs-keyword">new</span> ProviderProxyInvoker(providerConfig);</span><br><span class="line">       <span class="hljs-comment">// 初始化注册中心</span></span><br><span class="line">       <span class="hljs-keyword">if</span> (providerConfig.isRegister()) &#123;</span><br><span class="line">           List&lt;RegistryConfig&gt; registryConfigs = providerConfig.getRegistry();</span><br><span class="line">           <span class="hljs-keyword">if</span> (CommonUtils.isNotEmpty(registryConfigs)) &#123;</span><br><span class="line">               <span class="hljs-keyword">for</span> (RegistryConfig registryConfig : registryConfigs) &#123;</span><br><span class="line">                   RegistryFactory.getRegistry(registryConfig); <span class="hljs-comment">// 提前初始化Registry</span></span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="hljs-comment">// 将处理器注册到server</span></span><br><span class="line">       List&lt;ServerConfig&gt; serverConfigs = providerConfig.getServer();</span><br><span class="line">       <span class="hljs-keyword">for</span> (ServerConfig serverConfig : serverConfigs) &#123;</span><br><span class="line">           Server server = serverConfig.buildIfAbsent();</span><br><span class="line">           <span class="hljs-comment">// 注册序列化接口</span></span><br><span class="line">           server.registerProcessor(providerConfig, providerProxyInvoker);</span><br><span class="line">           <span class="hljs-keyword">if</span> (serverConfig.isAutoStart()) &#123;</span><br><span class="line">               server.start();</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       <span class="hljs-comment">// 注册到注册中心</span></span><br><span class="line">       providerConfig.setConfigListener(<span class="hljs-keyword">new</span> ProviderAttributeListener());</span><br><span class="line">       register();</span><br><span class="line"></span><br><span class="line">       <span class="hljs-comment">// 记录一些缓存数据</span></span><br><span class="line">       RpcRuntimeContext.cacheProviderConfig(<span class="hljs-keyword">this</span>);</span><br><span class="line">       exported = <span class="hljs-keyword">true</span>;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<p>主要逻辑如下：</p>
+<ol>
+<li>根据 providerConfig 创建一个 key 和 AppName。</li>
+<li>检验同一个服务多次发布的次数。</li>
+<li>创建一个 ProviderProxyInvoker， 其中包含了过滤器链，而过滤器链的最后一链就是对接口实现类的调用。</li>
+<li>初始化注册中心，创建 Server（会有多个Server，因为可能配置了多个协议）。</li>
+<li>将 config 和 invoker 注册到 Server 中。内部是将其放进了一个 Map 中。</li>
+<li>启动 Server。启动 Server 其实就是启动 Netty 服务，并创建一个 RpcHandler，也就是 Netty 的 Handler，这个 RpcHandler 内部含有一个数据结构，包含接口级别的 invoker。所以，当请求进入的时候，RpcHandler 的 channelRead 方法会被调用，然后间接的调用 invoker 方法。</li>
+<li>成功启动后，注册到注册中心。将数据缓存到 RpcRuntimeContext 的一个 Set 中。</li>
+</ol>
+<p>一起来详细看看。</p>
+<p>Invoker 怎么构造的？很简单，最主要的就是过滤器。关于过滤器，我们之前已经写过一篇文章了。不再赘述。</p>
+<p>关键看看 Server 是如何构造的。</p>
+<p>关键代码 <code>serverConfig.buildIfAbsent()</code>，类似 HashMap 的 putIfAbsent。如果不存在就创建。</p>
+<p>Server 接口目前有 2 个实现，bolt 和 rest。当然，Server 也是基于扩展的，所以，不用怕，可以随便增加实现。</p>
+<p>关键代码在 ServerFactory 的 getServer 中，其中会获取扩展点的 Server，然后，执行 Server 的 init 方法，我们看看默认 bolt 的 init 方法。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Override</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">init</span><span class="hljs-params">(ServerConfig serverConfig)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">this</span>.serverConfig = serverConfig;</span><br><span class="line">    <span class="hljs-comment">// 启动线程池</span></span><br><span class="line">    bizThreadPool = initThreadPool(serverConfig);</span><br><span class="line">    boltServerProcessor = <span class="hljs-keyword">new</span> BoltServerProcessor(<span class="hljs-keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>保存了 serverConfig 的引用，启动了一个业务线程池，创建了一个 BoltServerProcessor 对象。</p>
+<p>第一：这个线程池会在 Bolt 的 RpcHandler 中被使用，也就是说，复杂业务都是在这个线程池执行，不会影响 Netty 的 IO 线程。</p>
+<p>第二：BoltServerProcessor 非常重要，他的构造方法包括了当前的 BoltServer，所以他俩是互相依赖的。关键点来了：</p>
+<p>BoltServerProcessor 实现了 UserProcessor 接口，而 Bolt 的 RpcHandler 持有一个 <code>Map&lt;String, UserProcessor&lt;?&gt;&gt;</code>，所以，当 RpcHandler 被执行 channelRead 方法的时候，一定会根据接口名称找到对应的 UserProcessor，并执行他的 handlerRequest 方法。</p>
+<p>那么，RpcHandler 是什么时候创建并放置到 RpcHandler 中的呢？</p>
+<p>具体是这样的：在 <code>server.start()</code> 执行的时候，该方法会初始化 Netty 的 Server，在 SOFA 中，叫 RpcServer，将 BoltServerProcessor 放置到名叫 userProcessors 的 Map 中。<strong>然后</strong>，当 RpcServer 启动的时候，也就是 start 方法，会执行一个 init 方法，该方法内部就是设置 Netty 各种属性的地方，包括 Hander，其中有 2 行代码对我们很重要：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">final</span> RpcHandler rpcHandler = <span class="hljs-keyword">new</span> RpcHandler(<span class="hljs-keyword">true</span>, <span class="hljs-keyword">this</span>.userProcessors);</span><br><span class="line">pipeline.addLast(<span class="hljs-string">"handler"</span>, rpcHandler);</span><br></pre></td></tr></table></figure>
+<p>创建了一个 RpcHandler，并添加到 pipeline 中，这个 Handler 的构造参数就是包含所有 BoltServerProcessor 的 Map。</p>
+<p>所以，总的流程就是：</p>
+<blockquote>
+<p>每个接口都会创建一个 providerConfig 对象，这个对象会创建对应的 invoker 对象（包含过滤器链），这两个对象都会放到 BoltServer 的 invokerMap 中，而 BoltServer 还包含其他对象，比如 BoltServerProcessor（继承 UserProcessor）， RpcServer(依赖 RpcHandler)。当初始化 BoltServerProcessor 的时候，会传入 this（BoltServer），当初始化 RpcServer 的时候，会传入 BoltServerProcessor 到 RpcServer 的 Map 中。在 RpcHandler 初始化的时候，又会将 RpcServer 的 Map 传进自己的内部。完成最终的依赖。<br>当请求进入，RpcHandler 调用对应的 UserProcessor 的 handlerRequest 方法，而该方法中，会调用对应的 invoker，invoker 调用过滤器链，知道调用真正的实现类。</p>
+</blockquote>
+<p>而大概的 UML 图就是下面这样的：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-bc548c7fb0b7a331.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>红色部分是 RPC 的核心，包含 Solt 的 Server，实现 UserProcessor 接口的 BoltServerProcessor，业务线程池，存储所有接口实现的 Map。</p>
+<p>绿色部分是 Bolt 的接口和类，只要实现了 UserProcessor 接口，就能将具体实现替换，也既是处理具体数据的逻辑。</p>
+<p>最后，看看关键类 BoltServerProcessor ，他是融合 RPC 和 Bolt 的胶水类。</p>
+<p>该类会注册一个序列化器替代 Bolt 默认的。handleRequest 方法是这个类的核心方法。有很多逻辑，主要看这里：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// 查找服务</span></span><br><span class="line">Invoker invoker = boltServer.findInvoker(serviceName);</span><br><span class="line"><span class="hljs-comment">// 真正调用</span></span><br><span class="line">response = doInvoke(serviceName, invoker, request);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * 找到服务端Invoker</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> serviceName 服务名</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> Invoker对象</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> Invoker <span class="hljs-title">findInvoker</span><span class="hljs-params">(String serviceName)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> invokerMap.get(serviceName);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>根据服务名称，从 Map 中找到服务，然后调用 invoker 的 invoker 方法。</p>
+<p>再看看 Netty 到 BoltServerProcessor 的 handlerRequest 的调用链，使用 IDEA 的 Hierarchy 功能，查看该方法，最后停留在 ProcessTast 中，一个 Runnable.</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-9ac01fb1c428aa50.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>根据经验，这个类肯定是被放到线程池了。什么时候放的呢？看看他的构造方法的 Hierarchy。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-3509b833b40923ff.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>从图中可以看到 ，Bolt 的 RpcHandler 的 channelRead 最终会调用 ProcessTask 的 构造方法。</p>
+<p>那么 BoltServer 的用户线程池什么时候使用呢？还是使用 IDEA 的 Hierarchy 功能。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-730e8c41dd65e6b3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>其实也是在这个过程中，当用户没有设置线程池，则使用系统线程池。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>好了，关于 SOFA 的服务发布和服务的接收过程，就介绍完了，可以说，整个框架还是非常轻量级的。基本操作就是：内部通过在 Netty的 Handler 中保存一个存储服务实现的 Map 完成远程调用。</p>
+<p>其实和我们之前用 Netty 写的小 demo 类似。</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/04/30/2018/2018-04-30-SOFA-源码分析-——-服务引用过程/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">SOFA-源码分析-——-服务引用过程</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/04/28/2018/2018-04-28-Java-并发编程常识-——-by-梁飞/">
+                <span class="level-item">Java-并发编程常识-——-by-梁飞</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/04/29/2018/2018-04-29-SOFA-源码分析-——-服务发布过程/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="SOFA-源码分析-——-服务发布过程" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>RocketMQ 和 Kafka 索引设计比较 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="RocketMQ 和 Kafka 索引设计比较">
+<meta property="og:url" content="http://thinkinjava.cn/2019/11/15/2019/1115/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="RocketMQ 和 Kafka 索引设计比较">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="RocketMQ 和 Kafka 索引设计比较" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-11-15T01:19:02.000Z">2019-11-15</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Message-Queue/">Message Queue</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    15 分钟 读完 (大约 2315 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                RocketMQ 和 Kafka 索引设计比较
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a></p>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>索引，是存储设计的关键，一个好的索引，应该能够在最短的时间里，找到你想要的数据，同时，还能尽量少的使用内存或磁盘空间。</p>
+<p>今天不谈 MySQL 或者 NoSQL 这些数据库索引，谈谈相对而言较为简单的 MQ 索引。通过研究 MQ 的索引，看看他们为何如此设计，我们又有哪些借鉴之处。</p>
+<h2 id="RocketMQ"><a href="#RocketMQ" class="headerlink" title="RocketMQ"></a>RocketMQ</h2><p>RocketMQ 的数据文件属于混合存储，即，所有的 topic 数据都放在一个文件里，因此，读数据的时候，就无法做到连续读了，只能随机读，所以 RocketMQ 推荐使用大内存，利用 PageCache 预读机制把 commitlog 数据缓存起来，而混合存储的好处则是能够承受万级别的队列数量。</p>
+<p>下图为阿里云某篇文章对 RocketMQ 和 kafka 进行的“不同数量 topic 对性能的影响”测试，每个 topic 都是  8 个 queue 或者 8 个 partition。文章测试结果如下：</p>
+<p><img src="http://q0zlvq28b.bkt.clouddn.com/2019-11-15-014119.png" alt></p>
+<p><img src="http://q0zlvq28b.bkt.clouddn.com/2019-11-15-014411.png" alt="-"></p>
+<p>文章地址：<a href="http://jm.taobao.org/2016/04/07/kafka-vs-rocketmq-topic-amout/" target="_blank" rel="noopener">http://jm.taobao.org/2016/04/07/kafka-vs-rocketmq-topic-amout/</a></p>
+<p>怎么说呢？很强。</p>
+<p>当然，华为云的老哥也做了一些回应：<a href="https://bbs.huaweicloud.com/blogs/113911" target="_blank" rel="noopener">https://bbs.huaweicloud.com/blogs/113911</a></p>
+<p>华为老哥表示 kafka 64 分区有些夸张，单机单磁盘 1000 分区还是没啥问题的（最好别超过 2000）。</p>
+<p>这不是说索引的，跑偏了。回来。</p>
+<p>RocketMQ 提供基于 MsgID 搜索消息的方案，即，每条消息，都有一个唯一的 ID，ID 由 broker IP + Port + CommitLog    Offset 组成，通过这两个参数，可快速定位到一条消息。注意，Kafka 是没有这个功能的，但理论上，通过 Kafka 的 offset 也是可以找到具体的消息的，下面会详细说。</p>
+<p>另外 RocketMQ 有 2 种索引。</p>
+<ol>
+<li>消息消费索引</li>
+<li>Hash 查询索引</li>
+</ol>
+<h4 id="消息消费索引"><a href="#消息消费索引" class="headerlink" title="消息消费索引"></a>消息消费索引</h4><p>消息消费索引，可以理解为，就是 topic 的索引数据，类似 kafka 的索引数据。如果没有这个，消费者基本就找不到消息了。这个索引里，存放着对应 topic 、对应 queue 里的消息连续 offset 集合（不像 commitLog 是混合存储的）。</p>
+<p>下图为 RocketMQ 的存储设计图：</p>
+<p><img src="http://q0zlvq28b.bkt.clouddn.com/2019-11-15-014426.png" alt="image-"></p>
+<p>如图：消息被不停的 append 到 commitlog，然后，再构建<code>消费索引</code>，如果没有这个索引，consumer 要在 commitlog 里消费消息，那可真是太难了（慢慢遍历？）。</p>
+<p><img src="http://q0zlvq28b.bkt.clouddn.com/2019-11-15-014436.png" alt="image-"></p>
+<p>每个 consumerQueue 文件里存放着 3ow 个元素，每个元素 20 字节，8 字节 offset ，4 字节 size， 8 字节 tag hashcode，因此，每个文件也就 5.8MB 不到，很轻量。</p>
+<h4 id="Hash-查询索引"><a href="#Hash-查询索引" class="headerlink" title="Hash 查询索引"></a>Hash 查询索引</h4><p>Hash 查询索引，主要是根据 Key 来快速查询消息，属于一种附加功能。RocketMQ 采用了 Java HashMap 的思想，实现了 Hash 索引的存储。</p>
+<p>Hash 索引结果如下图：</p>
+<p><img src="http://q0zlvq28b.bkt.clouddn.com/2019-11-15-014448.png" alt></p>
+<p>这里我直接使用了 RocketMQ PDF 文档里的图，从图中可以看出，这个 Map 有 500w 个 slot，每个 slot 的链表长度为 4. 如果我们使用一个  key 进行消息查找，他的过程是这样的：先 hash key 得到 hashCode，然后对 5oow 取余，找到槽位，这个槽位大小是 4 个字节，保存了链表尾部的具体元素地址。而这个链表元素的大小是 20 个字节，保存了 key 的 hash 值，commitlog offset，时间戳，还有他下一个链表节点的地址。</p>
+<p>为什么在 链表元素里保存 了 hash 值呢？为了防止 hash 值不同，但是 hash 取模后的结果相同（也就是 hash 冲突），如果冲突了，就用 hash 值比对一下。</p>
+<p>那如果 hash 值相同，key 内容不同呢？RocketMQ 的做法是放在客户端过滤。</p>
+<p>整体处理逻辑和 Java 的 HashMap 类似。</p>
+<h2 id="Kafka"><a href="#Kafka" class="headerlink" title="Kafka"></a>Kafka</h2><p>鼎鼎大名的 Kafka，可以说强无敌了。今天，我们主要说说他的索引设计。</p>
+<p>Kafka 每个 topic 有多个 partition ，每个 partition 有多个 segment，每个 segment 里，存储了消息的相关文件：数据文件，索引文件。</p>
+<p>如下图：</p>
+<p><img src="http://q0zlvq28b.bkt.clouddn.com/2019-11-15-014502.png" alt="image"></p>
+<p>Kafka 不像 RocketMQ，所有数据都存在一个文件里，Kafka 每个 topic 的文件都是隔离开的，而每个 topic 又可能会有很多的 partition（看你的配置），因此，如果你的 topic 非常多，或者你的 partition 非常多的话，顺序写就会变成随机写，性能会骤降（按照 kafka 的说法，可能相差 6,000 倍），这也是我个人认为是两者比较大的区别之一。</p>
+<p>Kafka 的索引文件和 数据文件绑定在一起的。这个和 RocketMQ 的 消费索引类似，Kafka 里面是逻辑 offset 映射物理 offset ，并且采用了稀疏索引的方式。然后，我们看看他们的索引设计，如下图：</p>
+<p><img src="http://q0zlvq28b.bkt.clouddn.com/2019-11-15-014518.png" alt="-"></p>
+<p>我们以 [3, 745] 为例进行说明，3 表示逻辑索引，即这个 partition  下的全局递增逻辑索引（当然，这个是相对偏移量，这里为了描述简单，就不区分了），745 表示这条消息的所在文件的物理 position。</p>
+<p>假设，我现在是一个消费者，订阅了这个 partition 的消息，那么我将从 0 号逻辑索引开始订阅，从 *.index 开始遍历，然后找到对应的物理文件 position.</p>
+<p>朋友，kafka 的这个 .index 文件和 RocketMQ 的 consumerQueue 索引，是不是很相似呢？</p>
+<p>其实刚开始我一直在想，如果 Kafka 不设计索引行不行？</p>
+<p>仔细想想，如果没有索引，如何定位一条消息？每次写入时，都返回一个物理 offset（同时返回 ip、partition、segment 等信息），消费者直接通过这个物理 offset 消费消息。例如 0ffset 362， offset 901 等等。</p>
+<p>例如：查找 offset 901消息。通过 服务器 ip+port + topic + partition + segment + offset 901 来找，也不是不可以。但是也太不人性化了吧？</p>
+<p>或者，我们直接遍历 .log 文件，从头开始消费。但如果，我不想从头开始消费呢？我想从第 18 条消息开始消费呢？因为没有 .index ，我只能慢慢遍历。</p>
+<p>如果我们设计一个索引，一个 topic 设计一个递增的 offset，从 0 开始，每新增一条消息，加一。这是一个逻辑偏移量，我们让逻辑偏移量 映射 物理偏移量。消费者也从  0 开始消费，这样，就达到了某种默契。就算是第  18 条消息，我也能快速找到。</p>
+<p>我们看看 kafka 自己怎么说的：</p>
+<p><img src="http://q0zlvq28b.bkt.clouddn.com/2019-11-15-015214.png" alt="-"></p>
+<p>意思就是：本来我们想用 guid 作为消息的 key 来映射物理 offset 的。但是，仔细一想，不太合适。缺点如下：</p>
+<ol>
+<li>由于每个消费者都为 broker 维护一个 ID，因此没必要用 guid 这种全局 id ，完全可以在 broker 的基础上，再做唯一 id。</li>
+<li>guid 和物理 offset  的索引映射设计非常的重，耗费资源。</li>
+</ol>
+<p>所以，他们搞了一个基于 partition  的分区原子计数器。使用 broker ID + 分区 ID +  计数器 就可以标识一条唯一的消息。然后，用计数器映射 偏移量 offset，简直就是完美。然后，为了达到搜索效率和空间消耗的平衡，边稠密索引为稀疏索引。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>好，开始总结。</p>
+<p>RocketMQ 和 Kafka 的索引设计相似之处：</p>
+<p>RocketMQ 的 topic 和 kafka 的 topic 类似，RocketMQ 的 queue 和 kafka 的 partition 类似，都是为了 scale out。RocketMQ 为每个 queue 设计了 consumerQueue 索引文件，每个文件大小固定 5.8MB；Kafka 为每个 partition 设计了 segment （.index + .log）。也就是说，consumerQueue 索引文件和 segment 的 .index 本质是一样的，都是为了让 consumer 快速找到消息。</p>
+<p>最后，他俩的最大不同，就是：RocketMQ 是所有 topic 混合存储，目的是支持更多的 topic，而 Kafka 的 topic 是单独存储，好处是顺序读性能好，另外，根据分区做副本也比较好做。</p>
+<p>不得不说，工程设计都是取舍与平衡。得根据实际场景来进行代码设计。</p>
+<p>例如，现在有个小公司，想自己实现个消息队列，你会怎么设计呢?</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/11/13/2019/1113mqThreadModel/">
+                <span class="level-item">RocketMQ 线程模型分析</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2019/11/15/2019/1115/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="RocketMQ 和 Kafka 索引设计比较" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

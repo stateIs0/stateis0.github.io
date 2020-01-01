@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>并发编程之线程池的使用及扩展和优化 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之线程池的使用及扩展和优化">
+<meta property="og:url" content="http://thinkinjava.cn/2018/01/04/2018/2018-01-04-并发编程之线程池的使用及扩展和优化/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="并发编程之线程池的使用及扩展和优化">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="并发编程之线程池的使用及扩展和优化" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-01-03T18:11:11.000Z">2018-01-04</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/并发编程/">并发编程</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    28 分钟 读完 (大约 4182 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                并发编程之线程池的使用及扩展和优化
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       <!--more-->       多线程的软件设计方法确实可以最大限度的发挥现代多核处理器的计算能力，提高生产系统的吞吐量和性能。但是，如果一个系统同时创建大量线程，线程间频繁的切换上下文导致的系统开销将会拖慢整个系统。严重的甚至导致内存耗尽导致OOM异常。因此，在实际的生产环境中，线程的数量必须得到控制，盲目的创建大量新车对系统是有伤害的。</p>
+<p>那么，怎么才能最大限度的利用CPU的性能，又能保持系统的稳定性呢？其中有一个方法就是使用线程池。</p>
+<p>简而言之，在使用线程池后，创建线程便处理从线程池获得空闲线程，关闭线程变成了向池子归还线程。也就是说，提高了线程的复用。</p>
+<p>而 JDK 在 1.5 之后为我提供了现成的线程池工具，我们今天就来学习看看如何使用他们。</p>
+<ol>
+<li>Executors 线程池工厂能创建哪些线程池</li>
+<li>如何手动创建线程池</li>
+<li>如何扩展线程池</li>
+<li>如何优化线程池的异常信息</li>
+<li>如何设计线程池中的线程数量</li>
+</ol>
+<h2 id="1-Executors-线程池工厂能创建哪些线程池"><a href="#1-Executors-线程池工厂能创建哪些线程池" class="headerlink" title="1. Executors 线程池工厂能创建哪些线程池"></a><strong>1. Executors 线程池工厂能创建哪些线程池</strong></h2><p>先来一个最简单的线程池使用例子：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyTask</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Runnable</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    System.out</span><br><span class="line">        .println(System.currentTimeMillis() + <span class="hljs-string">": Thread ID :"</span> + Thread.currentThread().getId());</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">      Thread.sleep(<span class="hljs-number">1000</span>);</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">      e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>&#123;</span><br><span class="line">  MyTask myTask = <span class="hljs-keyword">new</span> MyTask();</span><br><span class="line">  ExecutorService service1 = Executors.newFixedThreadPool(<span class="hljs-number">5</span>);</span><br><span class="line">  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;</span><br><span class="line">    service1.submit(myTask);</span><br><span class="line">  &#125;</span><br><span class="line">  service1.shutdown();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-78568c1e3a3862a3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="运行结果"></p>
+<p>我们创建了一个线程池实例，并设置默认线程数量为5，并向线程池提交了10任务，分别打印当前毫秒时间和线程ID，从结果中，我们可以看到结果中有5个相同 id 的线程打印了毫秒时间。</p>
+<p>这是最简单的例子。</p>
+<p>接下来我们讲讲其他的线程创建方式。</p>
+<p><strong>1. 固定线程池</strong><br> ExecutorService service1 = Executors.newFixedThreadPool(5);<br>该方法返回一个固定线程数量的线程池。该线程池中的线程数量始终不变。当有一个新的任务提交时，线程池中若有空闲线程，则立即执行，若没有，则新的任务会被暂存在一个任务队列（默认无界队列 int 最大数）中，待有线程空闲时，便处理在任务队列中的任务。</p>
+<p><strong>2. 单例线程池</strong><br>ExecutorService service3 = Executors.newSingleThreadExecutor();<br> 该方法返回一个只有一个线程的线程池。若多余一个任务被提交到该线程池，任务会被保存在一个任务队列（默认无界队列 int 最大数）中，待线程空闲，按先入先出的顺序执行队列中的任务。</p>
+<p><strong>3. 缓存线程池</strong><br>ExecutorService service2 = Executors.newCachedThreadPool();<br> 该方法返回一个可根据实际情况调整线程数量的线程池，线程池的线程数量不确定，但若有空闲线程可以复用，则会优先使用可复用的线程，所有线程均在工作，如果有新的任务提交，则会创建新的线程处理任务。所有线程在当前任务执行完毕后，将返回线程池进行复用。</p>
+<p><strong>4. 任务调用线程池</strong><br>ExecutorService service4 = Executors.newScheduledThreadPool(2);<br>该方法也返回一个 ScheduledThreadPoolExecutor 对象，该线程池可以指定线程数量。</p>
+<p>前3个线程的用法没什么差异，关键是第四个，虽然线程任务调度框架很多，但是我们仍然可以学习该线程池。如何使用呢？下面来个例子：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">A</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>&#123;</span><br><span class="line">    ScheduledThreadPoolExecutor service4 = (ScheduledThreadPoolExecutor) Executors</span><br><span class="line">        .newScheduledThreadPool(<span class="hljs-number">2</span>);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 如果前面的任务没有完成，则调度也不会启动</span></span><br><span class="line">    service4.scheduleAtFixedRate(<span class="hljs-keyword">new</span> Runnable() &#123;</span><br><span class="line">      <span class="hljs-meta">@Override</span></span><br><span class="line">      <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">          <span class="hljs-comment">// 如果任务执行时间大于间隔时间，那么就以执行时间为准（防止任务出现堆叠）。</span></span><br><span class="line">          Thread.sleep(<span class="hljs-number">10000</span>);</span><br><span class="line">          System.out.println(System.currentTimeMillis() / <span class="hljs-number">1000</span>);</span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">          e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;<span class="hljs-comment">// initialDelay（初始延迟） 表示第一次延时时间 ; period 表示间隔时间</span></span><br><span class="line">    &#125;, <span class="hljs-number">0</span>, <span class="hljs-number">2</span>, TimeUnit.SECONDS);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    service4.scheduleWithFixedDelay(<span class="hljs-keyword">new</span> Runnable() &#123;</span><br><span class="line">      <span class="hljs-meta">@Override</span></span><br><span class="line">      <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">          Thread.sleep(<span class="hljs-number">5000</span>);</span><br><span class="line">          System.out.println(System.currentTimeMillis() / <span class="hljs-number">1000</span>);</span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">          e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;<span class="hljs-comment">// initialDelay（初始延迟） 表示延时时间；delay + 任务执行时间 = 等于间隔时间 period</span></span><br><span class="line">    &#125;, <span class="hljs-number">0</span>, <span class="hljs-number">2</span>, TimeUnit.SECONDS);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 在给定时间，对任务进行一次调度</span></span><br><span class="line">    service4.schedule(<span class="hljs-keyword">new</span> Runnable() &#123;</span><br><span class="line">      <span class="hljs-meta">@Override</span></span><br><span class="line">      <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="hljs-string">"5 秒之后执行 schedule"</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;, <span class="hljs-number">5</span>, TimeUnit.SECONDS);</span><br><span class="line">  &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码创建了一个 ScheduledThreadPoolExecutor 任务调度线程池，分别调用了3个方法，需要着重解释 scheduleAtFixedRate 和 scheduleWithFixedDelay 方法，这两个方法的作用很相似，唯一的区别就是他们执行人物的间隔时间的计算方式，前者时间间隔算法是根据指定的 period 时间和任务执行时间中取时间长的，后者取的是指定的 delay 时间 + 任务执行时间。如果同学们有兴趣，可以将上面的代码跑跑看。一样便能看出端倪。</p>
+<p>好了，JDK 给我们封装了创建线程池的 4 个方法，但是，请注意，由于这些方法高度封装，因此，如果使用不当，出了问题将无从排查，因此，我建议，程序员应到自己手动创建线程池，而手动创建的前提就是高度了解线程池的参数设置。那么我们就来看看如何手动创建线程池。</p>
+<h2 id="2-如何手动创建线程池"><a href="#2-如何手动创建线程池" class="headerlink" title="2. 如何手动创建线程池"></a><strong>2. 如何手动创建线程池</strong></h2><p>下面是一个手动创建线程池的范本：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * 默认5条线程（默认数量，即最少数量），</span></span><br><span class="line"><span class="hljs-comment"> * 最大20线程（指定了线程池中的最大线程数量），</span></span><br><span class="line"><span class="hljs-comment"> * 空闲时间0秒（当线程池梳理超过核心数量时，多余的空闲时间的存活时间，即超过核心线程数量的空闲线程，在多长时间内，会被销毁），</span></span><br><span class="line"><span class="hljs-comment"> * 等待队列长度1024，</span></span><br><span class="line"><span class="hljs-comment"> * 线程名称[MXR-Task-%d],方便回溯，</span></span><br><span class="line"><span class="hljs-comment"> * 拒绝策略：当任务队列已满，抛出RejectedExecutionException</span></span><br><span class="line"><span class="hljs-comment"> * 异常。</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> ThreadPoolExecutor threadPool = <span class="hljs-keyword">new</span> ThreadPoolExecutor(<span class="hljs-number">5</span>, <span class="hljs-number">20</span>, <span class="hljs-number">0L</span>,</span><br><span class="line">    TimeUnit.MILLISECONDS, <span class="hljs-keyword">new</span> LinkedBlockingQueue&lt;&gt;(<span class="hljs-number">1024</span>)</span><br><span class="line">    , <span class="hljs-keyword">new</span> ThreadFactoryBuilder().setNameFormat(<span class="hljs-string">"My-Task-%d"</span>).build()</span><br><span class="line">    , <span class="hljs-keyword">new</span> AbortPolicy()</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<p>我们看到，<strong>ThreadPoolExecutor</strong> 也就是线程池有 7 个参数，我们一起来好好看看：</p>
+<ol>
+<li><strong>corePoolSize</strong> 线程池中核心线程数量</li>
+<li><strong>maximumPoolSize</strong> 最大线程数量</li>
+<li><strong>keepAliveTime</strong>  空闲时间（当线程池梳理超过核心数量时，多余的空闲时间的存活时间，即超过核心线程数量的空闲线程，在多长时间内，会被销毁）</li>
+<li><strong>unit</strong> 时间单位</li>
+<li><strong>workQueue</strong> 当核心线程工作已满，需要存储任务的队列</li>
+<li><strong>threadFactory</strong> 创建线程的工厂</li>
+<li><strong>handler</strong> 当队列满了之后的拒绝策略</li>
+</ol>
+<p>前面几个参数我们就不讲了，很简单，主要是后面几个参数，队列，线程工厂，拒绝策略。</p>
+<p>我们先看看队列，线程池默认提供了 4 个队列。</p>
+<ol>
+<li>无界队列： 默认大小 int 最大值，因此可能会耗尽系统内存，引起OOM，非常危险。</li>
+<li>直接提交的队列 ：  没有容量，不会保存，直接创建新的线程，因此需要设置很大的线程池数。否则容易执行拒绝策略，也很危险。</li>
+<li>有界队列：如果core满了，则存储在队列中，如果core满了且队列满了，则创建线程，直到maximumPoolSize 到了，如果队列满了且最大线程数已经到了，则执行拒绝策略。</li>
+<li>优先级队列：按照优先级执行任务。也可以设置大小。</li>
+</ol>
+<p>楼主在自己的项目中使用了无界队列，但是设置了任务大小，1024。如果你的任务很多，建议分为多个线程池。不要把鸡蛋放在一个篮子里。</p>
+<p>再看看拒绝策略，什么是拒绝策略呢？当队列满了，如何处理那些仍然提交的任务。JDK 默认有4种策略。</p>
+<ol>
+<li>AbortPolicy ：直接抛出异常，阻止系统正常工作.</li>
+<li>CallerRunsPolicy : 只要线程池未关闭，该策略直接在调用者线程中，运行当前被丢弃的任务。显然这样做不会真的丢弃任务，但是，任务提交线程的性能极有可能会急剧下降。</li>
+<li>DiscardOldestPolicy: 该策略将丢弃最老的一个请求，也就是即将被执行的一个任务，并尝试再次提交当前任务.</li>
+<li>DiscardPolicy: 该策略默默地丢弃无法处理的任务，不予任何处理，如果允许任务丢失，我觉得这是最好的方案.</li>
+</ol>
+<p>当然，如果你不满意JDK提供的拒绝策略，可以自己实现，只需要实现 RejectedExecutionHandler 接口，并重写 rejectedExecution 方法即可。</p>
+<p>最后，线程工厂，线程池的所有线程都由线程工厂来创建，而默认的线程工厂太过单一，我们看看默认的线程工厂是如何创建线程的：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * The default thread factory</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DefaultThreadFactory</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">ThreadFactory</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> AtomicInteger poolNumber = <span class="hljs-keyword">new</span> AtomicInteger(<span class="hljs-number">1</span>);</span><br><span class="line">        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> ThreadGroup group;</span><br><span class="line">        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> AtomicInteger threadNumber = <span class="hljs-keyword">new</span> AtomicInteger(<span class="hljs-number">1</span>);</span><br><span class="line">        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String namePrefix;</span><br><span class="line"></span><br><span class="line">        DefaultThreadFactory() &#123;</span><br><span class="line">            SecurityManager s = System.getSecurityManager();</span><br><span class="line">            group = (s != <span class="hljs-keyword">null</span>) ? s.getThreadGroup() :</span><br><span class="line">                                  Thread.currentThread().getThreadGroup();</span><br><span class="line">            namePrefix = <span class="hljs-string">"pool-"</span> +</span><br><span class="line">                          poolNumber.getAndIncrement() +</span><br><span class="line">                         <span class="hljs-string">"-thread-"</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="hljs-function"><span class="hljs-keyword">public</span> Thread <span class="hljs-title">newThread</span><span class="hljs-params">(Runnable r)</span> </span>&#123;</span><br><span class="line">            Thread t = <span class="hljs-keyword">new</span> Thread(group, r,</span><br><span class="line">                                  namePrefix + threadNumber.getAndIncrement(),</span><br><span class="line">                                  <span class="hljs-number">0</span>);</span><br><span class="line">            <span class="hljs-keyword">if</span> (t.isDaemon())</span><br><span class="line">                t.setDaemon(<span class="hljs-keyword">false</span>);</span><br><span class="line">            <span class="hljs-keyword">if</span> (t.getPriority() != Thread.NORM_PRIORITY)</span><br><span class="line">                t.setPriority(Thread.NORM_PRIORITY);</span><br><span class="line">            <span class="hljs-keyword">return</span> t;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，线程名称为 pool- + 线程池编号 + -thread- + 线程编号 。设置为非守护线程。优先级为默认。</p>
+<p>如果我们想修改名称呢？对，实现 ThreadFactory 接口，重写 newThread 方法即可。但是已经有人造好轮子了， 比如我们的例子中使用的 google 的 guaua 提供的 ThreadFactoryBuilder 工厂。可以自定义线程名称，是否守护，优先级，异常处理等等，功能强大。</p>
+<h2 id="3-如何扩展线程池"><a href="#3-如何扩展线程池" class="headerlink" title="3. 如何扩展线程池"></a><strong>3. 如何扩展线程池</strong></h2><p>那么我们能扩展线程池的功能吗？比如记录线程任务的执行时间。实际上，JDK 的线程池已经为我们预留的接口，在线程池核心方法中，有2 个方法是空的，就是给我们预留的。还有一个线程池退出时会调用的方法。我们看看例子：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * 如何扩展线程池，重写 beforeExecute, afterExecute, terminated 方法，这三个方法默认是空的。</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * 可以监控每个线程任务执行的开始和结束时间，或者自定义一些增强。</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * 在 Worker 的 runWork 方法中，会调用这些方法</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ExtendThreadPoolDemo</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyTask</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Runnable</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    String name;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">MyTask</span><span class="hljs-params">(String name)</span> </span>&#123;</span><br><span class="line">      <span class="hljs-keyword">this</span>.name = name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">      System.out</span><br><span class="line">          .println(<span class="hljs-string">"正在执行：Thread ID:"</span> + Thread.currentThread().getId() + <span class="hljs-string">", Task Name = "</span> + name);</span><br><span class="line">      <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        Thread.sleep(<span class="hljs-number">100</span>);</span><br><span class="line">      &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    ExecutorService es = <span class="hljs-keyword">new</span> ThreadPoolExecutor(<span class="hljs-number">5</span>, <span class="hljs-number">5</span>, <span class="hljs-number">0L</span>, TimeUnit.MILLISECONDS,</span><br><span class="line">        <span class="hljs-keyword">new</span> LinkedBlockingQueue&lt;&gt;()) &#123;</span><br><span class="line">      <span class="hljs-meta">@Override</span></span><br><span class="line">      <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">beforeExecute</span><span class="hljs-params">(Thread t, Runnable r)</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="hljs-string">"准备执行："</span> + ((MyTask) r).name);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="hljs-meta">@Override</span></span><br><span class="line">      <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">afterExecute</span><span class="hljs-params">(Runnable r, Throwable t)</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="hljs-string">"执行完成： "</span> + ((MyTask) r).name);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="hljs-meta">@Override</span></span><br><span class="line">      <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">terminated</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="hljs-string">"线程池退出"</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">5</span>; i++) &#123;</span><br><span class="line">      MyTask myTask = <span class="hljs-keyword">new</span> MyTask(<span class="hljs-string">"TASK-GEYM-"</span> + i);</span><br><span class="line">      es.execute(myTask);</span><br><span class="line">      Thread.sleep(<span class="hljs-number">10</span>);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    es.shutdown();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们重写了 beforeExecute 方法，也就是执行任务之前会调用该方法，而 afterExecute 方法则是在任务执行完毕后会调用该方法。还有一个 terminated 方法，在线程池退出时会调用该方法。执行结果是什么呢？</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-754d506dbff55db4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>可以看到，每个任务执行前后都会调用 before 和 after 方法。相当于执行了一个切面。而在调用 shutdown 方法后则会调用 terminated 方法。</p>
+<h2 id="4-如何优化线程池的异常信息"><a href="#4-如何优化线程池的异常信息" class="headerlink" title="4. 如何优化线程池的异常信息"></a><strong>4. 如何优化线程池的异常信息</strong></h2><p>如何优化线程池的异常信息？ 在说这个问题之前，我们先说一个不容易发现的bug：</p>
+<p>看代码：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> ExecutionException, InterruptedException </span>&#123;</span><br><span class="line"></span><br><span class="line">  ThreadPoolExecutor executor = <span class="hljs-keyword">new</span> ThreadPoolExecutor(<span class="hljs-number">0</span>, Integer.MAX_VALUE, <span class="hljs-number">0L</span>,</span><br><span class="line">      TimeUnit.MILLISECONDS, <span class="hljs-keyword">new</span> SynchronousQueue&lt;&gt;());</span><br><span class="line"></span><br><span class="line">  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">5</span>; i++) &#123;</span><br><span class="line">    executor.submit(<span class="hljs-keyword">new</span> DivTask(<span class="hljs-number">100</span>, i));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DivTask</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Runnable</span> </span>&#123;</span><br><span class="line">  <span class="hljs-keyword">int</span> a, b;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">DivTask</span><span class="hljs-params">(<span class="hljs-keyword">int</span> a, <span class="hljs-keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">this</span>.a = a;</span><br><span class="line">    <span class="hljs-keyword">this</span>.b = b;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">double</span> re = a / b;</span><br><span class="line">    System.out.println(re);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行结果：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-a3b52ab932d7be31.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>注意：只有4个结果，其中一个结果被吞没了，并且没有任何信息。为什么呢？如果仔细看代码，会发现，在进行 100 / 0 的时候肯定会报错的，但是却没有报错信息，令人头痛，为什么呢？实际上，如果你使用 execute 方法则会打印错误信息，当你使用 submit 方法却没有调用它的get 方法，异常将会被吞没，因为，如果发生了异常，异常是作为返回值返回的。</p>
+<p>怎么办呢？我们当然可以使用 execute 方法，但是我们可以有另一种方式：重写 submit 方法，楼主写了一个例子，大家看一下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">  <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">TraceThreadPoolExecutor</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ThreadPoolExecutor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">TraceThreadPoolExecutor</span><span class="hljs-params">(<span class="hljs-keyword">int</span> corePoolSize, <span class="hljs-keyword">int</span> maximumPoolSize, <span class="hljs-keyword">long</span> keepAliveTime,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">        TimeUnit unit, BlockingQueue&lt;Runnable&gt; workQueue)</span> </span>&#123;</span><br><span class="line">      <span class="hljs-keyword">super</span>(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">execute</span><span class="hljs-params">(Runnable command)</span> </span>&#123;</span><br><span class="line"><span class="hljs-comment">//      super.execute(command);</span></span><br><span class="line">      <span class="hljs-keyword">super</span>.execute(wrap(command, clientTrace(), Thread.currentThread().getName()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-keyword">public</span> Future&lt;?&gt; submit(Runnable task) &#123;</span><br><span class="line"><span class="hljs-comment">//      return super.submit(task);</span></span><br><span class="line">      <span class="hljs-keyword">return</span> <span class="hljs-keyword">super</span>.submit(wrap(task, clientTrace(), Thread.currentThread().getName()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> Exception <span class="hljs-title">clientTrace</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Exception(<span class="hljs-string">"Client stack trace"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> Runnable <span class="hljs-title">wrap</span><span class="hljs-params">(<span class="hljs-keyword">final</span> Runnable task, <span class="hljs-keyword">final</span> Exception clientStack,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">        String clientThreaName)</span> </span>&#123;</span><br><span class="line">      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Runnable() &#123;</span><br><span class="line">        <span class="hljs-meta">@Override</span></span><br><span class="line">        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">          <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">            task.run();</span><br><span class="line">          &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">            clientStack.printStackTrace();</span><br><span class="line">            <span class="hljs-keyword">throw</span> e;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>我们重写了 submit 方法，封装了异常信息，如果发生了异常，将会打印堆栈信息。我们看看使用重写后的线程池后的结果是什么？</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-793e4be77a2ed977.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>从结果中，我们清楚的看到了错误信息的原因：by zero！并且堆栈信息明确，方便排错。优化了默认线程池的策略。</p>
+<h2 id="5-如何设计线程池中的线程数量"><a href="#5-如何设计线程池中的线程数量" class="headerlink" title="5. 如何设计线程池中的线程数量"></a><strong>5. 如何设计线程池中的线程数量</strong></h2><p>线程池的大小对系统的性能有一定的影响，过大或者过小的线程数量都无法发挥最优的系统性能，但是线程池大小的确定也不需要做的非常精确。因为只要避免极大和极小两种情况，线程池的大小对性能的影响都不会影响太大，一般来说，确定线程池的大小需要考虑CPU数量，内存大小等因素，在《Java Concurrency in Practice》 书中给出了一个估算线程池大小的经验公式：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-557329a5eea427f0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>公式还是有点复杂的，简单来说，就是如果你是CPU密集型运算，那么线程数量和CPU核心数相同就好，避免了大量无用的切换线程上下文，如果你是IO密集型的话，需要大量等待，那么线程数可以设置的多一些，比如CPU核心乘以2. </p>
+<p>至于如何获取 CPU 核心数，Java 提供了一个方法：</p>
+<p>Runtime.getRuntime().availableProcessors()；</p>
+<p>返回了CPU的核心数量。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>好了，到这里，我们已经对如何使用线程池有了一个认识，这里，楼主建议大家手动创建线程池，这样对线程池中的各个参数可以有精准的了解，在对系统进行排错或者调优的时候有好处。比如设置核心线程数多少合适，最大线程数，拒绝策略，线程工厂，队列的大小和类型等等，也可以是G家的线程工厂自定义线程。</p>
+<p>下一篇，我们将深入源码，看看JDK 的线程池是如何实现的。因此，先熟悉线程池的使用吧！！！</p>
+<p>good  luck！！！</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/01/04/2018/2018-01-04-并发编程之-线程协作工具-LockSupport/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">并发编程之-线程协作工具-LockSupport</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/01/03/2018/2018-01-03-并发编程之-线程协作工具类/">
+                <span class="level-item">并发编程之-线程协作工具类</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/01/04/2018/2018-01-04-并发编程之线程池的使用及扩展和优化/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="并发编程之线程池的使用及扩展和优化" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

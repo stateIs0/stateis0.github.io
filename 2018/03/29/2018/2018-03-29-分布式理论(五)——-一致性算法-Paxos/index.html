@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>分布式理论(五)——-一致性算法-Paxos - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="分布式理论(五)——-一致性算法-Paxos">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/29/2018/2018-03-29-分布式理论(五)——-一致性算法-Paxos/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="分布式理论(五)——-一致性算法-Paxos">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="分布式理论(五)——-一致性算法-Paxos" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-03-28T18:11:11.000Z">2018-03-29</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/分布式/">分布式</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    17 分钟 读完 (大约 2569 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                分布式理论(五)——-一致性算法-Paxos
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       <!--more-->       ## 前言</p>
+<p>Paxos 算法如同我们标题大图：世界上只有一种一致性算法，就是 Paxos。出自一位 google 大神之口。</p>
+<p>同时，Paxos 也是出名的晦涩难懂，推理过程极其复杂。楼主在尝试理解 Paxos 算法的过程中历经挫折。</p>
+<p>今天，楼主不会讲推理过程，因为就算是尝试使用大白话来讲，也非常的难懂。当然更不会讲数学公式。</p>
+<p>而是从一个普通 Java 程序员的角度来理解 Paxos 算法。</p>
+<h2 id="1-什么是-Paxos-算法"><a href="#1-什么是-Paxos-算法" class="headerlink" title="1. 什么是 Paxos 算法"></a>1. 什么是 Paxos 算法</h2><p>Paxos 算法由图灵奖获得者 Leslie Lamport 于 1990 年提出的一种基于消息传递且具有高度容错的特性的一致性算法。</p>
+<p>来看看大师的样貌：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-d3dc929240b8f0e1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Leslie Lamport（莱斯利·兰波特）"></p>
+<p>标准的程序员。。。。</p>
+<p>Paxos 有点类似我们之前说的 2PC，3PC，但是解决了他们俩的各种硬伤。该算法在很多大厂都得到了工程实践，比如阿里的 OceanBase 的分布式数据库，底层就是使用的 paxos 算法。再比如 Google 的 chubby 分布式锁也是用的这个算法。可见该算法在分布式系统中的地位，甚至于，paxos 就是分布式一致性的代名词。</p>
+<h2 id="2-Paxos-解决了什么问题"><a href="#2-Paxos-解决了什么问题" class="headerlink" title="2. Paxos 解决了什么问题"></a>2. Paxos 解决了什么问题</h2><p>那么它解决了什么问题呢？<br>答：解决了一致性问题。</p>
+<p>什么是 consensus （一致性）问题？</p>
+<p>在一个分布式系统中，有一组的 process，每个 process 都可以提出一个 value，consensus 算法就是用来从这些 values 里选定一个最终 value。如果没有 value 被提出来，那么就没有 value 被选中；如果有1个 value 被选中，那么所有的 process 都应该被通知到。</p>
+<p>我们假设一种情况，在一个集群环境中，要求所有机器上的状态是一致的，其中有2台机器想修改某个状态，机器 A 想把状态改为 A，机器 B 想把状态改为 B，那么到底听谁的呢？</p>
+<p>有人说，可以像 2PC，3PC 一样引入一个协调者，谁先到，听谁的。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-138fec3412382850.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>但是如果，协调者宕机了呢？</p>
+<p>所以需要对协调者也做备份，也要做集群。这时候，问题来了，这么多协调者，听谁的呢？</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-8cdcb216bb7a10b7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>Paxos 算法就是为了解决这个问题而生的！！！ 牛不？</p>
+<p>下面，楼主会尝试用自己的语言配合图，来解释使用 Paxos 算法来解决这样一个类似问题的过程。如果解释的不好，还请见谅。但楼主不会去写任何的算法推导过程，如果各位想看，文末有 Paxos 论文链接，和很多大牛写的推导过程。</p>
+<p>开始吧！</p>
+<h2 id="3-Paxos-例子说明"><a href="#3-Paxos-例子说明" class="headerlink" title="3. Paxos 例子说明"></a>3. Paxos 例子说明</h2><p>楼主这个例子来自中文维基百科，但楼主为了形象化，辅以图片解释，但愿不会让人更迷糊。</p>
+<h4 id="例子："><a href="#例子：" class="headerlink" title="例子："></a>例子：</h4><p>在 Paxos 岛上，有A1, A2, A3, A4, A5 5位议员，就税率问题进行决议。我们假设几个场景来解释：</p>
+<h4 id="场景-1"><a href="#场景-1" class="headerlink" title="场景 1."></a>场景 1.</h4><p>假设 A1 说：税率应该是 10%。而此时只有他一个人提这个建议。如下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-a8942ad847e30fe4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>很完美，没有任何人和他竞争提案，他的这个提案毫无阻挠的通过了。A2 - A5 都会回应他：<code>我们收到了你的提案，等待最终的批准。</code>而 A1 在收到 2 份回复后，就可以发布最终的决议：<code>税率定位 10%，不用再讨论了。</code></p>
+<p>这里有个注意的地方就是：为什么收到了 2 份回复就可以确定提案了呢？<br>答：因为包括他自己，就达到 3 个人了，<code>少数服从多数。</code><br>如果各位听说过鸽笼原理/抽屉原理，就明白个大概了。有人说，<code>鸽笼原理/抽屉原理就是 Paxos 的核心思想。</code></p>
+<h4 id="场景-2："><a href="#场景-2：" class="headerlink" title="场景 2："></a>场景 2：</h4><p>现在我们假设在 A1 提出 10% 税率提案的同时, A5 决定将税率定为 20%，如果这个提案要通过侍从送到其他议员的案头，A1 的草案将由 4 位侍从送到 A2-A5 那里。但是侍从不靠谱（代表分布式环境不靠谱），负责 A2 和 A3 的侍从顺利送达，而负责 A4 和 A5 的侍从则开溜了！</p>
+<p>而 A5 的草案则送到了 A4 和 A3 的手中。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-16ed1e944c9a3164.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>现在，A1 ，A2，A3 收到了 A1 的提案，A3，A4， A5 收到 A5 的提案，按照 Paxos 的协议，A1，A2，A4，A5 4个侍从将接受他们的提案，侍从拿着回复：<code>我已收到你的提案，等待最终批准</code> 回到提案者那里。</p>
+<p>而 A3 的行为将决定批准哪一个。</p>
+<p>当 A3 同时收到了 A1 和 A5 的请求，该如何抉择呢？不同的抉择将会导致不同的结果。</p>
+<p>有 3 种情况，我们分析一下：</p>
+<h4 id="场景2：情况一"><a href="#场景2：情况一" class="headerlink" title="场景2：情况一"></a>场景2：情况一</h4><p>假设 A1 的提案先送到 A3 那里，并且 A3 接受了该提案并回复了侍从。这样，A1 加上 A2 加上 A3，构成了多数派，成功确定了税率为 10%。 而 A5 的侍从由于路上喝酒喝多了，晚到了一天，等他到了，税率已经确定了，A3 回复 A5：<code>兄弟，你来的太晚了，税率已经定好了，不用折腾了，听 A1 的吧</code>。</p>
+<p>如下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-8225ccdd35b12857.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<h4 id="场景2：情况二"><a href="#场景2：情况二" class="headerlink" title="场景2：情况二"></a>场景2：情况二</h4><p>依然假设 A1 的提案先送到 A3 处，但是这次 A5 的侍从不是放假了，只是中途耽搁了一会。这次, A3 依然会将”接受”回复给 A1 .但是在决议成型之前它又收到了 A5 的提案。这时协议根据 A5 的身份地位有两种处理方式，但结果相同。</p>
+<ol>
+<li>当 A5 地位很高，例如 CEO，就回复 A5：<code>我已收到您的提案，等待最终批准，但是您之前有人提出将税率定为10%,请明察。</code></li>
+<li>当 A5 没地位，普通码农一个，直接不回复。等待 A1 广播：<code>税率定为 10% 啦！！！</code></li>
+</ol>
+<p>如下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-e78d51fcb7950709.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<h4 id="场景2：情况三"><a href="#场景2：情况三" class="headerlink" title="场景2：情况三"></a>场景2：情况三</h4><p>在这个情况中，我们将看见，根据提案的时间及提案者的权势决定<code>是否应答</code>是有意义的。在这里，时间和提案者的权势就构成了给提案编号的依据。这样的编号符合”任何两个提案之间构成偏序”的要求。</p>
+<p>A1 和 A5 同样提出上述提案，这时 A1 可以正常联系 A2 和 A3，A5 也可以正常联系这两个人。这次 A2 先收到 A1 的提案; A3 则先收到 A5 的提案。而 A5 <code>更有地位</code>。</p>
+<p>在这种情况下，已经回答 A1 的 A2 发现有比 A1 更有权势的 A5 提出了税率 20% 的新提案，于是回复A5说：<code>我已收到您的提案，等待最终批准。</code></p>
+<p>而回复 A5 的 A3 发现新的提案者A1是个小人物，<code>没地位不予应答</code>。</p>
+<p>此时，A5 得到了 A2，A3 的回复，于是 A5 说：<code>税率定为 20%，别再讨论了</code>。</p>
+<p>那 A4 呢？ A4 由于睡过头了，迷迷糊糊的说：<code>现有的税率是什么? 如果没有决定，则建议将其定为 15%.</code></p>
+<p>这个时候，其他的议员就告诉他：<code>哥们，已经定为 20% 了，别折腾了。洗洗继续睡吧</code>。</p>
+<p>整个过程如下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-6d4bb868d27fc6ac.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<h2 id="4-总结"><a href="#4-总结" class="headerlink" title="4. 总结"></a>4. 总结</h2><p>从上面的例子可以看出：这个 Paxos 协议/算法 就是少数服从多数，标准的 <a href="https://baike.baidu.com/item/%E6%8A%BD%E5%B1%89%E5%8E%9F%E7%90%86/233776?fr=aladdin&amp;fromid=8942185&amp;fromtitle=%E9%B8%BD%E7%AC%BC%E5%8E%9F%E7%90%86" target="_blank" rel="noopener">鸽笼原理/抽屉原理</a>，同时，还会根据议员的身份来判断是否需要应答，这个身份其实就是一个编号，是为了防止出现活性导致死循环。</p>
+<p>注意：这一切都是在没有 <code>拜占庭将军</code> 问题的基础上建立的，即消息不会被篡改（因为分布式大多在局域网中）。</p>
+<p>Paxos 的目标：保证最终有一个提案会被选定，当提案被选定后，其他议员最终也能获取到被选定的提案。</p>
+<p>Paxos 协议用来解决的问题可以用一句话来简化： 将所有节点都写入同一个值，且被写入后不再更改。</p>
+<h2 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h2><p><a href="https://www.zhihu.com/question/19787937" target="_blank" rel="noopener">如何浅显易懂地解说 Paxos 的算法？</a><br> <a href="http://blog.xiaohansong.com/2016/09/30/Paxos/" title="图解 Paxos 一致性协议" target="_blank" rel="noopener">图解 Paxos 一致性协议</a><br> <a href="http://www.cnblogs.com/linbingdong/p/6253479.html" target="_blank" rel="noopener">分布式系列文章——Paxos算法原理与推导</a><br><a href="https://zh.wikipedia.org/wiki/Paxos%E7%AE%97%E6%B3%95" target="_blank" rel="noopener">Paxos算法 维基百科，自由的百科全书</a><br><a href="https://wenku.baidu.com/view/bf8e118fa0116c175f0e4853.html?from=search" target="_blank" rel="noopener">Paxos Made Simple【翻译】</a><br><a href="https://wenku.baidu.com/view/87276e1dfad6195f312ba6d7.html" target="_blank" rel="noopener">The Part-Time Parliament(Paxos算法中文翻译)</a></p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/03/30/2018/2018-03-30-分布式理论(六)——-Raft-算法/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">分布式理论(六)——-Raft-算法</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/03/28/2018/2018-03-28-分布式理论（四）——-一致性协议之-3PC/">
+                <span class="level-item">分布式理论（四）——-一致性协议之-3PC</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/03/29/2018/2018-03-29-分布式理论(五)——-一致性算法-Paxos/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="分布式理论(五)——-一致性算法-Paxos" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

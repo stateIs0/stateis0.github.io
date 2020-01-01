@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>分类: Redis - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="website">
+<meta property="og:title" content="莫那·鲁道的技术博客">
+<meta property="og:url" content="http://thinkinjava.cn/categories/Redis/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="莫那·鲁道的技术博客">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="莫那·鲁道的技术博客" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    <div class="card-content">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+        <ul>
+            <li><a href="/categories">分类</a></li>
+            
+            <li class="is-active"><a href="#" aria-current="page">Redis</a></li>
+        </ul>
+        </nav>
+    </div>
+</div>
+
+    <div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-09-30T16:01:01.000Z">2018-10-01</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Redis/">Redis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    11 分钟 读完 (大约 1609 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2018/10/01/2018/2018-10-01-简简单单写一个 Redis 客户端/">简简单单写一个 Redis 客户端</a>
+            
+        </h6>
+        <div class="content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这篇文章很简单，就是写一个 Java 版本的 Redis Client，而且不是一个生产级别的项目，只是一个验证类型的 demo。用于了解“实现一个 Redis Client” 需要注意哪些事情。</p>
+<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h2><ol>
+<li><p>首先，Redis 是一个服务器，有 ip，有端口，那么，我们就可以用 Java 的 Socket 来和他交互，也可以用 telnet 来交互。说白了，就是一个 TCP 服务器，只要打开了  TCP 通道，然后进行一次连接 3 次握手，建立起全双工通道，就能够互相发送数据。</p>
+</li>
+<li><p>从我们之前的编程经验中，我知道，和一个服务器交互，通常是需要协议的，例如 HTTP 服务器，你需要 HTTP 协议，和 Dubbo 交互，你需要了解 Dubbo 协议，当然，这些都是建立在 TCP 协议之上的。那么，Redis 大概也是有协议的，我们后面再看。</p>
+</li>
+</ol>
+<h2 id="动手"><a href="#动手" class="headerlink" title="动手"></a>动手</h2><p>思考了上面的两点，我们可以尝试动手。</p>
+<p>我们可以先用 telnet 访问以下本地的 Redis Server，例如 ：<code>telnet  127.0.0.1 6379</code>，如下：</p>
+<figure class="highlight shell hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">➜  master telnet 127.0.0.1 6379</span><br><span class="line">Trying 127.0.0.1...</span><br><span class="line">Connected to localhost.</span><br><span class="line">Escape character is '^]'.</span><br><span class="line">set baby hello</span><br><span class="line">+OK</span><br><span class="line">get baby</span><br><span class="line"><span class="hljs-meta">$</span><span class="hljs-bash">5</span></span><br><span class="line">hello</span><br><span class="line">del baby</span><br><span class="line">:1</span><br><span class="line">xxx</span><br><span class="line">-ERR unknown command 'xxx'</span><br></pre></td></tr></table></figure>
+<p>步骤：</p>
+<ol>
+<li>我们连接上了本机的 Redis Server。</li>
+<li>执行 set baby hello 命令，也就是保存一个键值对。</li>
+<li>返回了 +OK 字符串</li>
+<li>然后我们获取刚刚的 baby 字符串。</li>
+<li>返回了 $5 <code>换行</code> hello</li>
+<li>然后我们删除了 baby 字符串。</li>
+<li>返回了 :1 ，1表示删除成功。</li>
+<li>然后我们尝试执行一个不存在的命令。</li>
+<li>返回了 <code>-ERR unknown command &#39;xxx&#39;</code>.</li>
+</ol>
+<p>我们使用  Redis 官方提供的 redis-cli 客户端执行这些命令看看结果：<br><figure class="highlight shell hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">➜  master redis-cli</span><br><span class="line">127.0.0.1:6379&gt; set baby hello</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; get baby</span><br><span class="line">"hello"</span><br><span class="line">127.0.0.1:6379&gt; del baby</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; xxx</span><br><span class="line">(error) ERR unknown command 'xxx'</span><br><span class="line">127.0.0.1:6379&gt;</span><br></pre></td></tr></table></figure></p>
+<p>很明显，redis-cli 客户端和 telnet 的使用区别就是返回值的不同，telnet 多了一些奇怪的字符，或者在一些返回值前面加入了一些符合，例如在 OK 前面加入了+ 号。在get baby 后，返回了一个 $5 字符串。我们猜想，telnet 得到的数据是 Redis-Server 真正返回的数据，redis-cli 对这些数据进行了处理。</p>
+<p>好了，大概了解了操作，我们用 Java 写一个 Socket 访问一下 Redis Server。</p>
+<h2 id="用-Java-Socket-访问-Redis-Server"><a href="#用-Java-Socket-访问-Redis-Server" class="headerlink" title="用 Java Socket 访问 Redis Server"></a>用 Java Socket 访问 Redis Server</h2><p>代码很简单，如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">static</span> Socket client = <span class="hljs-keyword">new</span> Socket();</span><br><span class="line"><span class="hljs-keyword">static</span> InputStream is;</span><br><span class="line"><span class="hljs-keyword">static</span> OutputStream os;</span><br><span class="line"><span class="hljs-keyword">static</span> &#123;</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        client.connect(<span class="hljs-keyword">new</span> InetSocketAddress(<span class="hljs-string">"127.0.0.1"</span>, <span class="hljs-number">6379</span>));</span><br><span class="line">        is = client.getInputStream();</span><br><span class="line">        os = client.getOutputStream();</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> IOException </span>&#123;</span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="hljs-string">"set baby hello \n"</span>);</span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="hljs-comment">// result : +OK</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="hljs-string">"get baby \n"</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="hljs-number">1</span>);<span class="hljs-comment">// 等 redis 返回数据</span></span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="hljs-comment">// result : $5</span></span><br><span class="line">    <span class="hljs-comment">// result : hello</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="hljs-string">"del baby \n"</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="hljs-number">1</span>);<span class="hljs-comment">// 等 redis 返回数据</span></span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="hljs-comment">// result  :1</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="hljs-string">"xxx \n"</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="hljs-number">1</span>);<span class="hljs-comment">// 等 redis 返回数据</span></span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="hljs-comment">// -ERR unknown command `xxx`, with args beginning with:</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="hljs-string">"mget hello baby \r\n"</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="hljs-number">1</span>);</span><br><span class="line">    printResult();</span><br><span class="line"></span><br><span class="line">    closeStream();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">writeAndFlush</span><span class="hljs-params">(String content)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        os.write(content.getBytes());</span><br><span class="line">        os.flush();</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">closeStream</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        is.close();</span><br><span class="line">        os.close();</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">printResult</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="hljs-keyword">int</span> a = is.available();</span><br><span class="line">        <span class="hljs-keyword">byte</span>[] b = <span class="hljs-keyword">new</span> <span class="hljs-keyword">byte</span>[a];</span><br><span class="line">        is.read(b);</span><br><span class="line"></span><br><span class="line">        String result = <span class="hljs-keyword">new</span> String(b);</span><br><span class="line">        System.out.println(result);</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到， 使用 Java Socket 和使用 telnet 的效果是相同的。</p>
+<p>所以，要想达到 redis-cli  的效果，那么就需要对返回值进行处理，例如 $5 、:1 这些符号，到底是什么意思？即：解析 redis 自己的应用层协议。</p>
+<h2 id="Redis-序列化协议（RESP）"><a href="#Redis-序列化协议（RESP）" class="headerlink" title="Redis 序列化协议（RESP）"></a>Redis 序列化协议（RESP）</h2><p>答案就在 redis 的官方文档: <a href="http://redisdoc.com/topic/protocol.html" target="_blank" rel="noopener">通信协议（protocol）</a></p>
+<p>redis 协议称之为 RESP（REdis Serialization Protocol），即 redis 序列化协议。</p>
+<p>该协议的设计目标：</p>
+<ol>
+<li>实现简单。</li>
+<li>快速解析。</li>
+<li>人类易读。</li>
+</ol>
+<p>所有的命令一律以 <code>\r\n</code> 结尾。</p>
+<p>Redis 收到命令后，对命令进行处理，然后返回数据。</p>
+<p>redis 1.2 版本后，支持批量回复：Buik Reply。</p>
+<p>关于回复，有多种类型：<br>通过检查服务器发回数据的第一个字节， 可以确定这个回复是什么类型：</p>
+<ul>
+<li>状态回复（status reply）的第一个字节是 <code>&quot;+&quot;</code><ul>
+<li>错误回复（error reply）的第一个字节是<code>&quot;-&quot;</code></li>
+<li>整数回复（integer reply）的第一个字节是<code>&quot;:&quot;</code></li>
+<li>批量回复（bulk reply）的第一个字节是 <code>&quot;$&quot;</code></li>
+<li>多条批量回复（multi bulk reply）的第一个字节是<code>&quot;*&quot;</code></li>
+</ul>
+</li>
+</ul>
+<p>我们回到我们的 Socket 小程序里，可以看到，</p>
+<ul>
+<li>当我执行 <code>set</code> 命令，返回的是 <code>+OK</code>，即这个是状态回复。</li>
+<li>当我们执行 <code>xxx</code> 命令，返回值的开头是 - 号，即这个是错误回复。</li>
+<li>当我们执行 <code>get</code> 命令，返回的是 <code>$5 hello</code>，即这个是批量回复，同时<code>5</code>表示后面将返回  5 个字节。字符串的最大长度为 512 MB。</li>
+<li>当我们执行<code>del</code>命令，返回的是<code>:1</code>，表示这个是整数回复，只在操作真正被执行了的时候， 才返回 <code>1</code> ， 否则返回 0， 1表示<code>true</code>。</li>
+<li>当我们执行 <code>mget hello baby  \r\n</code> 时，返回的第一个字符就是 <em> 号，表示这是一个多条批量回复。</em> 号后面的值记录了多条回复的数量，我们这里返回的是 <code>*2\r\n $5\r\n world \r\n $-1\r\n</code>， <code>*2</code> 表示后面有 2 条回复。<code>$5</code> 表示后面有 5 个字节。 <code>$-1</code> 表示 <code>baby</code> 这个<code>key</code> 是没有数据的，<code>-1</code> 表示什么都没有。</li>
+</ul>
+<p>通过对协议的解析，我们就能做出一个类似 redis-cli 的客户端。</p>
+<p>我这里抛转引玉，写了一个最简单的，大家看看就好 ：）</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">respParseHandler</span><span class="hljs-params">(String result)</span> </span>&#123;</span><br><span class="line">       <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">           <span class="hljs-keyword">if</span> (result.startsWith(<span class="hljs-string">"+"</span>)) &#123;</span><br><span class="line">               <span class="hljs-comment">// 状态回复</span></span><br><span class="line">               System.out.println(result.substring(<span class="hljs-number">1</span>));</span><br><span class="line">               <span class="hljs-keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="hljs-keyword">if</span> (result.startsWith(<span class="hljs-string">"-"</span>)) &#123;</span><br><span class="line">               <span class="hljs-comment">// 错误回复</span></span><br><span class="line">               System.err.println(result.substring(<span class="hljs-number">1</span>));</span><br><span class="line">               <span class="hljs-keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="hljs-keyword">if</span> (result.startsWith(<span class="hljs-string">":"</span>)) &#123;</span><br><span class="line">               <span class="hljs-comment">// 整数回复</span></span><br><span class="line">               <span class="hljs-keyword">if</span> (result.substring(<span class="hljs-number">1</span>).equalsIgnoreCase(<span class="hljs-string">"1"</span>)) &#123;</span><br><span class="line">                   System.out.println(<span class="hljs-string">"success"</span>);</span><br><span class="line">               &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">                   System.out.println(<span class="hljs-string">"error"</span>);</span><br><span class="line">               &#125;</span><br><span class="line">               <span class="hljs-keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="hljs-keyword">if</span> (result.startsWith(<span class="hljs-string">"$"</span>)) &#123;</span><br><span class="line">               <span class="hljs-comment">// 批量回复</span></span><br><span class="line">               <span class="hljs-keyword">if</span> (result.substring(<span class="hljs-number">1</span>, <span class="hljs-number">3</span>).equalsIgnoreCase(<span class="hljs-string">"-1"</span>)) &#123;</span><br><span class="line">                   System.out.println(<span class="hljs-string">"no data, redis return -1"</span>);</span><br><span class="line">                   <span class="hljs-keyword">return</span>;</span><br><span class="line">               &#125;</span><br><span class="line">   </span><br><span class="line">               <span class="hljs-keyword">int</span> line = result.indexOf(<span class="hljs-string">"\r\n"</span>);</span><br><span class="line">               System.out.println(result.substring(line + <span class="hljs-number">2</span>));</span><br><span class="line">               <span class="hljs-keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="hljs-keyword">if</span> (result.startsWith(<span class="hljs-string">"*"</span>)) &#123;</span><br><span class="line">               <span class="hljs-comment">// 多条批量回复</span></span><br><span class="line">               <span class="hljs-keyword">char</span> num = result.charAt(<span class="hljs-number">1</span>);</span><br><span class="line">               <span class="hljs-keyword">int</span> first = result.indexOf(<span class="hljs-string">'$'</span>);</span><br><span class="line">               <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; Integer.valueOf(String.valueOf(num)); i++) &#123;</span><br><span class="line"></span><br><span class="line">                   <span class="hljs-keyword">int</span> next = result.indexOf(<span class="hljs-string">'$'</span>, first + <span class="hljs-number">1</span>);</span><br><span class="line">                   <span class="hljs-keyword">if</span> (next != -<span class="hljs-number">1</span>) &#123;</span><br><span class="line">                       respParseHandler(result.substring(first, next));</span><br><span class="line">                   &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">                       respParseHandler(result.substring(first));</span><br><span class="line">                   &#125;</span><br><span class="line">                   first = next;</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;</span><br><span class="line">           e.printStackTrace();</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+    <div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-08-23T07:00:01.000Z">2018-08-23</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Redis/">Redis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    20 分钟 读完 (大约 2968 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2018/08/23/2018/2018-08-24-总结一次 Pika 迁移遇到的坑/">总结一次 Pika 迁移遇到的坑</a>
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br></p>
+        </div>
+        
+        <!---->
+        <!--<div class="level is-mobile">-->
+            <!--<div class="level-start">-->
+                <!--<div class="level-item">-->
+                <!--<a class="button is-size-7 is-light" href="/2018/08/23/2018/2018-08-24-总结一次 Pika 迁移遇到的坑/#more">阅读更多</a>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+    <div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-08-09T07:01:01.000Z">2018-08-09</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Redis/">Redis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    9 分钟 读完 (大约 1352 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2018/08/09/2018/2018-08-10-Redis 面试常见问答/">Redis 面试常见问答</a>
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br></p>
+        </div>
+        
+        <!---->
+        <!--<div class="level is-mobile">-->
+            <!--<div class="level-start">-->
+                <!--<div class="level-item">-->
+                <!--<a class="button is-size-7 is-light" href="/2018/08/09/2018/2018-08-10-Redis 面试常见问答/#more">阅读更多</a>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+    <div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-08-08T07:01:01.000Z">2018-08-08</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Redis/">Redis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    6 分钟 读完 (大约 874 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2018/08/08/2018/2018-08-09-Mac 搭建 Redis Sentinel 集群/">Mac 搭建 Redis Sentinel 集群</a>
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br></p>
+        </div>
+        
+        <!---->
+        <!--<div class="level is-mobile">-->
+            <!--<div class="level-start">-->
+                <!--<div class="level-item">-->
+                <!--<a class="button is-size-7 is-light" href="/2018/08/08/2018/2018-08-09-Mac 搭建 Redis Sentinel 集群/#more">阅读更多</a>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+    <div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-08-07T07:01:01.000Z">2018-08-07</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Redis/">Redis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    6 分钟 读完 (大约 935 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2018/08/07/2018/2018-08-08-Mac 搭建 Redis 集群/">Mac 搭建 Redis 集群</a>
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br></p>
+        </div>
+        
+        <!---->
+        <!--<div class="level is-mobile">-->
+            <!--<div class="level-start">-->
+                <!--<div class="level-item">-->
+                <!--<a class="button is-size-7 is-light" href="/2018/08/07/2018/2018-08-08-Mac 搭建 Redis 集群/#more">阅读更多</a>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+    <div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-08-06T07:01:01.000Z">2018-08-06</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Redis/">Redis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    19 分钟 读完 (大约 2818 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2018/08/06/2018/2018-08-07-Jedis 如何支持 Cluster/">Jedis 如何支持 Cluster</a>
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br></p>
+        </div>
+        
+        <!---->
+        <!--<div class="level is-mobile">-->
+            <!--<div class="level-start">-->
+                <!--<div class="level-item">-->
+                <!--<a class="button is-size-7 is-light" href="/2018/08/06/2018/2018-08-07-Jedis 如何支持 Cluster/#more">阅读更多</a>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+    <div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-08-04T07:01:01.000Z">2018-08-04</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Redis/">Redis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    14 分钟 读完 (大约 2079 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2018/08/04/2018/2018-08-05-Redis 复制运维及优化/">Redis 复制运维及优化</a>
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br></p>
+        </div>
+        
+        <!---->
+        <!--<div class="level is-mobile">-->
+            <!--<div class="level-start">-->
+                <!--<div class="level-item">-->
+                <!--<a class="button is-size-7 is-light" href="/2018/08/04/2018/2018-08-05-Redis 复制运维及优化/#more">阅读更多</a>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+    <div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-08-04T07:01:01.000Z">2018-08-04</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Redis/">Redis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    7 分钟 读完 (大约 1121 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2018/08/04/2018/2018-08-06-Jedis 如何支持 Sentinel/">Jedis 如何支持 Sentinel</a>
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br></p>
+        </div>
+        
+        <!---->
+        <!--<div class="level is-mobile">-->
+            <!--<div class="level-start">-->
+                <!--<div class="level-item">-->
+                <!--<a class="button is-size-7 is-light" href="/2018/08/04/2018/2018-08-06-Jedis 如何支持 Sentinel/#more">阅读更多</a>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+    <div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-08-03T07:01:01.000Z">2018-08-03</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Redis/">Redis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    18 分钟 读完 (大约 2748 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2018/08/03/2018/2018-08-04-Redis 复制原理/">Redis 复制原理</a>
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br></p>
+        </div>
+        
+        <!---->
+        <!--<div class="level is-mobile">-->
+            <!--<div class="level-start">-->
+                <!--<div class="level-item">-->
+                <!--<a class="button is-size-7 is-light" href="/2018/08/03/2018/2018-08-04-Redis 复制原理/#more">阅读更多</a>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+    <div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-08-02T07:01:01.000Z">2018-08-02</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Redis/">Redis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    7 分钟 读完 (大约 1102 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                <a class="has-link-black-ter" href="/2018/08/02/2018/2018-08-03-Redis 复制初体验/">Redis 复制初体验</a>
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br></p>
+        </div>
+        
+        <!---->
+        <!--<div class="level is-mobile">-->
+            <!--<div class="level-start">-->
+                <!--<div class="level-item">-->
+                <!--<a class="button is-size-7 is-light" href="/2018/08/02/2018/2018-08-03-Redis 复制初体验/#more">阅读更多</a>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+    
+<div class="card card-transparent">
+    <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+        <div class="pagination-previous is-invisible is-hidden-mobile">
+            <a class="is-flex-grow has-text-black-ter" href="/categories/Redis/page/0/">上一页</a>
+        </div>
+        <div class="pagination-next">
+            <a class="is-flex-grow has-text-black-ter" href="/categories/Redis/page/2/">下一页</a>
+        </div>
+        <ul class="pagination-list is-hidden-mobile">
+            
+            <li><a class="pagination-link is-current" href="/categories/Redis/">1</a></li>
+            
+            <li><a class="pagination-link has-text-black-ter" href="/categories/Redis/page/2/">2</a></li>
+            
+        </ul>
+    </nav>
+</div>
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="莫那·鲁道的技术博客" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

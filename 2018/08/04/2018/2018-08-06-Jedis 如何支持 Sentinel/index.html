@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>Jedis 如何支持 Sentinel - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Jedis 如何支持 Sentinel">
+<meta property="og:url" content="http://thinkinjava.cn/2018/08/04/2018/2018-08-06-Jedis 如何支持 Sentinel/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Jedis 如何支持 Sentinel">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="Jedis 如何支持 Sentinel" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-08-04T07:01:01.000Z">2018-08-04</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Redis/">Redis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    7 分钟 读完 (大约 1121 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                Jedis 如何支持 Sentinel
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       <!--more-->       ## 前言</p>
+<p>Jedis 作为 Java 世界 Redis 的老牌客户端，很好的支持了 Sentinel，例如 Sentinel 的故障转移功能。</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>Jedis 提供了一个 Sentinel 构造方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">JedisSentinelPool</span><span class="hljs-params">(String masterName, Set&lt;String&gt; sentinels,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">    <span class="hljs-keyword">final</span> GenericObjectPoolConfig poolConfig, <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> connectionTimeout, <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> soTimeout,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">    <span class="hljs-keyword">final</span> String password, <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> database, <span class="hljs-keyword">final</span> String clientName)</span> </span>&#123;</span><br><span class="line">  <span class="hljs-keyword">this</span>.poolConfig = poolConfig;</span><br><span class="line">  <span class="hljs-keyword">this</span>.connectionTimeout = connectionTimeout;</span><br><span class="line">  <span class="hljs-keyword">this</span>.soTimeout = soTimeout;</span><br><span class="line">  <span class="hljs-keyword">this</span>.password = password;</span><br><span class="line">  <span class="hljs-keyword">this</span>.database = database;</span><br><span class="line">  <span class="hljs-keyword">this</span>.clientName = clientName;</span><br><span class="line"></span><br><span class="line">  HostAndPort master = initSentinels(sentinels, masterName);</span><br><span class="line">  initPool(master);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该构造方法做了 2件事情，初始化 Sentinel 和 Pool。我们先看看 initSentinel。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> HostAndPort <span class="hljs-title">initSentinels</span><span class="hljs-params">(Set&lt;String&gt; sentinels, <span class="hljs-keyword">final</span> String masterName)</span> </span>&#123;</span><br><span class="line">   HostAndPort master = <span class="hljs-keyword">null</span>; </span><br><span class="line">   <span class="hljs-keyword">boolean</span> sentinelAvailable = <span class="hljs-keyword">false</span>;</span><br><span class="line"></span><br><span class="line">   <span class="hljs-keyword">for</span> (String sentinel : sentinels) &#123;<span class="hljs-comment">// 遍历 Sentinel 节点</span></span><br><span class="line">     <span class="hljs-keyword">final</span> HostAndPort hap = HostAndPort.parseString(sentinel);<span class="hljs-comment">// 解析 String 为 ip port</span></span><br><span class="line"></span><br><span class="line">     Jedis jedis = <span class="hljs-keyword">null</span>;</span><br><span class="line">     <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">       jedis = <span class="hljs-keyword">new</span> Jedis(hap.getHost(), hap.getPort());<span class="hljs-comment">// 创建 Jedis 对象 </span></span><br><span class="line">       <span class="hljs-comment">// 执行 get-master-addr-by-name masterName 获取主节点信息</span></span><br><span class="line">       List&lt;String&gt; masterAddr = jedis.sentinelGetMasterAddrByName(masterName);</span><br><span class="line">       <span class="hljs-comment">// 标识符：Sentinel 存在</span></span><br><span class="line">       sentinelAvailable = <span class="hljs-keyword">true</span>;</span><br><span class="line">       <span class="hljs-comment">// 如果主节点是空，或者返回长度不等于 2，跳过此 Sentinel</span></span><br><span class="line">       <span class="hljs-keyword">if</span> (masterAddr == <span class="hljs-keyword">null</span> || masterAddr.size() != <span class="hljs-number">2</span>) &#123;</span><br><span class="line">         <span class="hljs-keyword">continue</span>;</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="hljs-comment">// 如果成功获取主节点，解析字符串成 HostAndPort 对象</span></span><br><span class="line">       master = toHostAndPort(masterAddr);</span><br><span class="line">       <span class="hljs-keyword">break</span>;</span><br><span class="line">     &#125; <span class="hljs-keyword">catch</span> (JedisException e) &#123;</span><br><span class="line">     &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">       <span class="hljs-keyword">if</span> (jedis != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">         jedis.close();<span class="hljs-comment">// 每次循环归还 Redis 连接</span></span><br><span class="line">       &#125;</span><br><span class="line">     &#125;</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="hljs-comment">// 如果 master 是 null，抛出异常</span></span><br><span class="line">   <span class="hljs-keyword">if</span> (master == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">     <span class="hljs-keyword">if</span> (sentinelAvailable) &#123;<span class="hljs-comment">// 细化异常，这个是 Sentinel 有问题</span></span><br><span class="line">       <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> JedisException(<span class="hljs-string">"Can connect to sentinel, but "</span> + masterName</span><br><span class="line">           + <span class="hljs-string">" seems to be not monitored..."</span>);</span><br><span class="line">     &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">       <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> JedisConnectionException(<span class="hljs-string">"All sentinels down, cannot determine where is "</span></span><br><span class="line">           + masterName + <span class="hljs-string">" master is running..."</span>);</span><br><span class="line">     &#125;</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="hljs-comment">// 遍历 哨兵</span></span><br><span class="line">   <span class="hljs-keyword">for</span> (String sentinel : sentinels) &#123;</span><br><span class="line">     <span class="hljs-keyword">final</span> HostAndPort hap = HostAndPort.parseString(sentinel);</span><br><span class="line">     <span class="hljs-comment">// 创建 master 监听器线程</span></span><br><span class="line">     MasterListener masterListener = <span class="hljs-keyword">new</span> MasterListener(masterName, hap.getHost(), hap.getPort());</span><br><span class="line">     masterListener.setDaemon(<span class="hljs-keyword">true</span>);<span class="hljs-comment">// 后台线程</span></span><br><span class="line">     masterListeners.add(masterListener);<span class="hljs-comment">// 添加到监听集合，后期优雅关闭</span></span><br><span class="line">     masterListener.start();<span class="hljs-comment">// 启动线程</span></span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="hljs-keyword">return</span> master;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>方法很长，简单说说逻辑：</p>
+<ol>
+<li>遍历 Sentinel 字符串</li>
+<li>根据字符串生成 HostAndPort 对象，然后创建一个 Jedis 对象。</li>
+<li>使用 Jedis 对象发送 <code>get-master-addr-by-name masterName</code> 命令，得到 master 信息。</li>
+<li>得到 master 信息后，再次遍历哨兵集合，为每个哨兵创建一个线程，监听哨兵的发布订阅消息，消息主题是  <code>+switch-master</code>. 当主节点发生变化时，将通过 pub/sub 通知该线程，该线程将更新 Redis 连接池。</li>
+</ol>
+<p>看看这个线程的主要内容：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Override</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">  <span class="hljs-comment">// flag</span></span><br><span class="line">  running.set(<span class="hljs-keyword">true</span>);</span><br><span class="line">  <span class="hljs-comment">// 死循环</span></span><br><span class="line">  <span class="hljs-keyword">while</span> (running.get()) &#123;</span><br><span class="line">    <span class="hljs-comment">//创建一个 Jedis对象</span></span><br><span class="line">    j = <span class="hljs-keyword">new</span> Jedis(host, port);</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">      <span class="hljs-comment">// 继续检查</span></span><br><span class="line">      <span class="hljs-keyword">if</span> (!running.get()) &#123;</span><br><span class="line">        <span class="hljs-keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="hljs-comment">// jedis 对象，通过 Redis pub/sub 订阅 switch-master 主题</span></span><br><span class="line">      j.subscribe(<span class="hljs-keyword">new</span> JedisPubSub() &#123;</span><br><span class="line">        <span class="hljs-meta">@Override</span></span><br><span class="line">        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onMessage</span><span class="hljs-params">(String channel, String message)</span> </span>&#123;</span><br><span class="line">          <span class="hljs-comment">// 分割字符串  </span></span><br><span class="line">          String[] switchMasterMsg = message.split(<span class="hljs-string">" "</span>);</span><br><span class="line">          <span class="hljs-comment">// 如果长度大于三</span></span><br><span class="line">          <span class="hljs-keyword">if</span> (switchMasterMsg.length &gt; <span class="hljs-number">3</span>) &#123;</span><br><span class="line">            <span class="hljs-comment">// 且 第一个 字符串的名称和当前 masterName 发生了 switch</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (masterName.equals(switchMasterMsg[<span class="hljs-number">0</span>])) &#123;</span><br><span class="line">              <span class="hljs-comment">// 重新初始化连接池（第 4 个和 第 5 个）</span></span><br><span class="line">              initPool(toHostAndPort(Arrays.asList(switchMasterMsg[<span class="hljs-number">3</span>], switchMasterMsg[<span class="hljs-number">4</span>])));</span><br><span class="line">            &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">            &#125;</span><br><span class="line">          &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;, <span class="hljs-string">"+switch-master"</span>);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (JedisConnectionException e) &#123;</span><br><span class="line">      <span class="hljs-comment">// 如果连接异常</span></span><br><span class="line">      <span class="hljs-keyword">if</span> (running.get()) &#123;</span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">          <span class="hljs-comment">// 默认休息 5 秒</span></span><br><span class="line">          Thread.sleep(subscribeRetryWaitTimeMillis);</span><br><span class="line">        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e1) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">      j.close();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法已经写了很多注释，稍微说下逻辑：根据哨兵的 host 和 port 创建一个 jedis 对象，然后，这个 jedis 对象订阅了 pub/sub 消息，，消息的主题是 “+switch-master” ，如果收到消息了，就执行 onMessage 方法，该方法会根据新的  master 信息重新初始化 Redis 连接池。</p>
+<p>那么如何初始化连接池的呢？</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">initPool</span><span class="hljs-params">(HostAndPort master)</span> </span>&#123;</span><br><span class="line">  <span class="hljs-comment">// 比较 host  + port，如果不相等，就重新初始化</span></span><br><span class="line">  <span class="hljs-keyword">if</span> (!master.equals(currentHostMaster)) &#123;</span><br><span class="line">    <span class="hljs-comment">// 修改当前 master</span></span><br><span class="line">    currentHostMaster = master;</span><br><span class="line">    <span class="hljs-keyword">if</span> (factory == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">      factory = <span class="hljs-keyword">new</span> JedisFactory(master.getHost(), master.getPort(), connectionTimeout,</span><br><span class="line">          soTimeout, password, database, clientName, <span class="hljs-keyword">false</span>, <span class="hljs-keyword">null</span>, <span class="hljs-keyword">null</span>, <span class="hljs-keyword">null</span>);</span><br><span class="line">      initPool(poolConfig, factory);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">      <span class="hljs-comment">// 修改连接参数, 下次获取连接的时候，就可以生成新的连接</span></span><br><span class="line">      factory.setHostAndPort(currentHostMaster);</span><br><span class="line">      <span class="hljs-comment">// 清空旧的连接池</span></span><br><span class="line">      internalPool.clear();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>事实上，在 Sentinel 构造器里面，也会调用这个方法，第一次调用的时候， factory 肯定是 null，第二次调用的时候，会设置 factory 的 hostAndPort 为新的 master 地址，然后清空原来的连接池。那么新的 getResource 方法就会从这个新的地址获取到新的连接了。</p>
+<p>具体关于 JedisSentinelPool 的  getResource 方法就不细说了，大家可以自己看看，还是很简单的，</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>可以看到 Sentinel 的通知客户端机制，是需要客户端进行配合的，客户端需要通过 Sentinel 的 pub/sub 机制订阅哨兵节点的 <code>+switch-master</code> 主题，当 master 改变的时候，会通过 pub 通知客户端，客户端此时就可以优雅的更新连接池。</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/08/04/2018/2018-08-05-Redis 复制运维及优化/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Redis 复制运维及优化</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/08/03/2018/2018-08-04-Redis 复制原理/">
+                <span class="level-item">Redis 复制原理</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/08/04/2018/2018-08-06-Jedis 如何支持 Sentinel/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="Jedis 如何支持 Sentinel" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>深入剖析-Mybatis-原理（二） - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="深入剖析-Mybatis-原理（二）">
+<meta property="og:url" content="http://thinkinjava.cn/2017/12/17/2017/2017-12-17-深入剖析-mybatis-原理（二）/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入剖析-Mybatis-原理（二）">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="深入剖析-Mybatis-原理（二）" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2017-12-16T18:11:11.000Z">2017-12-17</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Mybatis/">Mybatis</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    16 分钟 读完 (大约 2386 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                深入剖析-Mybatis-原理（二）
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       在上篇文章中我们分析了 sqlSession.selectOne(“org.apache.ibatis.mybatis.UserInfoMapper.selectById”, parameter) 代码的执行过程，我们说，这种方式虽然更接近 mybaits 的底层，但不够面向对象，也不利于 IDEA 工具的编译期排错。</p>
+<p>而mybatis 还有另一种写法，我们在测试代码也写过，如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">UserInfoMapper userInfoMapper = sqlSession.getMapper(UserInfoMapper.class);</span><br><span class="line">UserInfo userInfo2 = userInfoMapper.selectById(<span class="hljs-number">1</span>);</span><br></pre></td></tr></table></figure>
+<p>这段代码非常的面向对象，也非常的利于IDE工具在编译期间排错。实际上这是mybait 为我们做的工作，是对第一种的方式的一种更抽象的封装。同时，这种方式也是我们现在开发常用的一种方式，所以，我们必须剖析的原理，看看他到底是如何实现的。想必有经验的大佬都能猜测到，肯定用动态代理的技术。不过，我们还是从源码看个究竟吧!</p>
+<h2 id="1-从-getMapper-方法进入源码"><a href="#1-从-getMapper-方法进入源码" class="headerlink" title="1. 从 getMapper 方法进入源码"></a>1. 从 getMapper 方法进入源码</h2><p><img src="http://upload-images.jianshu.io/upload_images/4236553-ff694d625cc85828.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>实际上调用了 configuration 的 getMapper方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-da3aa1ec0a3d0302.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>configuration  实际上调用了 mapperRegistry.getMapper：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-19bfd6f8d9a4ffc6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>注意，要停下来，看看 mapperRegistry 是什么，从名字上看出来，该对象是Mapper 映射器注册容器，我们看看该对象中有什么？</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-c31c196e39e8f7fa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-529c24e1aa81540e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>这是该类的属性，有一个 Configuration 对象，有一个 Map，Map 存放什么数据呢，key 是 class 类型， value是 MapperProxyFactory 类型，MapperProxyFactory  又是什么呢，看名字是映射器代理对象工厂，我们看看该类：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-a386a3c180617e3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>这是该类的结构图，有一个Class 对象，表示 映射器的接口，有一个Map 表示映射方法的缓存。并且由2 个newInstance 方法，看名字肯定是创建代理对象啦。我们看看这2个方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-f73fe5a113d6772c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>调用了动态的技术，根据给定的接口和SqlSession 和方法缓存，创建一个代理对象 MapperProxy ，该类实现了 InvocationHandler 接口，因此我们需要看看他的 invoke 方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-34f1449343bb4e42.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>这是  MapperProxy 的 invoke 方法，该方法首先判断方法的class 是否继承 Object ，如果是，就不使用代理，直接执行，如果该方法是默认的，那么就执行默认方法（该方法是针对Java7以上版本对动态类型语言的支持，不进行详述）。我们这里肯定不是，执行下面的 cachedMapperMethod 方法 并调用返回对象 MapperMethod 的execute 方法。</p>
+<p>我们看看 cachedMapperMethod  方法，该方法应该是跟缓存相关，我们看看实现：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-afbebcdf7a8cd59f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>该方法首先从缓存中取出，如果没有，便创建一个，并放入缓存并返回。我们关注一下 MapperMethod 的构造方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-909387fc49bc21b0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>该构造方法拿着这三个参数创建了两个对象，一个是SQL命令对象，一个方法签名对象，这两个类都是MapperMethod 的静态内部类。我们来看看这两个类。</p>
+<p>SqlCommand 类：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-c4b930d3f264359f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>该类由2个属性，一个是name，表示sql语句的名称，一个是type 自动，表示sql语句的类型，sql语句的名称是怎么来的呢？我们从代码中看到是从 resolveMappedStatement 方法返回的 MappedStatement 对象中得到的。而 SqlCommandType 也是从该方法中得到的。那么我重点关注该方法。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-1bc1b3da65e133b1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>我们刚刚说，name 是怎么来的，是调用了 MappedStatement 对象的getId 方法来的，而 id 是怎么来的呢？是mapperInterface.getName() + “.” + methodName 拼起来的，也就是接口名称和方法名称成为了一个id，素以注意，该方法不能重载。因为他不关注参数。根据id从 configuration 获取解析好的MappedStatement（存放在hashmap中）。如果没有这个id的话，注意，该方法最后还会递归调用该接口的所有父接口的 resolveMappedStatement ，确保找到给定 id 的 MappedStatement。</p>
+<p>那么 SqlCommandType  是什么呢？是个枚举，我们看看该枚举：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-95e50440f6556558.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>该枚举定义我们在xml中的标签。是不是很亲切？</p>
+<p>那么 MethodSignature 是什么呢？我们看看该类由哪些属性：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-8edcdfeaff0995dc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>看该类名字知道是方法的签名，因此包含方法的很多信息，是否返回多值，是否返回map，是否返回游标，返回值类型等等，这些属性都是在构造方法中注入的：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-e24af4c4c1d7a32a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>看完了内部类，回到 MapperProxy 的invoke 方法，现在有了 MapperMethod 对象，就要执行该对象的execute 方法，该方法是如何执行的呢？</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">execute</span><span class="hljs-params">(SqlSession sqlSession, Object[] args)</span> </span>&#123;</span><br><span class="line">    Object result;</span><br><span class="line">    <span class="hljs-keyword">switch</span> (command.getType()) &#123;</span><br><span class="line">      <span class="hljs-keyword">case</span> INSERT: &#123;</span><br><span class="line">      Object param = method.convertArgsToSqlCommandParam(args);</span><br><span class="line">        result = rowCountResult(sqlSession.insert(command.getName(), param));</span><br><span class="line">        <span class="hljs-keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="hljs-keyword">case</span> UPDATE: &#123;</span><br><span class="line">        Object param = method.convertArgsToSqlCommandParam(args);</span><br><span class="line">        result = rowCountResult(sqlSession.update(command.getName(), param));</span><br><span class="line">        <span class="hljs-keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="hljs-keyword">case</span> DELETE: &#123;</span><br><span class="line">        Object param = method.convertArgsToSqlCommandParam(args);</span><br><span class="line">        result = rowCountResult(sqlSession.delete(command.getName(), param));</span><br><span class="line">        <span class="hljs-keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="hljs-keyword">case</span> SELECT:</span><br><span class="line">        <span class="hljs-keyword">if</span> (method.returnsVoid() &amp;&amp; method.hasResultHandler()) &#123;</span><br><span class="line">          executeWithResultHandler(sqlSession, args);</span><br><span class="line">          result = <span class="hljs-keyword">null</span>;</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (method.returnsMany()) &#123;</span><br><span class="line">          result = executeForMany(sqlSession, args);</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (method.returnsMap()) &#123;</span><br><span class="line">          result = executeForMap(sqlSession, args);</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (method.returnsCursor()) &#123;</span><br><span class="line">          result = executeForCursor(sqlSession, args);</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">          Object param = method.convertArgsToSqlCommandParam(args);</span><br><span class="line">          result = sqlSession.selectOne(command.getName(), param);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">break</span>;</span><br><span class="line">      <span class="hljs-keyword">case</span> FLUSH:</span><br><span class="line">        result = sqlSession.flushStatements();</span><br><span class="line">        <span class="hljs-keyword">break</span>;</span><br><span class="line">      <span class="hljs-keyword">default</span>:</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> BindingException(<span class="hljs-string">"Unknown execution method for: "</span> + command.getName());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">if</span> (result == <span class="hljs-keyword">null</span> &amp;&amp; method.getReturnType().isPrimitive() &amp;&amp; !method.returnsVoid()) &#123;</span><br><span class="line">      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> BindingException(<span class="hljs-string">"Mapper method '"</span> + command.getName() </span><br><span class="line">          + <span class="hljs-string">" attempted to return null from a method with a primitive return type ("</span> + method.getReturnType() + <span class="hljs-string">")."</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> result;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>该方法主要是判断方法的类型，也就是我们的insert select 标签，根据不同的标签执行不同的方法，如果是 SELECT 标签就还要再判断他的返回值，根据不同的返回值类型执行不同的方法。默认执行 sqlSession 的 selectOne 方法，看到这里，是不是一目了然了呢？也就是说getMapper 最终还是调用 SqlSession 的 selectOne 方法，只不过通过动态代理封装了一遍，让mybatis 来管理这些字符串样式的key，而不是让用户来手动管理。</p>
+<p>我们回到 MapperRegistry 的 getMapper 方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-d4f49f5e2013655a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>首先根据接口类型从缓存中取出，如果没有，则抛出异常，因为这些缓存都是在解析配置文件的时候放入的。根据返回的映射代理工厂，调用该工厂的方法，传入 SqlSession 返回一个接口代理：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-1a6e9732af592d7e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>这段代码其实我们已经看过了，创建一个实现类 InvocationHandler 接口的对象，然后使用JDK动态代理创建实例返回，而 InvocationHandler  的实现类 MapperProxy 的代码我们刚刚也看过了。主要逻辑在invoke中，在该方法中调用 SqlSession 的 selectOne 方法。后面的我们就不说了，和上一篇文章的逻辑一样，就不赘述了。</p>
+<h2 id="2-总结"><a href="#2-总结" class="headerlink" title="2. 总结"></a>2. 总结</h2><p>大家可能注意到了，这篇文章不长，因为主要逻辑在上篇文章中，这里只不过将 Mybatis 如何封装代理的过程解析了一遍。主要实现这个功能是的是 mybatis 的binding 包下的几个类：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-a9585665c511ff4e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>这几个类完成了对代理的封装和对目标方法的调用。当然还有 SqlSession，可以看出，mybatis 的模块化做的非常好。</p>
+<p>我们也来看看这几个类的UML图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-dbd37c59a70f1dd3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>可以看到，所有的类都关联着SqlSession，由此可以看出SqlSession的重要性。而我们今天解析的代码只不过在SqlSession外面封装了一层，便于开发者使用，否则，配置这些字符串，就太难以维护了。</p>
+<p>好了，今天的Mybatis 分析就到这里了。我们通过一个demo知道了mybatis 的运行原理，由此，在以后的开发中，遇到错误时，再也不是黑盒操作了。可以深入源码去找真正的原因。当然，阅读源码带来的好处肯定不止这些。</p>
+<p>good luck ！！！！</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2017/12/19/2017/2017-12-19-深入剖析-mybatis-原理（三）如何整合Spring/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">深入剖析-Mybatis-原理（三）如何整合Spring</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2017/12/16/2017/2017-12-16-深入剖析-mybatis-原理（一）/">
+                <span class="level-item">深入剖析-Mybatis-原理（一）</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2017/12/17/2017/2017-12-17-深入剖析-mybatis-原理（二）/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="深入剖析-Mybatis-原理（二）" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

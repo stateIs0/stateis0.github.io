@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>闪电侠 Netty 小册里的骚操作 - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="闪电侠 Netty 小册里的骚操作">
+<meta property="og:url" content="http://thinkinjava.cn/2018/10/13/2018/2018-10-13-闪电侠 Netty 小册里的骚操作/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="闪电侠 Netty 小册里的骚操作">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="闪电侠 Netty 小册里的骚操作" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-10-12T16:01:01.000Z">2018-10-13</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Netty/">Netty</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    12 分钟 读完 (大约 1798 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                闪电侠 Netty 小册里的骚操作
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       即使这是一本小册，但基于“不提笔不读书”的理念，仍然有必要总结一下。此小册对于那些“硬杠 Netty 源码 却不曾在千万级生产环境上使用实操”的用户非常有用。当然，对那些没有 Netty 编程经验的人来说，更为有用。</p>
+<p>放个小册地址：<a href="https://juejin.im/book/5b4bc28bf265da0f60130116/section/5b4db06d5188251afc257383#heading-2" target="_blank" rel="noopener"><a href="https://juejin.im/book/5b4bc28bf265da0f60130116" target="_blank" rel="noopener">Netty 入门与实战：仿写微信 IM 即时通讯系统</a>
+</a></p>
+<p>再次强烈推荐，一碗黄焖鸡/半杯 Luckin coffee/一包炫赫门 的价钱，可以让你学会使用 Java 界的 epoll 进行多路复用网络编程，不能说是不划算的 ：）</p>
+<p>本文标题含有“骚操作”，为什么这么说呢？</p>
+<p>作者是某团某评基础架构部技术专家，长期负责后台千万级别的推送系统，而这些推送系统自然是长连接实现的。可以想象，作者的这些实践经验不可谓不好用，纵然看过源码，提过 issue，本人也觉得这些操作非常好用，非常骚气。</p>
+<h2 id="开始"><a href="#开始" class="headerlink" title="开始"></a>开始</h2><p>我们挑重点讲，虽然对于强迫症来讲，每一节都有笔记才是最吼的！</p>
+<p>1 服务端启动流程</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. 通过给 bind 方法添加监听器，用以自动绑定递增端口。算骚操作吧?</span><br><span class="line">2. attr 方法，为每条连接增加属性，能够实现全单例模式哟</span><br><span class="line">3. childOption 方法，关于 TCP连接的优化，SO_KEEPALIVE 底层心跳，TCP_NODELAY 延迟发送，SO_BACKLOG 等待队列</span><br></pre></td></tr></table></figure>
+<p>2  客户端启动流程</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. 还是通过监听器实现重试，但是是 connect 返回的 future，且重实间隔时间左移 1 位增加（性能优化，不使用乘二 ，优秀）。</span><br><span class="line">2. 重试不在主线程，而是使用 bootstrap.config().group().schedule 搞定时任务，和我想的不一样。优秀</span><br><span class="line">3. 客户端需要 CONNECT_TIMEOUT_MILLIS 属性</span><br></pre></td></tr></table></figure>
+<p>3 客户端与服务端双向通信</p>
+<figure class="highlight plain hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1.客户端在 channelActive 立刻搞事情，嗯，rpc 通信通常也会做一些处理，例如打印客户端ip之类的。</span><br></pre></td></tr></table></figure>
+<p>4  客户端与服务端通信协议编解码（扩展较多）</p>
+<figure class="highlight lsl hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">emm，这个其实就是自定义应用层协议。</span><br><span class="line"><span class="hljs-number">1.</span> <span class="hljs-number">4</span> 字节魔数校验，例如 dubbo 就使用<span class="hljs-number">0xdabb</span>进行校验，Java 字节码也使用 <span class="hljs-number">0xcafebabe</span> 校验字节码。</span><br><span class="line"><span class="hljs-number">2.</span>  版本号肯定需要的</span><br><span class="line"><span class="hljs-number">3.</span> 序列化算法，肯定也需要的</span><br><span class="line"><span class="hljs-number">4.</span> 指令，肯定也是需要的，不过，也可以使用别的方式。</span><br><span class="line"><span class="hljs-number">5.</span> 后面的数据长度，也是需要的，方便拆包。</span><br><span class="line"></span><br><span class="line">其实这里可以参照 RPC 协议来看，这里更像一个简化的 RPC 协议。</span><br><span class="line">一般 RPC 框架首先获取协议类型，根据这个协议类型得到协议处理器，然后再处理（一个端口处理多个协议的场景）。</span><br><span class="line">生产级别的 RPC 通常较为复杂，以 SOFABolt 为例，需要以下字段：</span><br><span class="line"><span class="hljs-number">1.</span> 协议版本</span><br><span class="line"><span class="hljs-number">2.</span> 请求类型，即指令（Request，Response， oneway）</span><br><span class="line"><span class="hljs-number">3.</span> 指令版本</span><br><span class="line"><span class="hljs-number">4.</span> RequestID 负责数据对应</span><br><span class="line"><span class="hljs-number">5.</span> 序列号器</span><br><span class="line"><span class="hljs-number">6.</span> 协议开关（例如 CRC 校验，安全校验）</span><br><span class="line"><span class="hljs-number">7.</span> 响应码，约定异常，简化异常</span><br><span class="line"><span class="hljs-number">8.</span> 类名长度，Java rpc 框架必备</span><br><span class="line"><span class="hljs-number">9.</span> 请求头长度（参照 http header）</span><br><span class="line"><span class="hljs-number">10.</span> 请求体长度（参照http body）</span><br><span class="line"><span class="hljs-number">11.</span> 类名</span><br><span class="line"><span class="hljs-number">12.</span> 业务请求头内容（一般是 Map，SOFABolt 支持自定义，SOFARPC 里面藏着是否泛化调用等信息）</span><br><span class="line"><span class="hljs-number">13.</span> 业务请求体内容（一般就是个Request对象或 Response对象，里面包含约定的属性，例如参数，返回值，超级多，SOFARPC 有个属性类 RemotingConstants，这里都有）</span><br><span class="line"><span class="hljs-number">14.</span> CRC 校验码（金融场景必备）</span><br></pre></td></tr></table></figure>
+<p>5  实现客户端与服务端收发消息</p>
+<figure class="highlight css hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1. 使用 <span class="hljs-selector-tag">hannel</span><span class="hljs-selector-class">.attr</span>(<span class="hljs-selector-tag">Attributes</span><span class="hljs-selector-class">.LOGIN</span>)<span class="hljs-selector-class">.set</span>(<span class="hljs-selector-tag">true</span>) 绑定登录标识方便哟</span><br></pre></td></tr></table></figure>
+<p>6  构建客户端与服务端 pipeline</p>
+<figure class="highlight markdown hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-bullet">1. </span>常用的 ChannelInboundHandlerAdapter 和 ChannelOutboundHandlerAdapter 但是需要强转哦，麻烦，</span><br><span class="line">   建议使用 SimpleChannelInboundHandler (还帮你释放内存哟)。</span><br><span class="line"><span class="hljs-bullet">2. </span>不使用 MessageToByteEncoder ，可以自己编解码哦，虽然麻烦点</span><br></pre></td></tr></table></figure>
+<p>7  拆包粘包理论与解决方案</p>
+<figure class="highlight markdown hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-bullet">1. </span>常用拆包：固定长度，行拆包（有bug，我写过文章分析），分隔符，基于长度</span><br><span class="line"><span class="hljs-bullet">2. </span>最通用的就是基于长度，只要你的自定义协议中包含长度域字段，就可以使用</span><br><span class="line"><span class="hljs-bullet">3. </span>LengthFieldBasedFrameDecoder 代替自己继承 ByteToMessageDecoder 哟。</span><br><span class="line"><span class="hljs-bullet">4. </span>对 LengthFieldBasedFrameDecoder 扩展一下，校验魔数关闭错误连接美滋滋。</span><br></pre></td></tr></table></figure>
+<p>8  channelHandler 的生命周期 </p>
+<figure class="highlight markdown hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-bullet">1. </span>在 channelReadComplete 方法里执行 flush，批量刷新，性能提升美滋滋。</span><br><span class="line"><span class="hljs-bullet">2. </span>channelActive 和 channelInActive 增减连接，RPC 都这么干</span><br></pre></td></tr></table></figure>
+<p>9 使用 channelHandler 的热插拔实现客户端身份校验</p>
+<figure class="highlight basic hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-number">1.</span> ctx.pipeline().<span class="hljs-comment">remove(this) 删除没有必要的 handler 美滋滋</span></span><br><span class="line"><span class="hljs-number">2.</span> handler<span class="hljs-comment">Removed 回调美滋滋</span></span><br></pre></td></tr></table></figure>
+<p>10  客户端互聊原理与实现</p>
+<figure class="highlight css hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. <span class="hljs-selector-tag">Session</span> 通过 <span class="hljs-selector-tag">channel</span><span class="hljs-selector-class">.attr</span>(<span class="hljs-selector-tag">Attributes</span><span class="hljs-selector-class">.SESSION</span>)<span class="hljs-selector-class">.set</span>(<span class="hljs-selector-tag">session</span>) 绑定连接美滋滋。</span><br><span class="line">2. <span class="hljs-selector-tag">channel</span><span class="hljs-selector-class">.attr</span>(<span class="hljs-selector-tag">Attributes</span><span class="hljs-selector-class">.SESSION</span>)<span class="hljs-selector-class">.set</span>(<span class="hljs-selector-tag">null</span>) 删除 <span class="hljs-selector-tag">session</span> 美滋滋</span><br><span class="line">3. <span class="hljs-selector-tag">channel</span><span class="hljs-selector-class">.attr</span>(<span class="hljs-selector-tag">Attributes</span><span class="hljs-selector-class">.SESSION</span>)<span class="hljs-selector-class">.get</span>() 美滋滋</span><br><span class="line">``` </span><br><span class="line"></span><br><span class="line">11 群聊的发起与通知</span><br></pre></td></tr></table></figure>
+<ol>
+<li>ChannelGroup c = ChannelGroup channelGroup = new DefaultChannelGroup(ctx.executor()) 批量处理连接美滋滋</li>
+<li><p>channelGroup.writeAndFlush 批量写连接美滋滋</p>
+<figure class="highlight clean hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">### 高能预警！！！！</span><br><span class="line"></span><br><span class="line"><span class="hljs-number">12</span>  牛逼的性能优化</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>共享 handler</p>
+</li>
+<li>压缩 handler - 合并编解码器 —— MessageToMessageCodec</li>
+<li>虽然有状态的 handler 不能搞单例，但是你可以绑定到 channel 属性上，强行单例</li>
+<li>缩短事件传播路径—— 放 Map 里，在第一个 handler 里根据指令来找具体 handler。</li>
+<li>更改事件传播源—— 用 ctx.writeAndFlush() 不要用 ctx.channel().writeAndFlush()</li>
+<li>减少阻塞主线程的操作—— 使用业务线程池，RPC 优化重点</li>
+<li><p>计算耗时，使用回调 Future</p>
+<figure class="highlight basic hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="hljs-symbol">13 </span>心跳和空闲检测</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>空闲检测 IdleStateHandler 用起来很爽， channelIdle 和 userEventTriggered 都可以处理</p>
+</li>
+<li>定时心跳 ctx.executor().scheduleAtFixedRate 很优秀</li>
+<li>通常空闲检测时间要比发送心跳的时间的两倍要长一些（3倍），这也是为了排除偶发的公网抖动，防止误判。美滋滋<br><code>`</code></li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>小小短文，无法尽数 Netty 精华，但对于新手来说，已经足够使用了。而我这里仅仅是做简单的阅读总结，更多的内容，还需要读者自己去研究小册，研究源码，研究 Netty 在 RPC 里的运用，方能成为 Netty 多路复用网络编程高手。</p>
+<p>关于 RPC 里使用 Netty 的最佳范例，推荐蚂蚁金服开源框架 <a href="https://github.com/alipay/sofa-bolt" target="_blank" rel="noopener">SOFABolt</a>，可以说是对 Netty 编程最佳实践的提炼，和此文相辅相成进行学习，可助汝纵横 Java 各种面试。</p>
+<p>good luck！！！</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/10/16/2018/2018-10-16-本人开源项目 Lu-Rpc/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">本人开源项目 Lu-Rpc</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/10/08/2018/2018-10-08-面试被问烂的 Spring IOC(求求你别再问了)/">
+                <span class="level-item">面试被问烂的 Spring IOC(求求你别再问了)</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/10/13/2018/2018-10-13-闪电侠 Netty 小册里的骚操作/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="闪电侠 Netty 小册里的骚操作" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

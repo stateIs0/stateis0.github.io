@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>并发编程-——-ScheduledThreadPoolExecutor - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程-——-ScheduledThreadPoolExecutor">
+<meta property="og:url" content="http://thinkinjava.cn/2018/04/21/2018/2018-04-21-并发编程-——-ScheduledThreadPoolExecutor/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="并发编程-——-ScheduledThreadPoolExecutor">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="并发编程-——-ScheduledThreadPoolExecutor" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2018-04-20T18:11:11.000Z">2018-04-21</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/并发编程/">并发编程</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    25 分钟 读完 (大约 3788 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                并发编程-——-ScheduledThreadPoolExecutor
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a>       <!--more-->       ## 1. 前言</p>
+<p>在前面的文章中，我们介绍了定时任务类 Timer ，他是 JDK 1.3 中出现的，位于 java.util 包下。而今天说的 <code>ScheduledThreadPoolExecutor</code>的是在 JUC 包下，是 JDK1.5 新增的。</p>
+<p>今天就来说说这个类。</p>
+<h2 id="2-API-介绍"><a href="#2-API-介绍" class="headerlink" title="2. API 介绍"></a>2. API 介绍</h2><p>该类内部结构和 <code>Timer</code>还是有点类似的，也是  3 个类：</p>
+<ul>
+<li><code>ScheduledThreadPoolExecutor</code>：程序员使用的接口。</li>
+<li><code>DelayedWorkQueue</code> ： 存储任务的队列。</li>
+<li><code>ScheduledFutureTask</code> ： 执行任务的线程。</li>
+</ul>
+<p><strong>构造方法介绍</strong>：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// 使用给定核心池大小创建一个新 ScheduledThreadPoolExecutor。</span></span><br><span class="line">ScheduledThreadPoolExecutor(<span class="hljs-keyword">int</span> corePoolSize)  </span><br><span class="line"><span class="hljs-comment">// 使用给定初始参数创建一个新 ScheduledThreadPoolExecutor。</span></span><br><span class="line">ScheduledThreadPoolExecutor(<span class="hljs-keyword">int</span> corePoolSize, RejectedExecutionHandler handler)  </span><br><span class="line"><span class="hljs-comment">// 使用给定的初始参数创建一个新 ScheduledThreadPoolExecutor。</span></span><br><span class="line">ScheduledThreadPoolExecutor(<span class="hljs-keyword">int</span> corePoolSize, ThreadFactory threadFactory)  </span><br><span class="line"><span class="hljs-comment">// 使用给定初始参数创建一个新 ScheduledThreadPoolExecutor。</span></span><br><span class="line">ScheduledThreadPoolExecutor(<span class="hljs-keyword">int</span> corePoolSize, ThreadFactory threadFactory, RejectedExecutionHandler handler)</span><br></pre></td></tr></table></figure>
+<p><code>ScheduledThreadPoolExecutor</code>最多支持 3 个参数：核心线程数量，线程工厂，拒绝策略。</p>
+<p>为什么没有最大线程数量？由于 <code>ScheduledThreadPoolExecutor</code> 内部是个无界队列，<code>maximumPoolSize</code> 也就没有意思了。</p>
+<p>再介绍一下他的 API 方法，请原谅我将 JDK 文档照抄过来了，就当是备忘吧，如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">protected</span> &lt;V&gt; <span class="hljs-function">RunnableScheduledFuture&lt;V&gt; <span class="hljs-title">decorateTask</span><span class="hljs-params">(Callable&lt;V&gt; callable, RunnableScheduledFuture&lt;V&gt; task)</span> <span class="hljs-comment">// 修改或替换用于执行 callable 的任务。</span></span></span><br><span class="line"><span class="hljs-function">  </span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> &lt;V&gt; RunnableScheduledFuture&lt;V&gt; <span class="hljs-title">decorateTask</span><span class="hljs-params">(Runnable runnable, RunnableScheduledFuture&lt;V&gt; task)</span> <span class="hljs-comment">// 修改或替换用于执行 runnable 的任务。        </span></span></span><br><span class="line"><span class="hljs-function">    </span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">execute</span><span class="hljs-params">(Runnable command)</span> <span class="hljs-comment">// 使用所要求的零延迟执行命令。  </span></span></span><br><span class="line"><span class="hljs-function"></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">boolean</span>	<span class="hljs-title">getContinueExistingPeriodicTasksAfterShutdownPolicy</span><span class="hljs-params">()</span> <span class="hljs-comment">// 获取有关在此执行程序已 shutdown 的情况下、是否继续执行现有定期任务的策略。      </span></span></span><br><span class="line"><span class="hljs-function">   </span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">boolean</span>	<span class="hljs-title">getExecuteExistingDelayedTasksAfterShutdownPolicy</span><span class="hljs-params">()</span> <span class="hljs-comment">// 获取有关在此执行程序已 shutdown 的情况下是否继续执行现有延迟任务的策略。  </span></span></span><br><span class="line"><span class="hljs-function"></span></span><br><span class="line"><span class="hljs-function">BlockingQueue&lt;Runnable&gt;	<span class="hljs-title">getQueue</span><span class="hljs-params">()</span> <span class="hljs-comment">// 返回此执行程序使用的任务队列。     </span></span></span><br><span class="line"><span class="hljs-function"></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">boolean</span>	<span class="hljs-title">remove</span><span class="hljs-params">(Runnable task)</span> <span class="hljs-comment">// 从执行程序的内部队列中移除此任务（如果存在），从而如果尚未开始，则其不再运行。     </span></span></span><br><span class="line"><span class="hljs-function">  </span></span><br><span class="line"><span class="hljs-function">&lt;V&gt; ScheduledFuture&lt;V&gt;	<span class="hljs-title">schedule</span><span class="hljs-params">(Callable&lt;V&gt; callable, <span class="hljs-keyword">long</span> delay, TimeUnit unit)</span> <span class="hljs-comment">// 创建并执行在给定延迟后启用的 ScheduledFuture。    </span></span></span><br><span class="line"><span class="hljs-function">    </span></span><br><span class="line"><span class="hljs-function">ScheduledFuture&lt;?&gt;	<span class="hljs-title">schedule</span><span class="hljs-params">(Runnable command, <span class="hljs-keyword">long</span> delay, TimeUnit unit)</span> <span class="hljs-comment">// 创建并执行在给定延迟后启用的一次性操作。  </span></span></span><br><span class="line"><span class="hljs-function">     </span></span><br><span class="line"><span class="hljs-function">ScheduledFuture&lt;?&gt;	<span class="hljs-title">scheduleAtFixedRate</span><span class="hljs-params">(Runnable command, <span class="hljs-keyword">long</span> initialDelay, <span class="hljs-keyword">long</span> period, TimeUnit unit)</span> <span class="hljs-comment">// 创建并执行一个在给定初始延迟后首次启用的定期操作，后续操作具有给定的周期；也就是将在 initialDelay 后开始执行，然后在 initialDelay+period 后执行，接着在 initialDelay + 2 * period 后执行，依此类推。 </span></span></span><br><span class="line"><span class="hljs-function">     </span></span><br><span class="line"><span class="hljs-function">ScheduledFuture&lt;?&gt;	<span class="hljs-title">scheduleWithFixedDelay</span><span class="hljs-params">(Runnable command, <span class="hljs-keyword">long</span> initialDelay, <span class="hljs-keyword">long</span> delay, TimeUnit unit)</span> <span class="hljs-comment">// 创建并执行一个在给定初始延迟后首次启用的定期操作，随后，在每一次执行终止和下一次执行开始之间都存在给定的延迟。  </span></span></span><br><span class="line"><span class="hljs-function">   </span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setContinueExistingPeriodicTasksAfterShutdownPolicy</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> value)</span> <span class="hljs-comment">// 设置有关在此执行程序已 shutdown 的情况下是否继续执行现有定期任务的策略。  </span></span></span><br><span class="line"><span class="hljs-function">   </span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setExecuteExistingDelayedTasksAfterShutdownPolicy</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> value)</span> <span class="hljs-comment">// 设置有关在此执行程序已 shutdown 的情况下是否继续执行现有延迟任务的策略。  </span></span></span><br><span class="line"><span class="hljs-function">      </span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">shutdown</span><span class="hljs-params">()</span> <span class="hljs-comment">// 在以前已提交任务的执行中发起一个有序的关闭，但是不接受新任务。</span></span></span><br><span class="line"><span class="hljs-function">    </span></span><br><span class="line"><span class="hljs-function">List&lt;Runnable&gt;	<span class="hljs-title">shutdownNow</span><span class="hljs-params">()</span> <span class="hljs-comment">// 尝试停止所有正在执行的任务、暂停等待任务的处理，并返回等待执行的任务列表。  </span></span></span><br><span class="line"><span class="hljs-function">     </span></span><br><span class="line"><span class="hljs-function">&lt;T&gt; Future&lt;T&gt; <span class="hljs-title">submit</span><span class="hljs-params">(Callable&lt;T&gt; task)</span> <span class="hljs-comment">//  提交一个返回值的任务用于执行，返回一个表示任务的未决结果的 Future。 </span></span></span><br><span class="line"><span class="hljs-function">   </span></span><br><span class="line"><span class="hljs-function">Future&lt;?&gt; <span class="hljs-title">submit</span><span class="hljs-params">(Runnable task)</span> <span class="hljs-comment">//  提交一个 Runnable 任务用于执行，并返回一个表示该任务的 Future。  </span></span></span><br><span class="line"><span class="hljs-function">     </span></span><br><span class="line"><span class="hljs-function">&lt;T&gt; Future&lt;T&gt; <span class="hljs-title">submit</span><span class="hljs-params">(Runnable task, T result)</span> <span class="hljs-comment">//  提交一个 Runnable 任务用于执行，并返回一个表示该任务的 Future。</span></span></span><br></pre></td></tr></table></figure>
+<p>最经常使用的几个方法如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// 使用给定核心池大小创建一个新 ScheduledThreadPoolExecutor。</span></span><br><span class="line">ScheduledThreadPoolExecutor(<span class="hljs-keyword">int</span> corePoolSize)  </span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 创建并执行在给定延迟后启用的一次性操作。  </span></span><br><span class="line">ScheduledFuture&lt;?&gt;	schedule(Runnable command, <span class="hljs-keyword">long</span> delay, TimeUnit unit) </span><br><span class="line">  </span><br><span class="line"><span class="hljs-comment">// 创建并执行一个在给定初始延迟后首次启用的定期操作，后续操作具有给定的周期；也就是将在 initialDelay 后开始执行，然后在 initialDelay+period 后执行，接着在 initialDelay + 2 * period 后执行，依此类推。 </span></span><br><span class="line">ScheduledFuture&lt;?&gt;	scheduleAtFixedRate(Runnable command, <span class="hljs-keyword">long</span> initialDelay, <span class="hljs-keyword">long</span> period, TimeUnit unit) </span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 创建并执行一个在给定初始延迟后首次启用的定期操作，随后，在每一次执行终止和下一次执行开始之间都存在给定的延迟。       </span></span><br><span class="line">ScheduledFuture&lt;?&gt;	scheduleWithFixedDelay(Runnable command, <span class="hljs-keyword">long</span> initialDelay, <span class="hljs-keyword">long</span> delay, TimeUnit unit)</span><br></pre></td></tr></table></figure>
+<p>除了默认的构造方法，还有 3 个 <code>schedule</code> 方法。我们将分析他们内部的实现。</p>
+<h2 id="3-构造方法内部实现"><a href="#3-构造方法内部实现" class="headerlink" title="3. 构造方法内部实现"></a>3. 构造方法内部实现</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">ScheduledThreadPoolExecutor</span><span class="hljs-params">(<span class="hljs-keyword">int</span> corePoolSize)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">super</span>(corePoolSize, Integer.MAX_VALUE, <span class="hljs-number">0</span>, NANOSECONDS,</span><br><span class="line">          <span class="hljs-keyword">new</span> DelayedWorkQueue());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们感兴趣的就是这个 <code>DelayedWorkQueue</code> 队列了。他也是一个阻塞队列。这个队列的数据结构是堆。同时，这个 <code>queue</code> 也是可比较的，比较什么呢？任务必须实现 <code>compareTo</code> 方法，这个方法的比较逻辑是：比较任务的执行时间，如果任务的执行时间相同，则比较任务的加入时间。</p>
+<p>因此，<code>ScheduledFutureTask</code> 有 2 个变量：</p>
+<ul>
+<li><code>time</code> ： 任务的执行时间。</li>
+<li><code>sequenceNumber</code>：任务的加入时间。</li>
+</ul>
+<p>这两个变量就是用来比较任务的执行顺序的。整个调度的顺序就是这个逻辑。</p>
+<h2 id="4-几个-schedule-方法的的区别"><a href="#4-几个-schedule-方法的的区别" class="headerlink" title="4. 几个 schedule  方法的的区别"></a>4. 几个 schedule  方法的的区别</h2><p>刚刚说了，有 3 个 <code>schedule</code> 方法：</p>
+<ol>
+<li><p><code>ScheduledFuture&lt;?&gt;  schedule(Runnable command, long delay, TimeUnit unit)</code><br>创建并执行在给定延迟后启用的一次性操作。  </p>
+</li>
+<li><p><code>ScheduledFuture&lt;?&gt;  scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit)</code><br>创建并执行一个在给定初始延迟后首次启用的定期操作，后续操作具有给定的周期；也就是将在<code>initialDelay</code> 后开始执行，然后在 <code>initialDelay+period</code>后执行，接着在<code>initialDelay + 2 * period</code>后执行，依此类推。 </p>
+</li>
+<li><p><code>ScheduledFuture&lt;?&gt;  scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit)</code><br>创建并执行一个在给定初始延迟后首次启用的定期操作，随后，在每一次执行终止和下一次执行开始之间都存在给定的延迟。       </p>
+</li>
+</ol>
+<p>第一个方法执行在给定的时间后，执行一次就结束。</p>
+<p><strong>有点意思的地方是 第二个方法和 第三个方法，他们直接的区别。</strong></p>
+<p>这两个方法都可以重复的调用。但是，重复调用的逻辑有所区别，这里就是比 Timer 好用的地方。</p>
+<p>他们的共同点在于：<strong>必须等待上个任务执行完毕才能执行下个任务。</strong></p>
+<p>不同点在于：<strong>他们调度的时间粗略是不同的。</strong></p>
+<p><code>scheduleAtFixedRate</code> 方法的执行周期都是固定的，也就是，他是以上一个任务的开始执行时间作为起点，加上之后的 period 时间，调度下次任务。</p>
+<p><code>scheduleWithFixedDelay</code> 方法则是以上一个任务的结束时间作为起点，加上之后的 period 时间，调度下次任务。</p>
+<p>有什么区别呢？</p>
+<p>如何任务执行时间很短，那就没上面区别。但是，如果任务执行时间很长，超过了 period 时间，那么区别就出来了。</p>
+<p>我们假设一下。</p>
+<p>我们设置 <code>period</code> 时间为  2 秒，而任务耗时 5 秒。</p>
+<p>这个两个方法的区别就体现出来了。</p>
+<p><code>scheduleAtFixedRate</code> 方法将会在上一个任务结束完毕立刻执行，他和上一个任务的开始执行时间的间隔是 <strong>5</strong> 秒（因为必须等待上一个任务执行完毕）。</p>
+<p><code>scheduleWithFixedDelay</code> 方法将会在上一个任务结束后，注意：<strong>再等待 2 秒，</strong>才开始执行，那么他和上一个任务的开始执行时间的间隔是 <strong>7</strong> 秒。</p>
+<p>所以，我们在使用 <code>ScheduledThreadPoolExecutor</code> 的过程中需要注意任务的执行时间不能超过间隔时间，如果超过了，最好使用<code>scheduleAtFixedRate</code> 方法，防止任务堆积。</p>
+<p>当然，也和具体的业务有关。不能一概而论。但一定要注意这两个方法的区别。</p>
+<h2 id="5-scheduled-方法的实现"><a href="#5-scheduled-方法的实现" class="headerlink" title="5. scheduled 方法的实现"></a>5. scheduled 方法的实现</h2><p>我们看看 scheduleAtFixedRate 方法的内部实现。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> ScheduledFuture&lt;?&gt; scheduleAtFixedRate(Runnable command,</span><br><span class="line">                                              <span class="hljs-keyword">long</span> initialDelay,</span><br><span class="line">                                              <span class="hljs-keyword">long</span> period,</span><br><span class="line">                                              TimeUnit unit) &#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (command == <span class="hljs-keyword">null</span> || unit == <span class="hljs-keyword">null</span>)</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> NullPointerException();</span><br><span class="line">    <span class="hljs-keyword">if</span> (period &lt;= <span class="hljs-number">0</span>)</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException();</span><br><span class="line">    ScheduledFutureTask&lt;Void&gt; sft =</span><br><span class="line">        <span class="hljs-keyword">new</span> ScheduledFutureTask&lt;Void&gt;(command,</span><br><span class="line">                                      <span class="hljs-keyword">null</span>,</span><br><span class="line">                                      triggerTime(initialDelay, unit),</span><br><span class="line">                                      unit.toNanos(period));</span><br><span class="line">    RunnableScheduledFuture&lt;Void&gt; t = decorateTask(command, sft);</span><br><span class="line">    sft.outerTask = t;</span><br><span class="line">    delayedExecute(t);</span><br><span class="line">    <span class="hljs-keyword">return</span> t;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>创建一个 <code>ScheduledFutureTask</code> 对象，然后装饰一个这个<code>Future</code> ，该类实现是直接返回，子类可以有自己的实现，在这个任务外装饰一层。</p>
+<p>然后执行 <code>delayedExecute</code> 方法，最后返回 <code>Future</code>。</p>
+<p>这个 <code>ScheduledFutureTask</code> 实现了很多接口，比如 <code>Future</code>，<code>Runnable</code>， <code>Comparable</code>，<code>Delayed</code> 等。</p>
+<p><code>ScheduledFutureTask</code> 的构造方法如下：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">ScheduledFutureTask(Runnable r, V result, <span class="hljs-keyword">long</span> ns, <span class="hljs-keyword">long</span> period) &#123;</span><br><span class="line">    <span class="hljs-keyword">super</span>(r, result);</span><br><span class="line">    <span class="hljs-keyword">this</span>.time = ns;</span><br><span class="line">    <span class="hljs-keyword">this</span>.period = period;</span><br><span class="line">    <span class="hljs-keyword">this</span>.sequenceNumber = sequencer.getAndIncrement();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">FutureTask</span><span class="hljs-params">(Runnable runnable, V result)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">this</span>.callable = Executors.callable(runnable, result);</span><br><span class="line">    <span class="hljs-keyword">this</span>.state = NEW;       <span class="hljs-comment">// ensure visibility of callable</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> &lt;T&gt; <span class="hljs-function">Callable&lt;T&gt; <span class="hljs-title">callable</span><span class="hljs-params">(Runnable task, T result)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (task == <span class="hljs-keyword">null</span>)</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> NullPointerException();</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> RunnableAdapter&lt;T&gt;(task, result);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">RunnableAdapter</span>&lt;<span class="hljs-title">T</span>&gt; <span class="hljs-keyword">implements</span> <span class="hljs-title">Callable</span>&lt;<span class="hljs-title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">final</span> Runnable task;</span><br><span class="line">    <span class="hljs-keyword">final</span> T result;</span><br><span class="line">    RunnableAdapter(Runnable task, T result) &#123;</span><br><span class="line">        <span class="hljs-keyword">this</span>.task = task;</span><br><span class="line">        <span class="hljs-keyword">this</span>.result = result;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> T <span class="hljs-title">call</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        task.run();</span><br><span class="line">        <span class="hljs-keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">`</span><br></pre></td></tr></table></figure>
+<p>层层递进，该类首先通过一个原子静态 <code>int</code>对象这只任务的入队编号，然后创建一个 <code>Callable</code>，这个 Callable 是一个适配器，适配了<code>Runnable</code>和<code>Callable</code>，也就是将<code>Runnable</code>包装成 <code>callabe</code>， 他的 <code>call</code>方法就是调用给定任务的 run 方法。当然，这里的 <code>result</code>是没有什么作用的。</p>
+<p>如果你传递的是一个  <code>callable</code> ，那么，就调用 <code>FutureTask</code> 的 <code>run</code>方法，设置真正的返回值。</p>
+<p>这里使用了适配器模式，还是挺有趣的。</p>
+<p>总的来说，这个 <code>ScheduledFutureTask</code> 基于 <code>FutureTask</code>， 关于 <code>FutureTask</code> 我们之前从源码介绍过了。</p>
+<p>而他自己重写了几个方法：<code>compareTo</code>， <code>getDelay</code>， <code>run</code>，<code>isPeriodic</code>4 个方法。</p>
+<p>我们还是要看看 <code>delayedExecute</code> 的实现。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">delayedExecute</span><span class="hljs-params">(RunnableScheduledFuture&lt;?&gt; task)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (isShutdown())</span><br><span class="line">        reject(task);</span><br><span class="line">    <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-comment">// 添加进队列。</span></span><br><span class="line">        <span class="hljs-keyword">super</span>.getQueue().add(task);</span><br><span class="line">        <span class="hljs-comment">// 如果线程池关闭了，且不可以在当前状态下运行任务，且从队列删除任务成功，就给任务打上取消标记。</span></span><br><span class="line">        <span class="hljs-comment">// 第二个判断是由两个变量控制的（下面是默认值）：</span></span><br><span class="line">        <span class="hljs-comment">// continueExistingPeriodicTasksAfterShutdown = false 表示关闭的时候应取消周期性任务。默认关闭</span></span><br><span class="line">        <span class="hljs-comment">// executeExistingDelayedTasksAfterShutdown = true。表示关闭的时候应取消非周期性的任务。默认不关闭。</span></span><br><span class="line">        <span class="hljs-comment">// running 状态下，canRunInCurrentRunState 必定返回 ture。</span></span><br><span class="line">        <span class="hljs-comment">// 非 running 状态下，canRunInCurrentRunState 根据上面的两个值返回。</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (isShutdown() &amp;&amp;</span><br><span class="line">            !canRunInCurrentRunState(task.isPeriodic()) &amp;&amp;</span><br><span class="line">            remove(task))</span><br><span class="line">            task.cancel(<span class="hljs-keyword">false</span>);</span><br><span class="line">        <span class="hljs-keyword">else</span></span><br><span class="line">            <span class="hljs-comment">// 开始执行任务</span></span><br><span class="line">            ensurePrestart();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>说说上面的方法。</p>
+<ol>
+<li>判断是否关闭，关闭则拒绝任务。</li>
+<li>如果不是 关闭状态，则添加进队列，而添加队列的顺序我们之前讲过了，根据 <code>ScheduledFutureTask</code> 的 <code>compareTo</code> 方法来的，先比较执行时间，再比较添加顺序。</li>
+<li>如果这个过程中线程池关闭了，则判断此时是否应该取消任务，根据两个变量来的，注释里面写了。默认的策略是，如果是周期性的任务，就取消，反之不取消。</li>
+<li>如果没有关闭线程池。就调用线程池里的线程执行任务。</li>
+</ol>
+<p>整体的过程如图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-7cbe02aef6b00d45.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>注意上面的图，如果是周期性的任务，则会在执行完毕后，归还队列。</p>
+<p>从哪里可以看出来呢？</p>
+<p><code>ScheduledFutureTask</code> 的 <code>run</code> 方法：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 是否是周期性任务</span></span><br><span class="line">    <span class="hljs-keyword">boolean</span> periodic = isPeriodic();</span><br><span class="line">    <span class="hljs-comment">// 如果不可以在当前状态下运行，就取消任务（将这个任务的状态设置为CANCELLED）。</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (!canRunInCurrentRunState(periodic))</span><br><span class="line">        cancel(<span class="hljs-keyword">false</span>);</span><br><span class="line">    <span class="hljs-comment">// 如果不是周期性的任务，调用 FutureTask # run 方法</span></span><br><span class="line">    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!periodic)</span><br><span class="line">        ScheduledFutureTask.<span class="hljs-keyword">super</span>.run();</span><br><span class="line">    <span class="hljs-comment">// 如果是周期性的。</span></span><br><span class="line">    <span class="hljs-comment">// 执行任务，但不设置返回值，成功后返回 true。（callable 不可以重复执行）</span></span><br><span class="line">    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (ScheduledFutureTask.<span class="hljs-keyword">super</span>.runAndReset()) &#123;</span><br><span class="line">        <span class="hljs-comment">// 设置下次执行时间</span></span><br><span class="line">        setNextRunTime();</span><br><span class="line">        <span class="hljs-comment">// 再次将任务添加到队列中</span></span><br><span class="line">        reExecutePeriodic(outerTask);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>逻辑如下：</p>
+<ol>
+<li>如果不能再当前状态下运行了，就取消这个任务。</li>
+<li>如果不是周期性的任务，就执行 <code>FutureTask</code> 的 <code>run</code> 方法。</li>
+<li>如果是周期性的任务，就需要执行 <code>runAndReset</code>方法。</li>
+<li>执行完毕后，重写设置当前任务的下次执行时间，然后添加进队列中。</li>
+</ol>
+<p>而管理整个执行过程的就是<code>ScheduledThreadPoolExecutor</code>的父类 <code>ThreadPoolExecutor</code>的<code>runWorker</code>方法。其中，该方法会从队列中取出数据，也就是调用队列的 <code>take</code> 方法。</p>
+<p>关于<code>DelayedWorkQueue</code> 的<code>take</code>方法，其中有个 <code>leader</code> 变量，如果 leader 不是空，说明已经有线程在等待了，那就阻塞当前线程，如果是空，说明，队列的第一个元素已经被更新了，就设置当前线程为 <code>leader</code>.</p>
+<p>这是一个 <code>Leader-Follower</code> 模式，Doug Lea 说的。</p>
+<p>当然，<code>take</code>方法整体的逻辑还是不变的。从队列的头部拿数据。使用 <code>Condition</code> 做线程之间的协调。</p>
+<h2 id="5-总结"><a href="#5-总结" class="headerlink" title="5. 总结"></a>5. 总结</h2><p>关于 <code>ScheduledThreadPoolExecutor</code> 调度类，我们分析的差不多了，总结一下。</p>
+<p><code>ScheduledThreadPoolExecutor</code> 是个定时任务线程池，类似 <code>Timer</code>，但是比 <code>Timer</code>强大，健壮。</p>
+<p>比如不会像 Timer 那样，任务异常了，整个调度系统就彻底无用了。</p>
+<p>也比<code>Timer</code> 多了<code>Rate</code> 模式（<code>Rate 和 Delay</code>）。</p>
+<p>这两种模式的区别就是任务执行的起点时间不同，<code>Rate</code>是从上一个任务的开始执行时间开始计算；<code>Delay</code> 是从上一个任务的结束时间开始计算。</p>
+<p>因此，如果任务本身的时间超过了间隔时间，那么这两种模式的间隔时间将会不一致。</p>
+<p>而任务的排序是通过 <code>ScheduledFutureTask</code>的 <code>compareTo</code>方法排序的，规则是先比较执行时间，如果时间相同，再比较加入时间。</p>
+<p>还要注意一点就是：如果任务执行过程中异常了，那么将不会再次重复执行。因为 <code>ScheduledFutureTask</code>的 <code>run</code>方法没有做<code>catch</code>处理。所以程序员需要手动处理，相对于 Timer 异常就直接费了调度系统来说，要好很多。</p>
+<p><code>ScheduledThreadPoolExecutor</code> 的是实现基于 <code>ThreadPoolExecutor</code>，大部分功能都是重用的父类，<strong>只是自己在执行完毕之后，重新设置时间，并再次将任务还到了队列中</strong>，形成了定时任务。</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2018/04/22/2018/2018-04-22-并发编程——-LinkedTransferQueue/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">并发编程——-LinkedTransferQueue</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2018/04/20/2018/2018-04-20-并发编程-——-Timer-源码分析/">
+                <span class="level-item">并发编程-——-Timer-源码分析</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2018/04/21/2018/2018-04-21-并发编程-——-ScheduledThreadPoolExecutor/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="并发编程-——-ScheduledThreadPoolExecutor" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

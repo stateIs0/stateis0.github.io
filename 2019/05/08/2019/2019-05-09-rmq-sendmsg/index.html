@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>RocketMQ 发送消息（一条消息从发送到存储的过程） - 莫那·鲁道的技术博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta property="og:type" content="article">
+<meta property="og:title" content="RocketMQ 发送消息（一条消息从发送到存储的过程）">
+<meta property="og:url" content="http://thinkinjava.cn/2019/05/08/2019/2019-05-09-rmq-sendmsg/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://thinkinjava.cn/images/og_image.png">
+<meta property="og:updated_time" content="2019-12-23T18:07:14.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="RocketMQ 发送消息（一条消息从发送到存储的过程）">
+<meta name="twitter:image" content="http://thinkinjava.cn/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/img/favicon.ico">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xt256.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-2-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.png" alt="RocketMQ 发送消息（一条消息从发送到存储的过程）" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">莫那·鲁道の技术博客</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/stateIs0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-8-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-05-08T09:01:02.000Z">2019-05-08</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Message-Queue/">Message Queue</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    21 分钟 读完 (大约 3142 个字)
+                </span>
+                
+                
+                <span class="level-item has-text-grey" id="busuanzi_container_page_pv">
+                    <i class="far fa-eye"></i>
+                    <span id="busuanzi_value_page_pv">0</span>次访问
+                </span>
+                
+            </div>
+        </div>
+        
+        <h6 class="is-size-5 is-size-5-mobile has-text-weight-normal">
+            
+                RocketMQ 发送消息（一条消息从发送到存储的过程）
+            
+        </h6>
+        <div class="content">
+            <p><meta name="referrer" content="no-referrer"><br><a id="more"></a><br>目录:</p>
+<ul>
+<li>前言</li>
+<li>quickStart</li>
+<li>单刀直入</li>
+<li>Remoting 模块发送消息实现</li>
+<li>如何处理返回值</li>
+<li>Broker Server 处理消息流程</li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>RocketMQ 目前在国内应该是比较流行的 MQ 了，楼主目前也在使用中，今天借着本文，理理 RocketMQ 发送一条消息到存储一条消息的过程。</p>
+<p>注意：本文主线是发送到存储，因此，阅读源码时，其他和这条线相关度不高的代码，会酌情阅读。另外，本文的目的是为了看清一条消息是如何被发出且被存储的，代码中，关于 MQ 文件系统的优化，设计等，并不会花很多篇幅介绍。</p>
+<h2 id="quickStart"><a href="#quickStart" class="headerlink" title="quickStart"></a>quickStart</h2><p>来自官方源码 example 的一段发送代码：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">DefaultMQProducer producer = <span class="hljs-keyword">new</span> DefaultMQProducer(<span class="hljs-string">"ProducerGroupName"</span>);</span><br><span class="line">producer.start();</span><br><span class="line"></span><br><span class="line">Message msg = <span class="hljs-keyword">new</span> Message(<span class="hljs-string">"TopicTest"</span>, <span class="hljs-string">"TagA"</span>, <span class="hljs-string">"OrderID188"</span>, <span class="hljs-string">"Hello world"</span>.getBytes(RemotingHelper.DEFAULT_CHARSET));</span><br><span class="line">SendResult sendResult = producer.send(msg);</span><br><span class="line">System.out.printf(<span class="hljs-string">"%s%n"</span>, sendResult);</span><br><span class="line"></span><br><span class="line">producer.shutdown();</span><br></pre></td></tr></table></figure>
+<h2 id="单刀直入"><a href="#单刀直入" class="headerlink" title="单刀直入"></a>单刀直入</h2><p>我们直接看看 send 方法。</p>
+<p>send 方法会设置一个默认的 timeout， 3 秒。<br>默认使用 SYNC 模式，另外有 Async 和 OneWay 模式。<br>我们需要处理方法签名中的 Client 端的异常，网络异常，Broker 端的异常，线程中断异常。</p>
+<p>DefaultMQProducerImpl # sendDefaultImpl 方法就是发送的主要逻辑。</p>
+<p><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g2uotxd3rbj30ig0hcdgf.jpg" alt></p>
+<p>这端代码里，有个有趣的地方，可以提一下，关于更新故障时间的策略，RMQ 有一个类 MQFaultStrategy，用来处理 MQ 错误，然后对 MQ Server 进行服务降级。</p>
+<p>对照图:</p>
+<p><img src="https://ws1.sinaimg.cn/large/006tNc79ly1g2uoza9kz9j30c2068a9x.jpg" alt></p>
+<p>这个策略具体内容：如果发送一条消息在 550 毫秒以内，那么就不用降级，如果 550 毫秒以外，就进行容错降级（熔断）30 秒，以此类推。<br>再看 DefaultMQProducerImpl # sendKernelImpl 发送到内核的方法实现。</p>
+<p>先找到 broker 的地址。尝试压缩大于 4M 的消息（批量消息不压缩）。执行各种钩子。构造 Request 对象（存放数据），Context 上下文对象（存放调用上下文）。</p>
+<p>这里会设置一个消息生成时间，即 bornTimestamp。后面使用消息轨迹的时候，可以查看。</p>
+<p>最后，如果是 SYNC 模式，就调用 MQClientAPIImpl 来发送消息，这一层还是在 Client 模块里，在这一层，会设置更详细的消息细节，构造命令对象。最后调用 remotingClient # invokeSync 发送消息。</p>
+<p>注意，在 MQClientAPIImpl # sendMessage 这一层，会给命令对象设置一个 CmdCode，叫 SEND_MESSAGE，这个东西就是一个和 Broker 的契约，Broker 会根据这个 Code 进行不同的策略。另外，如果这里用 RPC 的方式，例如，使用一个接口的抽象方法，然后 Broker 对抽象方法进行 RPC 调用，这样可不可以呢？</p>
+<p>最后，看看 remotingClient # invokeSync 是如何实现的。</p>
+<h2 id="Remoting-模块发送消息实现"><a href="#Remoting-模块发送消息实现" class="headerlink" title="Remoting 模块发送消息实现"></a>Remoting 模块发送消息实现</h2><p>invokeSync 方法首先执行  RPCBefore 钩子，类似 Spring 的各种 Bean 扩展组件，然后就是对超时进行判断。可以看到，每个方法几乎都有对超时的判断，超时判断和超时处理在分布式场景非常重要。</p>
+<p>然后根据 addr 找到对应的 Socket Channel。然后执行 invokeSyncImpl 方法。</p>
+<p>这里其实和其他大部分的 RPC 框架都是类似的了，生产一个永远自增的 Request ID，创建一个 Feature 对象，和这个 ID 绑定，方便 Netty 返回数据对这个 ID 对应的线程进行唤醒。<br>然后调用 Netty 的 writeAndFlush 方法，将数据写进 Socket，同时添加一个监听器，如果发送失败，唤醒当前线程。</p>
+<p>发送完毕之后，当前线程进行等待，使用 CountDownLatch.wait 方法实现，当 Netty 返回数据时，使用 CountDownLatch.countDown 进行唤醒，然后返回从 Broker 写入的结果，可能成功，也可能失败，需要到上层（Client 层）解析，网络层只负责网络的事情。</p>
+<p>我们知道， Netty 会使用 Handler 处理出去的数据和返回的数据，我们看看 Client 端 Netty 有哪些 Handler.</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">Bootstrap handler = <span class="hljs-keyword">this</span>.bootstrap.group(<span class="hljs-keyword">this</span>.eventLoopGroupWorker).channel(NioSocketChannel.class)</span><br><span class="line">            .option(ChannelOption.TCP_NODELAY, <span class="hljs-keyword">true</span>)</span><br><span class="line">            .option(ChannelOption.SO_KEEPALIVE, <span class="hljs-keyword">false</span>)</span><br><span class="line">            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, nettyClientConfig.getConnectTimeoutMillis())</span><br><span class="line">            .option(ChannelOption.SO_SNDBUF, nettyClientConfig.getClientSocketSndBufSize())</span><br><span class="line">            .option(ChannelOption.SO_RCVBUF, nettyClientConfig.getClientSocketRcvBufSize())</span><br><span class="line">            .handler(<span class="hljs-keyword">new</span> ChannelInitializer&lt;SocketChannel&gt;() &#123;</span><br><span class="line">                <span class="hljs-meta">@Override</span></span><br><span class="line">                <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">initChannel</span><span class="hljs-params">(SocketChannel ch)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                    ChannelPipeline pipeline = ch.pipeline();</span><br><span class="line">                    <span class="hljs-keyword">if</span> (nettyClientConfig.isUseTLS()) &#123;</span><br><span class="line">                        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">null</span> != sslContext) &#123;</span><br><span class="line">                            pipeline.addFirst(defaultEventExecutorGroup, <span class="hljs-string">"sslHandler"</span>, sslContext.newHandler(ch.alloc()));</span><br><span class="line">                            log.info(<span class="hljs-string">"Prepend SSL handler"</span>);</span><br><span class="line">                        &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">                            log.warn(<span class="hljs-string">"Connections are insecure as SSLContext is null!"</span>);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    pipeline.addLast(</span><br><span class="line">                        defaultEventExecutorGroup,</span><br><span class="line">                        <span class="hljs-keyword">new</span> NettyEncoder(),</span><br><span class="line">                        <span class="hljs-keyword">new</span> NettyDecoder(),</span><br><span class="line">                        <span class="hljs-keyword">new</span> IdleStateHandler(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()),</span><br><span class="line">                        <span class="hljs-keyword">new</span> NettyConnectManageHandler(),</span><br><span class="line">                        <span class="hljs-keyword">new</span> NettyClientHandler());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br></pre></td></tr></table></figure>
+<p>我们看到，这里使用了一个 Encoder，Decoder，空闲处理器，连接管理器，ClientHandler。</p>
+<p>XXCoder 就是对 Cmd 对象进行序列化和反序列化的。这里的空闲使用的读写最大空闲时间为 120s，超过这个，就会触发空闲事件。RMQ 就会关闭 Channel 连接。而针对空闲事件进行处理的就是连接管理器了。</p>
+<p>连接管理器处理空闲、Close、Connect、异常等事件，使用监听器模式，不同的监听器对不同的事件进行处理。另外，这里也许可以借鉴 EventBus，每个事件可以设置多个监听器。</p>
+<h2 id="如何处理返回值"><a href="#如何处理返回值" class="headerlink" title="如何处理返回值"></a>如何处理返回值</h2><p>我们看了 RMQ 中 Netty 的设计，再看看返回值处理就简单了，NettyClientHandler 会在 channelRead0 方法处理 Netty Server 的返回值。对应 RMQ，则是 processMessageReceived 方法。该方法很简洁：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">processMessageReceived</span><span class="hljs-params">(ChannelHandlerContext ctx, RemotingCommand msg)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">final</span> RemotingCommand cmd = msg;</span><br><span class="line">        <span class="hljs-keyword">if</span> (cmd != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">            <span class="hljs-keyword">switch</span> (cmd.getType()) &#123;</span><br><span class="line">                <span class="hljs-keyword">case</span> REQUEST_COMMAND:</span><br><span class="line">                    processRequestCommand(ctx, cmd);</span><br><span class="line">                    <span class="hljs-keyword">break</span>;</span><br><span class="line">                <span class="hljs-keyword">case</span> RESPONSE_COMMAND:</span><br><span class="line">                    processResponseCommand(ctx, cmd);</span><br><span class="line">                    <span class="hljs-keyword">break</span>;</span><br><span class="line">                <span class="hljs-keyword">default</span>:</span><br><span class="line">                    <span class="hljs-keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>其实，这是一个模板方法，固定算法，由子类实现，分为 Request 实现和 Response 实现。我们看看 Response 实现。</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">processResponseCommand</span><span class="hljs-params">(ChannelHandlerContext ctx, RemotingCommand cmd)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> opaque = cmd.getOpaque();</span><br><span class="line">        <span class="hljs-comment">// 找到 Response .</span></span><br><span class="line">        <span class="hljs-keyword">final</span> ResponseFuture responseFuture = responseTable.get(opaque);</span><br><span class="line">        <span class="hljs-keyword">if</span> (responseFuture != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">            responseFuture.setResponseCommand(cmd);</span><br><span class="line"></span><br><span class="line">            responseTable.remove(opaque);</span><br><span class="line"></span><br><span class="line">            <span class="hljs-keyword">if</span> (responseFuture.getInvokeCallback() != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                executeInvokeCallback(responseFuture);</span><br><span class="line">            &#125; <span class="hljs-keyword">else</span> &#123;<span class="hljs-comment">// 返回结果</span></span><br><span class="line">                responseFuture.putResponse(cmd);</span><br><span class="line">                responseFuture.release();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">            log.warn(<span class="hljs-string">"receive response, but not matched any request, "</span> + RemotingHelper.parseChannelRemoteAddr(ctx.channel()));</span><br><span class="line">            log.warn(cmd.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里，通过 cmd 对象的 Request ID 找到 Feature,执行 responseFuture.putResponse，设置返回值，唤醒阻塞等待的发送线程。这里还有一个 release 调用，这个和异步发送有关，默认最大同时 65535 个异步请求，具体就不展开了。</p>
+<p>好，到这里，唤醒阻塞的发送线程，返回数据，客户端层面的发送就结束了，我们小结一下。根据模块层次，我们记录一下 sendMessage 的过程：</p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNc79ly1g2urdndmakj30la0e7mxe.jpg" alt></p>
+<p>层次还是比较清晰的。</p>
+<p>我们再来看看 Server 端如何处理一条消息的。</p>
+<h2 id="Broker-Server-处理消息流程"><a href="#Broker-Server-处理消息流程" class="headerlink" title="Broker Server 处理消息流程"></a>Broker Server 处理消息流程</h2><p>从哪里入手呢？</p>
+<p>我们上面看源码，看到有个 SEND_MESSAGE Code，是 Client 和  Broker Server 的一个约定代码，我们看看这个代码在哪里用的。</p>
+<p>在 broker 模块的 BrokerController 类中，有个 registerProcessor 方法，会将 SEND_MESSAGE Code 和一个 SendMessageProcessor 对象绑定。</p>
+<p>这一步我们停一下，再去看看 netty Server 端的 Handler。</p>
+<p>NettyRemotingServer 是处理 Request 的类，他的 ServerBootstrap 会在 pipeline 中添加一个 NettyServerHandler 处理器，这个处理器的 channelRead0 方法会调用 NettyRemotingServer 的父类 processMessageReceived 方法。</p>
+<p>这个方法会从 processorTable 里，根据 Cmd Code，也就是 SEND_MESSAGE 获取对应的 Processor， Processor 由 2 部分组成，一部分是处理数据的对象，一部分是这个对象所对应的线程池。用于异步处理逻辑，防止阻塞 Netty IO 线程。</p>
+<p>关键代码：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">doBeforeRpcHooks(RemotingHelper.parseChannelRemoteAddr(ctx.channel()), cmd);</span><br><span class="line"><span class="hljs-keyword">final</span> RemotingCommand response = pair.getObject1().processRequest(ctx, cmd);<span class="hljs-comment">// 处理.</span></span><br><span class="line">doAfterRpcHooks(RemotingHelper.parseChannelRemoteAddr(ctx.channel()), cmd, response);</span><br></pre></td></tr></table></figure>
+<p>前后都是执行一些钩子，例如 ACL 啥的。</p>
+<p>这里我们小结一下，RMQ 会有一个 BrokerController 类，会注册 Code 和 Processor 的绑定关系，BrokerController 也会把这些绑定，注册到 Netty Server 中，当 Netty Server 从 Socket 收到 Cmd 对象，根据 Cmd 对象的 Code，就可以找到对应 Processor 类，对数据进行处理。</p>
+<p>中间是处理 Request 请求的。这个 processRequest 方法，有很多的实现，如下图，我们主要看 SendMessageProcessor 的实现。</p>
+<p><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g2urptryj8j31qs0eujsv.jpg" alt></p>
+<p>SendMessageProcessor # sendMessage 是处理消息的主要逻辑。</p>
+<p>关键代码：<br>putMessageResult = this.brokerController.getMessageStore().putMessage(msgInner);</p>
+<p>消息存储引擎，这里我们看 DefaultMessageStore 的 putMessage 实现。</p>
+<p>首先一堆校验。注意，其中有一个地方：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.isOSPageCacheBusy()) &#123;<span class="hljs-comment">// 检查 mmp 忙不忙.</span></span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> PutMessageResult(PutMessageStatus.OS_PAGECACHE_BUSY, <span class="hljs-keyword">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由于 RMQ 写数据是王 PageCache 里面写的，因此，如果写的慢，就是 PageCache 忙，这里忙的标准是，如果锁文件的时间，超过了 1 秒，那就是忙。</p>
+<p>最后调用 PutMessageResult result = this.commitLog.putMessage(msg) 写数据。</p>
+<p>如果耗时超过 500 毫秒，就会打印日志。这样我们排查问题的时候，可以看看 storeStats 的日志。</p>
+<p>看看 commitLog 的 putMessage 方法实现。</p>
+<p>先拿到最新的 MappedFile 文件，MappedFile 文件的命名是用 offset 命名的，一个文件默认 1gb，这个大小和 mmp 的机制有关，通常不能过大。</p>
+<p>然后上锁，这段代码是可以说整个 RMQ Server 的热点区域，</p>
+<p>这里上锁会记录上锁的时间，方便前面做 PageCache Busy 的判断。</p>
+<p>写入代码：</p>
+<p>result = mappedFile.appendMessage(msg, this.appendMessageCallback)</p>
+<p>写完之后，释放锁，如果超过 500 毫秒，打印 cost time 日志。</p>
+<p>统计。</p>
+<p>处理刷盘和slave 同步，这里看刷盘策略和同步策略，是 SYNC 还是 ASYNC。</p>
+<p>经过我的测试，同步刷盘和异步刷盘的性能差距是 10 倍。<br>而 Slave 的数据同步，如果用 SYNC 模式，tps 最高也就 2000 多一丢度，为什么？内网，两台机器 ping 一下都要 0.2 毫秒，一秒最多 5000 次，再加上处理逻辑， 2000 已经到顶了，网络成了瓶颈。</p>
+<p>如果用全异步的话，我的 4c8g 的机器，单机 tps 最高能  2 万多。美滋滋。</p>
+<p>跑题了。</p>
+<p>我们看看  mappedFile.appendMessage 方法的实现。</p>
+<p>一路追踪，有个关键逻辑， 在 appendMessagesInner 里：</p>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">int</span> currentPos = <span class="hljs-keyword">this</span>.wrotePosition.get();</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> (currentPos &lt; <span class="hljs-keyword">this</span>.fileSize) &#123;</span><br><span class="line">    ByteBuffer byteBuffer = writeBuffer != <span class="hljs-keyword">null</span> ? writeBuffer.slice() : <span class="hljs-keyword">this</span>.mappedByteBuffer.slice();</span><br><span class="line">    byteBuffer.position(currentPos);</span><br><span class="line">    AppendMessageResult result = <span class="hljs-keyword">null</span>;</span><br><span class="line">    <span class="hljs-keyword">if</span> (messageExt <span class="hljs-keyword">instanceof</span> MessageExtBrokerInner) &#123;</span><br><span class="line">        <span class="hljs-comment">// 写数据到 缓存</span></span><br><span class="line">        result = cb.doAppend(<span class="hljs-keyword">this</span>.getFileFromOffset(), byteBuffer, <span class="hljs-keyword">this</span>.fileSize - currentPos, (MessageExtBrokerInner) messageExt);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (messageExt <span class="hljs-keyword">instanceof</span> MessageExtBatch) &#123;</span><br><span class="line">        result = cb.doAppend(<span class="hljs-keyword">this</span>.getFileFromOffset(), byteBuffer, <span class="hljs-keyword">this</span>.fileSize - currentPos, (MessageExtBatch) messageExt);</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">this</span>.wrotePosition.addAndGet(result.getWroteBytes());</span><br><span class="line">    <span class="hljs-keyword">this</span>.storeTimestamp = result.getStoreTimestamp();</span><br><span class="line">    <span class="hljs-keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>代码中，使用了 mappedFile 从 Linux 映射的 MMap buffer，对数据进行写入。我们看看 doAppend 方法。</p>
+<p>我们可以看到，一条消息有太多的内容：<br>总长度、魔数、CRC 校验、队列 ID、各种 flag、存储时间，物理 offset、存储 IP、时间戳、扩展属性等等。</p>
+<p>最终，这条消息会被写入到 MMap 中。</p>
+<p>那什么时候刷盘呢？</p>
+<p>如果是 SYNC 模式，执行 CommitLog 的 handleDiskFlush 的方法时，就会立刻刷盘并等待刷盘结果。<br>如果是 ASYNC 模式，执行  CommitLog 的 handleDiskFlush 的方法时，会通知异步线程进行刷盘，但不等待结果。</p>
+<p>另外，如果没有新数据，则为 500ms 执行一次刷盘策略。</p>
+<p>简单说下异步刷盘：</p>
+<ol>
+<li>默认刷盘 4 页，Linux 一页是  4kb 数据，4页就是 16kb。</li>
+<li>如果写的数据减去已经刷的数据，剩下的数据大于等于 4 页，就执行刷盘.</li>
+<li>执行 mappedByteBuffer.force() 或者 fileChannel.force(false);</li>
+</ol>
+<p>我们这里小结一下，看看 RMQ Server 处理处理一条消息的：</p>
+<p><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g2uukmxvzej30o50g0dg0.jpg" alt></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>来张大图总结一下。</p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNc79ly1g2uv1yq5hpj30ot0nxt97.jpg" alt></p>
+<p>篇幅有限，下篇再一起看看 RMQ 如何消费消息。</p>
+
+        </div>
+        
+        <!---->
+        <!---->
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？赞赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g3dqkhkyg2j307407st99.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g3dqktq3v5j307808574n.jpg" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2019/05/08/2019/2019-05-09-rmq-busy-exp/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">RocketMQ 异常分析 [TIMEOUT_CLEAN_QUEUE]broker Busy, Start Flow Control for a Whil</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/04/13/2019/2019-04-13-architecture2/">
+                <span class="level-item">软件架构视图介绍</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+	var gitment = new Gitment({
+		id: '2019/05/08/2019/2019-05-09-rmq-sendmsg/',
+		owner: 'stateIs0',
+		repo: 'api',
+		oauth: {
+			client_id: '7d9cae74c658c80633dc',
+			client_secret: 'd0a092383c80e61bffef403d6c206e2494b68d5d',
+		},
+	})
+	console.log(gitment.id)
+	gitment.render('comment-container')
+</script>
+
+
+    </div>
+</div>
+
+</div>
+                
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-4-widescreen  has-order-3 column-right is-sticky">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.png" alt="莫那鲁道">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        莫那鲁道
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Java 萌新
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>HangZhou</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        248
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        22
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        0
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/stateis0">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://tva1.sinaimg.cn/large/006y8mN6ly1g83fg5dh8xj304m04qq34.jpg">
+                
+                <i class="fab fa-weixin"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Apollo/">
+            <span class="level-start">
+                <span class="level-item">Apollo</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">11</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-中间件/">
+            <span class="level-start">
+                <span class="level-item">Java 中间件</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-性能优化/">
+            <span class="level-start">
+                <span class="level-item">Java 性能优化</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java-设计/">
+            <span class="level-start">
+                <span class="level-item">Java 设计</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Message-Queue/">
+            <span class="level-start">
+                <span class="level-item">Message Queue</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Mybatis/">
+            <span class="level-start">
+                <span class="level-item">Mybatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Netty/">
+            <span class="level-start">
+                <span class="level-item">Netty</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">19</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">12</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/SOFA/">
+            <span class="level-start">
+                <span class="level-item">SOFA</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">16</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/my-open-source/">
+            <span class="level-start">
+                <span class="level-item">my open source</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分享文章/">
+            <span class="level-start">
+                <span class="level-item">分享文章</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/分布式/">
+            <span class="level-start">
+                <span class="level-item">分布式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">24</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/基础/">
+            <span class="level-start">
+                <span class="level-item">基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">17</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/工具/">
+            <span class="level-start">
+                <span class="level-item">工具</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发编程/">
+            <span class="level-start">
+                <span class="level-item">并发编程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">50</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/扯淡/">
+            <span class="level-start">
+                <span class="level-item">扯淡</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">14</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/故障排查/">
+            <span class="level-start">
+                <span class="level-item">故障排查</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.png" alt="RocketMQ 发送消息（一条消息从发送到存储的过程）" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2020 莫那·鲁道&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+
+                
+                <br>
+
+                <!--<span id="busuanzi_container_site_uv">-->
+                <!--共<span id="busuanzi_value_site_uv"></span>个访客-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <!--<span id="busuanzi_container_site_pv">-->
+                <!--&lt;!&ndash;共<span id="busuanzi_value_site_pv"></span>个访客&ndash;&gt;-->
+                <!--&lt;!&ndash;</span>&ndash;&gt;-->
+
+                        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+                        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span> 次</span>   <br>
+                        <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人 次</span>
+                
+
+
+
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/stateis0">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>
