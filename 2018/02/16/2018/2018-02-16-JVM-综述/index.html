@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>JVM-综述 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="JVM-综述">
+<meta property="og:url" content="http://thinkinjava.cn/2018/02/16/2018/2018-02-16-JVM-%E7%BB%BC%E8%BF%B0/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-6ac7141a47ef1258.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-0462adabdf0aac40.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-b58c0180435f2e21.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-eba420d0b83f65a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-02-15T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.305Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-6ac7141a47ef1258.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-02-16-JVM-综述" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/02/16/2018/2018-02-16-JVM-%E7%BB%BC%E8%BF%B0/" class="article-date">
+  <time datetime="2018-02-15T18:11:11.000Z" itemprop="datePublished">2018-02-16</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/JVM/">JVM</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      JVM-综述
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 概览
+从 JVM 的总体上看，它解决了3个问题：
+1. Java 程序的内存管理（GC & 运行时数据区）。
+2. Java Class 二进制字节流的加载（ClassLoader）。
+3. Java 程序的执行（执行引擎）。
+
+<p>如下图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-6ac7141a47ef1258.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="虚拟机基本架构"></p>
+<p>在我们的日常开发中，最和我们息息相关的就是1和2了，比如 GC 调优，内存故障排查，再比如使用自定义的类加载器去实现一些特定的逻辑，就如我们之前分析的 tomcat 源码中的类加载器用于隔离不同版本的相同类库，必须要使用自定义的类加载器。</p>
+<h2 id="1-Java-程序的内存管理（GC-amp-运行时数据区）"><a href="#1-Java-程序的内存管理（GC-amp-运行时数据区）" class="headerlink" title="1. Java 程序的内存管理（GC &amp; 运行时数据区）"></a>1. Java 程序的内存管理（GC &amp; 运行时数据区）</h2><h4 id="1-1-运行时数据区"><a href="#1-1-运行时数据区" class="headerlink" title="1.1. 运行时数据区"></a>1.1. 运行时数据区</h4><p>从上图中可以看出，虚拟机内存管理主要由几个部分组成：</p>
+<ol>
+<li>Java 堆（存放对象的地方）</li>
+<li>Java 栈（在 HotSpot 实现中，本地方法栈和虚拟机栈合二为一）</li>
+<li>PC 寄存器（也称为程序计数器）</li>
+<li>方法区（JDK8 中已经将方法区去除，改为元数据区，解决了方法区—-也称为永久代的内存溢出）。</li>
+<li>直接内存（大小不限制于 Java 堆，直接向操作系统申请，使用场景于读写频繁的场合，例如 NIO）</li>
+</ol>
+<h4 id="1-2-垃圾回收系统"><a href="#1-2-垃圾回收系统" class="headerlink" title="1.2. 垃圾回收系统"></a>1.2. 垃圾回收系统</h4><p>Java 程序员之所以不需要显式的释放内存，一切都归功于 GC，GC 解放了 Java 程序员的双手。GC 系统会在后台清除无用的实例对象，释放内存空间。</p>
+<p>而 JVM 中的 GC 可谓是一个庞大的系统，其中分为几个部分：</p>
+<ol>
+<li>判断什么是垃圾对象</li>
+<li>垃圾回收算法</li>
+<li>各种各样的垃圾收集器</li>
+</ol>
+<p>我们将会在后面慢慢讲解。</p>
+<h2 id="2-Java-Class-二进制字节流的加载（ClassLoader）"><a href="#2-Java-Class-二进制字节流的加载（ClassLoader）" class="headerlink" title="2. Java Class 二进制字节流的加载（ClassLoader）"></a>2. Java Class 二进制字节流的加载（ClassLoader）</h2><h4 id="2-1-类加载器"><a href="#2-1-类加载器" class="headerlink" title="2.1 类加载器"></a>2.1 类加载器</h4><p>对于 Java 虚拟机来说，Class 文件是一个重要的接口，无论使用何种语言进行软件开发，只要能将源文件编译为正确的 Class 文件，那么这种语言就可以在 Java 虚拟机上运行。可以说，Class 文件就是虚拟机的基石。</p>
+<p>如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-0462adabdf0aac40.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="各种语言都可以在 JVM 上运行"></p>
+<p>从上图可以看出，虚拟机不拘泥于 Java 语言，任何一个源文件只要能编译成 Class 文件的格式，就可以在JVM 上运行！Class 文件格式就像是一个接口，只要遵守这个接口，就能够在 JVM 上运行。</p>
+<h4 id="2-2-类加载器的工作流程"><a href="#2-2-类加载器的工作流程" class="headerlink" title="2.2 类加载器的工作流程"></a>2.2 类加载器的工作流程</h4><p>Class 文件通常是以文件的方式存在（任何二进制流都可以是 Class 类型），但只有能被 JVM 加载后才能被使用，才能运行编译后的代码。系统装在 Class 类型可以分为加载，链接和初始化三个步骤。其中，链接也可分为验证，准备和解析3步骤。如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-b58c0180435f2e21.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Class 文件转载过程"></p>
+<h4 id="2-3-类装载的条件"><a href="#2-3-类装载的条件" class="headerlink" title="2.3 类装载的条件"></a>2.3 类装载的条件</h4><p>JVM 不会无故装载 Class 文件，只有在必要的时候才装载，哪几个时候呢？</p>
+<ol>
+<li>当创建一个类的实例是，比如使用 new 关键字，或者通过反射，克隆，反序列化。</li>
+<li>当调用类的静态方法时，即当使用字节码 invokstatic 指令。</li>
+<li>当使用类或接口的静态字段时（final 常量除外），比如，使用 getstatic 或者 pustatic 指令。</li>
+<li>当时用 Java.lang.reflect 包中的方法反射类的方法时。</li>
+<li>当初始化子类，要求先初始化父类。</li>
+<li>作为启动虚拟机，含有 main（）方法的那个类。</li>
+</ol>
+<p>以上6种情况属于主动调用，主动调用会触发初始化，还有一种情况是被动调用，则不会引起初始化。</p>
+<h4 id="2-4-类加载器的双亲委派模型"><a href="#2-4-类加载器的双亲委派模型" class="headerlink" title="2.4 类加载器的双亲委派模型"></a>2.4 类加载器的双亲委派模型</h4><p>先来看一个著名的图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-eba420d0b83f65a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="类加载器双亲委派模型"></p>
+<p>虚拟机为了保护应用程序内出现多个类名相同的类对象，因此发明了这个机制：当 JVM 需要适用一个类时，在判断类是否已经被加载时，会先从当前底层类加载器进行判断。当系统需要加载一个类时，会从顶层类开始加载，依次向下尝试，知道成功，否则抛出ClassNotFound 异常。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="# 总结"></a># 总结</h2><p>这篇文章主要是为了后面的详细文章做一个大纲，因此只是讲述以 JVM 的一些基本的框架和概念，后面讲详细的讲述内部细节。让我们学习虚拟机更加的有条理。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/02/16/2018/2018-02-16-JVM-%E7%BB%BC%E8%BF%B0/" data-id="ckwes9acu006zkrs14n2og2xc" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/02/17/2018/2018-02-17-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%881%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          深入浅出-JVM-GC（1）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/02/16/2018/2018-02-16-JVM-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">JVM-运行时数据区</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

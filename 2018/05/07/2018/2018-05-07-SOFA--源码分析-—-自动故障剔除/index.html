@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>SOFA--源码分析-—-自动故障剔除 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="SOFA--源码分析-—-自动故障剔除">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/07/2018/2018-05-07-SOFA--%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E8%87%AA%E5%8A%A8%E6%95%85%E9%9A%9C%E5%89%94%E9%99%A4/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-05-06T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.320Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-05-07-SOFA--源码分析-—-自动故障剔除" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/05/07/2018/2018-05-07-SOFA--%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E8%87%AA%E5%8A%A8%E6%95%85%E9%9A%9C%E5%89%94%E9%99%A4/" class="article-date">
+  <time datetime="2018-05-06T18:11:11.000Z" itemprop="datePublished">2018-05-07</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/SOFA/">SOFA</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      SOFA--源码分析-—-自动故障剔除
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       ## 前言
+
+<p>集群中通常一个服务有多个服务提供者。其中部分服务提供者可能由于网络，配置，长时间 fullgc ，线程池满，硬件故障等导致长连接还存活但是程序已经无法正常响应。单机故障剔除功能会将这部分异常的服务提供者进行降级，使得客户端的请求更多地指向健康节点。当异常节点的表现正常后，单机故障剔除功能会对该节点进行恢复，使得客户端请求逐渐将流量分发到该节点。单机故障剔除功能解决了服务故障持续影响业务的问题，避免了雪崩效应。可以减少人工干预需要的较长的响应时间，提高系统可用率。</p>
+<p>这种功能叫做自动故障剔除。</p>
+<p>而 SOFA 是怎么实现的呢？</p>
+<h2 id="如何使用"><a href="#如何使用" class="headerlink" title="如何使用"></a>如何使用</h2><p>自动故障剔除的运行机制：</p>
+<ul>
+<li>单机故障剔除会统计一个时间窗口内的调用次数和异常次数，并计算每个服务对应ip的异常率和该服务的平均异常率。</li>
+<li>当达到ip异常率大于服务平均异常率到一定比例时，会对该服务+ip的维度进行权重降级。</li>
+<li>如果该服务+ip维度的权重并没有降为0，那么当该服务+ip维度的调用情况正常时，则会对其进行权重恢复。</li>
+<li>整个计算和调控过程异步进行，不会阻塞调用。</li>
+</ul>
+<p>根据官方例子，使用方式如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FaultToleranceConfig faultToleranceConfig = <span class="keyword">new</span> FaultToleranceConfig();</span><br><span class="line">        <span class="comment">// 是否开启调控.</span></span><br><span class="line">        faultToleranceConfig.setRegulationEffective(<span class="keyword">true</span>);</span><br><span class="line">        <span class="comment">// 是否进行降级</span></span><br><span class="line">        faultToleranceConfig.setDegradeEffective(<span class="keyword">true</span>);</span><br><span class="line">        <span class="comment">// 时间窗口大小</span></span><br><span class="line">        faultToleranceConfig.setTimeWindow(<span class="number">20</span>);</span><br><span class="line">        <span class="comment">// 每次权重降级的比率</span></span><br><span class="line">        faultToleranceConfig.setWeightDegradeRate(<span class="number">0.5</span>);</span><br><span class="line"></span><br><span class="line">FaultToleranceConfigManager.putAppConfig(<span class="string">&quot;appName&quot;</span>, faultToleranceConfig);</span><br></pre></td></tr></table></figure>
+
+<p>如上，该应用会在打开了单机故障剔除开关，每20s的时间窗口进行一次异常情况的计算，如果某个服务+ip的调用维度被判定为故障节点，则会进行将该服务+ip的权重降级为0.5倍。</p>
+<p>可以看到，这个功能面向框架用户的 API 就是这个 FaultToleranceConfig 类，即故障容错配置。</p>
+<p>用户可以配置某个服务是否开启调控，是否进行降级，实际窗口大小（秒），每次权重降级的比率。</p>
+<p>那么，SOFA 是如何实现的呢？</p>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><p>首先说明，由于这个功能相比较之前的功能，代码要复杂一些，因此，本次分析主要分析主流程，不会面面俱到。关于详细的代码细节，我们将在后面的源码分析中详细解释。</p>
+<h5 id="1-初始化"><a href="#1-初始化" class="headerlink" title="1. 初始化"></a>1. 初始化</h5><p>SOFA 对于该功能的设计使用了 Modle 的方式，简单来说，就是一个可扩展，可热插拔的中间件。SOFA  的中间件和 RPC 框架都是通过  Modle 的方式来实现的。</p>
+<p>如何实现呢？</p>
+<p>RPC 初始化的时候，会调用 RpcRuntimeContext 类的静态块，该静态块内部会初始化其他模块，即调用 ModuleFactory.installModules() 方法。该方法会加载配置文件中所有 Module 接口的 SPI 文件。然后循环调用 install 方法，即初始化。</p>
+<p>目前的源码中只有一个 Module 的实现类，即 FaultToleranceModule 。故障容错模块。该类的 install 方法 会创建一个订阅者，在事件总线中订阅两个事件：ClientSyncReceiveEvent 和 ClientAsyncReceiveEvent。然后创建一个事件窗口调控器。并初始化该调控器。</p>
+<p>TimeWindowRegulator  是故障调控的核心类，内部包含以下属性：</p>
+<ol>
+<li>measureCounter 度量计数器，每执行一次度量任务，就加一。</li>
+<li>measureScheduler 度量定时任务线程池，使用 RATE 模式，即从任务开始时间开始计算。如果任务的时间超过了间隔时间，间隔时间将失效。这里的间隔时间是 1 秒。</li>
+<li>regulationExecutor 计算线程池，即在定时任务线程池中提交计算任务给这个线程池，以实现快速返回。该线程池核心大小为 2. </li>
+<li>measureModels 度量模型，一个存放 MeasureModel 对象的 List。</li>
+<li>measureStrategy 计算策略（根据度量结果，判断是否需要执行降级或者恢复） </li>
+<li>weightDegradeStrategy 降级策略: 调整权重 </li>
+<li>logDegradeStrategy 降级策略: 只打印日志</li>
+<li>recoverStrategy 恢复策略：调整权重</li>
+<li>listener 调用统计监听器，当发生事件时，会调用监听器的方法。</li>
+</ol>
+<p>属性很多，暂时不详细解释。说主流程。</p>
+<p>该类的 intit 方法是初始化这些属性，并注册监听器。注册方式是调用 InvocationStatFactory.addListener(listener) 方法。而这个监听器是该类的内部类 —— TimeWindowRegulatorListener。</p>
+<p>好，初始化完毕之后，开始说流程。</p>
+<p>当 RPC 框架调用了发送消息的方法，并返回（或者失败）后，就会向事件总线 EventBus 丢一个事件。例如 ClientSyncReceiveEvent 事件，该事件需要包含以下属性：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ConsumerConfig consumerConfig;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ProviderInfo   providerInfo;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> SofaRequest    request;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> SofaResponse   response;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Throwable      throwable;</span><br></pre></td></tr></table></figure>
+
+<p>基本包含了此次调用的所有信息。</p>
+<p>此时，就会触发订阅者的 onEvent 方法。即 FaultToleranceSubscriber 的 onEvent 方法。该方法会判断，如果用户启用了自动故障剔除功能，则根据 consumerConfig 和 providerInfo 得到一个调用统计器对象，并对调用次数加一。</p>
+<p>关键的方法在 onEvent 中调用的 InvocationStatFactory.getInvocationStat(consumerConfig, providerInfo); 该方法会创建一个 InvocationStat  调用统计器对象，放入 Map 中，而对应的 key 则是根据上面两个参数生成的 InvocationStatDimension 统计维度对象。</p>
+<p>创建完  InvocationStat  调用统计器对象后，调用所有监听器的 onAddInvocationStat 方法，表示，我添加了一个监听器了，你可以做点什么了。还记得 TimeWindowRegulator 初始化的时候会添加一个监听器吗。就是这里的监听器。</p>
+<p>内部类 TimeWindowRegulatorListener  的方法逻辑如下：<br>调用度量策略对象的 buildMeasureModel 方法，传入调用统计器。返回一个度量模型。然后，将这个模型添加进 List（measureModels 属性） 中。并调用外部类的 startRegulate 方法，开始进行调控。</p>
+<p>startRegulate 方法就是启动了定时任务，使用了一个原子 boolean 变量进行状态判断。</p>
+<p>定时任务的内容是什么呢？</p>
+<p>答：运行 MeasureRunnable 任务。<br>该任务首先会对度量计数器加一。然后循环 List 中的 MeasureModel 度量模型。并判断该 MeasureModel 是否到达了用户设定的时间窗口（取于用户设置的时间大小）。</p>
+<p>如果到达了时间窗口，并调用 measureStrategy 度量策略对象（serviceHorizontal）的 measure 方法，参数则是度量模型，返回一个度量的结果对象 —— MeasureResult。</p>
+<p>得到这个对象后，向计算线程池提交一个 RegulationRunnable 任务，该任务内容如下：<br>拿到刚刚传入的度量结果拿到度量结果详情的集合 —— measureResultDetails，循环这些集合，并执行 doRegulate 方法，进行调控。</p>
+<p>该方法就是真正的对服务进行调控的方法了。首先，一个服务有 3 个状态：健康，异常，忽略。状态来自于刚刚的 measure 方法。</p>
+<p>如果用户设置了可以降级的话，则判断服务的度量状态，如果异常了且不超过一个服务的最大调控 IP 数，则执行权重降级逻辑。反之，打印日志。</p>
+<p>如果度量状态是正常的，则执行权重恢复，并从降级 IP 列表中删除。</p>
+<p>如果用户没有设置可以降级，且度量状态是异常，那么，执行日志降级。即对异常 IP 记性异常信息的日志打印。</p>
+<p>当对权重进行降级之后，能够被负载均衡击中的几率就会对应的小很多。甚至了无法击中。</p>
+<p>以上，就是 SOFA 自动故障剔除功能的基本实现流程。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>还是那句话，由于这个功能比较繁杂，限于篇幅，今天看的是总流程，总结一下这个流程。</p>
+<p>RPC 框架在启动的时候，会自动加载故障容错模块，并监听客户端发送事件。同时会初始化故障容错相关的类和监听器。</p>
+<p>当发生订阅事件的时候，会调用 onEvent 方法，进而调用 TimeWindowRegulatorListener 的监听器方法。该方法会将度量模型添加进 List 中。</p>
+<p>定时任务每隔一秒会调度 MeasureRunnable 任务，内容是根据用户设置的时间窗口处理 List 中的调度模型。</p>
+<p>定时任务会向计算任务线程池提交一个 RegulationRunnable 任务。用于处理度量结果中的数据。该任务会循环度量结果的所有度量结果详情，并调用 doRegulate 方法进行调控。</p>
+<p>最后，doRegulate 方法则是根据 度量结果详情 的状态判断是否应该对服务 + IP 进行权重降级或者权重恢复，再或者是打印日志 —— 这依据用户设置。</p>
+<p>以上就是 SOFA  自动故障剔除的基本流程。后面我们会详细分析自动故障剔除的细节代码。敬请期待。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/05/07/2018/2018-05-07-SOFA--%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E8%87%AA%E5%8A%A8%E6%95%85%E9%9A%9C%E5%89%94%E9%99%A4/" data-id="ckwes9ae600bukrs16xxn9lpy" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/05/08/2018/2018-05-08-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E8%BF%9E%E6%8E%A5%E7%AE%A1%E7%90%86%E5%99%A8/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          SOFA-源码分析-—-连接管理器
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/05/07/2018/2018-05-07-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E2%80%94-%E8%87%AA%E5%AE%9A%E4%B9%89%E8%B7%AF%E7%94%B1%E5%AF%BB%E5%9D%80/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">SOFA-源码分析—-自定义路由寻址</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

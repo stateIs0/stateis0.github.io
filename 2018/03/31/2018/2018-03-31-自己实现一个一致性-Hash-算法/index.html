@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>自己实现一个一致性-Hash-算法 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="自己实现一个一致性-Hash-算法">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/31/2018/2018-03-31-%E8%87%AA%E5%B7%B1%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E4%B8%80%E8%87%B4%E6%80%A7-Hash-%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-77dfadca6f7a69d2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-51768b803b614b25.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-f42ecb157ad955a8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-03-30T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.313Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-77dfadca6f7a69d2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-03-31-自己实现一个一致性-Hash-算法" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/03/31/2018/2018-03-31-%E8%87%AA%E5%B7%B1%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E4%B8%80%E8%87%B4%E6%80%A7-Hash-%E7%AE%97%E6%B3%95/" class="article-date">
+  <time datetime="2018-03-30T18:11:11.000Z" itemprop="datePublished">2018-03-31</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      自己实现一个一致性-Hash-算法
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 前言
+
+<p>在前文<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/58fde9b2d0a3">分布式理论(八)—— Consistent Hash（一致性哈希算法）</a>中，我们讨论了一致性 hash 算法的原理，并说了，我们会自己写一个简单的算法。今天就来写一个。</p>
+<h2 id="普通-hash-的结果"><a href="#普通-hash-的结果" class="headerlink" title="普通 hash 的结果"></a>普通 hash 的结果</h2><p>先看看普通 hash 怎么做。</p>
+<p>首先，需要缓存节点对象，缓存中的存储对象，还有一个缓存节点集合，用于保存有效的缓存节点。</p>
+<ol>
+<li>实际存储对象，很简单的一个类，只需要获取他的 hash 值就好：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Obj</span> </span>&#123;</span><br><span class="line">  String key;</span><br><span class="line">  Obj(String key) &#123;</span><br><span class="line">    <span class="keyword">this</span>.key = key;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">hashCode</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> key.hashCode();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;Obj&#123;&quot;</span> +</span><br><span class="line">        <span class="string">&quot;key=&#x27;&quot;</span> + key + <span class="string">&#x27;\&#x27;&#x27;</span> +</span><br><span class="line">        <span class="string">&#x27;&#125;&#x27;</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>缓存节点对象，用于存储实际对象：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Node</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  Map&lt;Integer, Obj&gt; node = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">  String name;</span><br><span class="line"></span><br><span class="line">  Node(String name) &#123;</span><br><span class="line">    <span class="keyword">this</span>.name = name;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObj</span><span class="params">(Obj obj)</span> </span>&#123;</span><br><span class="line">    node.put(obj.hashCode(), obj);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function">Obj <span class="title">getObj</span><span class="params">(Obj obj)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> node.get(obj.hashCode());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">hashCode</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> name.hashCode();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>也很简单，内部使用了一个 map 保存节点。</p>
+<ol start="3">
+<li>缓存节点集合，用于保存有效的缓存节点：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">NodeArray</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">   Node[] nodes = <span class="keyword">new</span> Node[<span class="number">1024</span>];</span><br><span class="line">   <span class="keyword">int</span> size = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">   <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addNode</span><span class="params">(Node node)</span> </span>&#123;</span><br><span class="line">     nodes[size++] = node;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="function">Obj <span class="title">get</span><span class="params">(Obj obj)</span> </span>&#123;</span><br><span class="line">     <span class="keyword">int</span> index = obj.hashCode() % size;</span><br><span class="line">     <span class="keyword">return</span> nodes[index].getObj(obj);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="function"><span class="keyword">void</span> <span class="title">put</span><span class="params">(Obj obj)</span> </span>&#123;</span><br><span class="line">     <span class="keyword">int</span> index = obj.hashCode() % size;</span><br><span class="line">     nodes[index].putObj(obj);</span><br><span class="line">   &#125;</span><br><span class="line"> &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>内部一个数组，取数据时，通过取余机器数量获取缓存节点，再从节点中取出数据。</p>
+<ol start="4">
+<li>测试：当增减节点时，还能不能找到原有数据：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 验证普通 hash 对于增减节点，原有会不会出现移动。</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">   NodeArray nodeArray = <span class="keyword">new</span> NodeArray();</span><br><span class="line"></span><br><span class="line">   Node[] nodes = &#123;</span><br><span class="line">       <span class="keyword">new</span> Node(<span class="string">&quot;Node--&gt; 1&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> Node(<span class="string">&quot;Node--&gt; 2&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> Node(<span class="string">&quot;Node--&gt; 3&quot;</span>)</span><br><span class="line">   &#125;;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">for</span> (Node node : nodes) &#123;</span><br><span class="line">     nodeArray.addNode(node);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   Obj[] objs = &#123;</span><br><span class="line">       <span class="keyword">new</span> Obj(<span class="string">&quot;1&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> Obj(<span class="string">&quot;2&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> Obj(<span class="string">&quot;3&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> Obj(<span class="string">&quot;4&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> Obj(<span class="string">&quot;5&quot;</span>)</span><br><span class="line">   &#125;;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">for</span> (Obj obj : objs) &#123;</span><br><span class="line">     nodeArray.put(obj);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   validate(nodeArray, objs);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">validate</span><span class="params">(NodeArray nodeArray, Obj[] objs)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (Obj obj : objs) &#123;</span><br><span class="line">    System.out.println(nodeArray.get(obj));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  nodeArray.addNode(<span class="keyword">new</span> Node(<span class="string">&quot;anything1&quot;</span>));</span><br><span class="line">  nodeArray.addNode(<span class="keyword">new</span> Node(<span class="string">&quot;anything2&quot;</span>));</span><br><span class="line"></span><br><span class="line">  System.out.println(<span class="string">&quot;========== after  =============&quot;</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (Obj obj : objs) &#123;</span><br><span class="line">    System.out.println(nodeArray.get(obj));</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>测试步骤如下：</p>
+<ol>
+<li>向集合中添加 3 个节点。</li>
+<li>向 <code>集群</code> 中添加 5 个对象，这 5 个对象会根据 hash 值散列到不同的节点中。</li>
+<li>打印 <code>未增减前</code> 的数据。</li>
+<li>打印 <code>增加 2 个节点</code> 后数据，看看还能不能访问到数据。</li>
+</ol>
+<p>结果：</p>
+<p> <img src="https://upload-images.jianshu.io/upload_images/4236553-77dfadca6f7a69d2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>一个都访问不到了。这就是普通的取余的缺点，在增减机器的情况下，这种结果无法接收。</p>
+<p>再看看一致性 hash 如何解决。</p>
+<h2 id="一致性-Hash-的结果"><a href="#一致性-Hash-的结果" class="headerlink" title="一致性 Hash 的结果"></a>一致性 Hash 的结果</h2><p>关键的地方来了。</p>
+<p>缓存节点对象和实际保存对象不用更改，改的是什么？</p>
+<p>改的是保存对象的方式和取出对象的方式，也就是不使用对机器进行取余的算法。</p>
+<p>新的 NodeArray 对象如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">NodeArray</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"><span class="comment">/** 按照 键 排序*/</span></span><br><span class="line">TreeMap&lt;Integer, Node&gt; nodes = <span class="keyword">new</span> TreeMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">addNode</span><span class="params">(Node node)</span> </span>&#123;</span><br><span class="line">  nodes.put(node.hashCode(), node);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">put</span><span class="params">(Obj obj)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> objHashcode = obj.hashCode();</span><br><span class="line">  Node node = nodes.get(objHashcode);</span><br><span class="line">  <span class="keyword">if</span> (node != <span class="keyword">null</span>) &#123;</span><br><span class="line">    node.putObj(obj);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 找到比给定 key 大的集合</span></span><br><span class="line">  SortedMap&lt;Integer, Node&gt; tailMap = nodes.tailMap(objHashcode);</span><br><span class="line">  <span class="comment">// 找到最小的节点</span></span><br><span class="line">  <span class="keyword">int</span> nodeHashcode = tailMap.isEmpty() ? nodes.firstKey() : tailMap.firstKey();</span><br><span class="line">  nodes.get(nodeHashcode).putObj(obj);</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">Obj <span class="title">get</span><span class="params">(Obj obj)</span> </span>&#123;</span><br><span class="line">  Node node = nodes.get(obj.hashCode());</span><br><span class="line">  <span class="keyword">if</span> (node != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> node.getObj(obj);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 找到比给定 key 大的集合</span></span><br><span class="line">  SortedMap&lt;Integer, Node&gt; tailMap = nodes.tailMap(obj.hashCode());</span><br><span class="line">  <span class="comment">// 找到最小的节点</span></span><br><span class="line">  <span class="keyword">int</span> nodeHashcode = tailMap.isEmpty() ? nodes.firstKey() : tailMap.firstKey();</span><br><span class="line">  <span class="keyword">return</span> nodes.get(nodeHashcode).getObj(obj);</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该类和之前的类的不同之处在于：</p>
+<ol>
+<li>内部没有使用数组，而是使用了有序 Map。</li>
+<li>put 方法中，对象如果没有落到缓存节点上，就找比他小的节点且离他最近的。这里我们使用了 TreeMap 的 tailMap 方法，具体 API 可以看文档。</li>
+<li>get 方法中，和 put 步骤相同，否则是取不到对象的。</li>
+</ol>
+<p>具体寻找节点的方式如图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-51768b803b614b25.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>相同的测试用例，执行结果如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-f42ecb157ad955a8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>找到了之前所有的节点。解决了普通 hash 的问题。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>代码比较简单，主要是通过 JDK 自带的 TreeMap 实现的寻找临近节点。当然，我们这里也只是测试了添加，关于修改还没有测试，但思路是一样的。这里只是做一个抛砖引玉。</p>
+<p>同时，我们也没有实现虚拟节点，感兴趣的朋友可以尝试一下。</p>
+<p>good luck！！！！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/03/31/2018/2018-03-31-%E8%87%AA%E5%B7%B1%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E4%B8%80%E8%87%B4%E6%80%A7-Hash-%E7%AE%97%E6%B3%95/" data-id="ckwes9adg009hkrs173u5a5a7" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/03/31/2018/2018-03-31-%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA(%E5%85%AB)%E2%80%94%E2%80%94-Consistent-Hash%EF%BC%88%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          分布式理论(八)——-Consistent-Hash（一致性哈希算法）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/03/30/2018/2018-03-30-%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA(%E5%85%AD)%E2%80%94%E2%80%94-Raft-%E7%AE%97%E6%B3%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">分布式理论(六)——-Raft-算法</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

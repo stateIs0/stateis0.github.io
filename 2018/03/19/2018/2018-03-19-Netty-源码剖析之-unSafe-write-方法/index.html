@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Netty-源码剖析之-unSafe-Write-方法 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="Netty-源码剖析之-unSafe-Write-方法">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/19/2018/2018-03-19-Netty-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90%E4%B9%8B-unSafe-write-%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-e09ae6d795112fa9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-f0c987de5b04d088.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-ee8f5fbb83da5912.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-15438cc4bf67d74d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-03-18T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.310Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-e09ae6d795112fa9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-03-19-Netty-源码剖析之-unSafe-write-方法" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/03/19/2018/2018-03-19-Netty-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90%E4%B9%8B-unSafe-write-%E6%96%B9%E6%B3%95/" class="article-date">
+  <time datetime="2018-03-18T18:11:11.000Z" itemprop="datePublished">2018-03-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Netty/">Netty</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Netty-源码剖析之-unSafe-Write-方法
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       ## 前言
+
+<p>在  <a target="_blank" rel="noopener" href="https://www.jianshu.com/p/bb579eb4fadd">Netty 源码剖析之 unSafe.read 方法</a> 一文中，我们研究了 read 方法的实现，这是读取内容到容器，再看看 Netty 是如何将内容从容器输出 Channel 的吧。</p>
+<h2 id="1-ctx-writeAndFlush-方法"><a href="#1-ctx-writeAndFlush-方法" class="headerlink" title="1. ctx.writeAndFlush 方法"></a>1. ctx.writeAndFlush 方法</h2><p>当我们调用此方法时，会从当前节点找上一个 outbound 节点，进行，并调用下个节点的 write 方法。具体看代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">@<span class="number">1</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> ChannelFuture <span class="title">writeAndFlush</span><span class="params">(Object msg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> writeAndFlush(msg, newPromise()); <span class="comment">// 创建了一个默认的 DefaultChannelPromise 实例，返回的就是这个实例。</span></span><br><span class="line"></span><br><span class="line">@<span class="number">2</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> ChannelFuture <span class="title">writeAndFlush</span><span class="params">(Object msg, ChannelPromise promise)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (isNotValidPromise(promise, <span class="keyword">true</span>)) &#123;<span class="comment">//判断 promise 有效性</span></span><br><span class="line">        ReferenceCountUtil.release(msg);<span class="comment">// 释放内存</span></span><br><span class="line">        <span class="keyword">return</span> promise;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    write(msg, <span class="keyword">true</span>, promise);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> promise;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@<span class="number">3</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(Object msg, <span class="keyword">boolean</span> flush, ChannelPromise promise)</span> </span>&#123;</span><br><span class="line">    AbstractChannelHandlerContext next = findContextOutbound();</span><br><span class="line">    <span class="keyword">final</span> Object m = pipeline.touch(msg, next);</span><br><span class="line">    EventExecutor executor = next.executor();</span><br><span class="line">    <span class="keyword">if</span> (executor.inEventLoop()) &#123;</span><br><span class="line">        <span class="keyword">if</span> (flush) &#123;</span><br><span class="line">            next.invokeWriteAndFlush(m, promise);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            next.invokeWrite(m, promise);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        AbstractWriteTask task;</span><br><span class="line">        <span class="keyword">if</span> (flush) &#123;</span><br><span class="line">            task = WriteAndFlushTask.newInstance(next, m, promise);</span><br><span class="line">        &#125;  <span class="keyword">else</span> &#123;</span><br><span class="line">            task = WriteTask.newInstance(next, m, promise);</span><br><span class="line">        &#125;</span><br><span class="line">        safeExecute(executor, task, promise, m);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>最终调用的就是 @3 方法。找到上一个 outbound 节点，判断他的节点是否时当前线程。如果是，则会直接调用，泛着，将后面的工作封装成一个任务放进 mpsc 队列，供当前线程稍后执行。这个 任务的 run 方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (ESTIMATE_TASK_SIZE_ON_SUBMIT) &#123;</span><br><span class="line">            ctx.pipeline.decrementPendingOutboundBytes(size);</span><br><span class="line">        &#125;</span><br><span class="line">        write(ctx, msg, promise);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        ctx = <span class="keyword">null</span>;</span><br><span class="line">        msg = <span class="keyword">null</span>;</span><br><span class="line">        promise = <span class="keyword">null</span>;</span><br><span class="line">        handle.recycle(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(AbstractChannelHandlerContext ctx, Object msg, ChannelPromise promise)</span> </span>&#123;</span><br><span class="line">    ctx.invokeWrite(msg, promise);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最终执行的是 invokeWrite 方法。</p>
+<p>我们看看如果直接执行会如何处理。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">invokeWriteAndFlush</span><span class="params">(Object msg, ChannelPromise promise)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (invokeHandler()) &#123;</span><br><span class="line">        invokeWrite0(msg, promise);</span><br><span class="line">        invokeFlush0();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        writeAndFlush(msg, promise);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先执行 invokeWrite0 方法进行 write，然后 flush。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-e09ae6d795112fa9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="@1"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-f0c987de5b04d088.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="@2"></p>
+<p>最终执行的是 unSafe 的 write 方法。<strong>注意：当前节点已经到了 Head 节点。</strong></p>
+<p>详细说说该方法。</p>
+<h2 id="2-unSafe-的-write-方法"><a href="#2-unSafe-的-write-方法" class="headerlink" title="2. unSafe  的 write 方法"></a>2. unSafe  的 write 方法</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(Object msg, ChannelPromise promise)</span> </span>&#123;</span><br><span class="line">    ChannelOutboundBuffer outboundBuffer = <span class="keyword">this</span>.outboundBuffer;</span><br><span class="line">    <span class="keyword">if</span> (outboundBuffer == <span class="keyword">null</span>) &#123;</span><br><span class="line">        safeSetFailure(promise, WRITE_CLOSED_CHANNEL_EXCEPTION);</span><br><span class="line">        ReferenceCountUtil.release(msg);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> size;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        msg = filterOutboundMessage(msg);</span><br><span class="line">        size = pipeline.estimatorHandle().size(msg);</span><br><span class="line">        <span class="keyword">if</span> (size &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            size = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        safeSetFailure(promise, t);</span><br><span class="line">        ReferenceCountUtil.release(msg);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    outboundBuffer.addMessage(msg, size, promise);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>方法步骤如下：</p>
+<ol>
+<li>判断 outboundBuffer 有效性。</li>
+<li>将 ByteBuf 过滤成池化或者线程局部直接内存（如果不是直接内存的话）。</li>
+<li>预估当前 ByteBuf 大小（就是可读字节数）。</li>
+<li>将 ByteBuf 包装成一个 Entry 节点放入到 outboundBuffer 的单向链表中。</li>
+</ol>
+<p>这里有一个地方需要注意一下， filterOutboundMessage 方法。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-ee8f5fbb83da5912.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>如果是直接内存的话，就直接返回了 ，反之调用 newDirectBuffer 方法。我们猜想肯定是重新包装成直接内存，利用直接内存令拷贝的特性，提升性能。</p>
+<p>看看该方法内部逻辑：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">final</span> ByteBuf <span class="title">newDirectBuffer</span><span class="params">(ByteBuf buf)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> readableBytes = buf.readableBytes();</span><br><span class="line">    <span class="keyword">if</span> (readableBytes == <span class="number">0</span>) &#123;</span><br><span class="line">        ReferenceCountUtil.safeRelease(buf);</span><br><span class="line">        <span class="keyword">return</span> Unpooled.EMPTY_BUFFER;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> ByteBufAllocator alloc = alloc();</span><br><span class="line">    <span class="keyword">if</span> (alloc.isDirectBufferPooled()) &#123;</span><br><span class="line">        ByteBuf directBuf = alloc.directBuffer(readableBytes);</span><br><span class="line">        directBuf.writeBytes(buf, buf.readerIndex(), readableBytes);</span><br><span class="line">        ReferenceCountUtil.safeRelease(buf);</span><br><span class="line">        <span class="keyword">return</span> directBuf;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> ByteBuf directBuf = ByteBufUtil.threadLocalDirectBuffer();</span><br><span class="line">    <span class="keyword">if</span> (directBuf != <span class="keyword">null</span>) &#123;</span><br><span class="line">        directBuf.writeBytes(buf, buf.readerIndex(), readableBytes);</span><br><span class="line">        ReferenceCountUtil.safeRelease(buf);</span><br><span class="line">        <span class="keyword">return</span> directBuf;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Allocating and deallocating an unpooled direct buffer is very expensive; give up.</span></span><br><span class="line">    <span class="keyword">return</span> buf;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>首先判断可读字节数，如果是0，之际返回一个空的 Buffer。</li>
+<li>获取该 Channel 的 ByteBufAllocator ，如果是直接内存且池化，则分配一个直接内存，将旧的 Buffer 写入到新的中，释放旧的 Buffer。返回新的直接内存 Buffer。</li>
+<li>反之，从 FastThreadLocal 中返回一个可重用的直接内存 Buffer，后面和上面的操作一样，写入，删除旧的，返回新的。注意，这里返回的可重用的 Buffer，当调用他的 release 方法的时候，实际上是归还到了 FastThreadLocal 中。对象池的最佳实践。</li>
+</ol>
+<p>关于 addMessage 方法，我们将在另一篇文章<a href="http://thinkinjava.cn/articles/2018/03/18/1521380047606.html">Netty 出站缓冲区 ChannelOutboundBuffer 源码解析（isWritable 属性的重要性）</a>详细阐述，这里只需要知道，他放入了一个 出站缓存中就行了。</p>
+<h2 id="3-unSafe-的-flush-方法"><a href="#3-unSafe-的-flush-方法" class="headerlink" title="3. unSafe 的 flush 方法"></a>3. unSafe 的 flush 方法</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-15438cc4bf67d74d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>重点是 outboundBuffer.addFlush() 方法和 flush0 方法。</p>
+<p>这两个方法在 <a href="http://thinkinjava.cn/articles/2018/03/18/1521380047606.html">Netty 出站缓冲区 ChannelOutboundBuffer 源码解析（isWritable 属性的重要性）</a></p>
+<p>这里只需要知道，addFlush 方法将刚刚添加进出站 buffer 的数据进行检查，并准备写入 Socket。<br>flush0 做真正的写入操作，其中，调用了 JDK 的 Socket 的 write 方法，将 ByteBuf 封装的 ByteBuffer 写到 Socket 中。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>可以看到，数据真正的写出还是调用了 head 的节点中 unsafe 的 write 方法和 flush 方法，其中，write 只是将数据写入到了出站缓冲区，并且，write 方法可以调用多次，flush 才是真正的写入到 Socket。而更详细的细节，可以查看我的另一篇文章<a href="http://thinkinjava.cn/articles/2018/03/18/1521380047606.html">Netty 出站缓冲区 ChannelOutboundBuffer 源码解析（isWritable 属性的重要性）</a>。</p>
+<p>good luck ！！！！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/03/19/2018/2018-03-19-Netty-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90%E4%B9%8B-unSafe-write-%E6%96%B9%E6%B3%95/" data-id="ckwes9ad6008fkrs17v5zhfw4" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/03/19/2018/2018-03-19-Netty-%E5%87%BA%E7%AB%99%E7%BC%93%E5%86%B2%E5%8C%BA-ChannelOutboundBuffer-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%EF%BC%88isWritable-%E5%B1%9E%E6%80%A7%E7%9A%84%E9%87%8D%E8%A6%81%E6%80%A7%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          Netty-出站缓冲区-ChannelOutboundBuffer-源码解析（isWritable-属性的重要性）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/03/18/2018/2018-03-18-Netty-%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6%E4%B9%8B-noCleaner-%E7%AD%96%E7%95%A5/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">Netty-内存回收之-noCleaner-策略</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

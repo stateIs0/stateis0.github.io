@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>SOFA-源码分析—-自定义路由寻址 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="SOFA-源码分析—-自定义路由寻址">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/07/2018/2018-05-07-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E2%80%94-%E8%87%AA%E5%AE%9A%E4%B9%89%E8%B7%AF%E7%94%B1%E5%AF%BB%E5%9D%80/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-05-06T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.320Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-05-07-SOFA-源码分析—-自定义路由寻址" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/05/07/2018/2018-05-07-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E2%80%94-%E8%87%AA%E5%AE%9A%E4%B9%89%E8%B7%AF%E7%94%B1%E5%AF%BB%E5%9D%80/" class="article-date">
+  <time datetime="2018-05-06T18:11:11.000Z" itemprop="datePublished">2018-05-07</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/SOFA/">SOFA</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      SOFA-源码分析—-自定义路由寻址
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 前言
+
+
+<p>SOFA-RPC 中对服务地址的选择也抽象为了一条处理链，由每一个 Router 进行处理。同 Filter 一样， SOFA-RPC 对 Router 提供了同样的扩展能力。</p>
+<p>那么就看看 SOFA  是如何处理的。</p>
+<h2 id="如何使用"><a href="#如何使用" class="headerlink" title="如何使用"></a>如何使用</h2><p>官方教程如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Extension(value = &quot;customerRouter&quot;)</span></span><br><span class="line"><span class="meta">@AutoActive(consumerSide = true)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CustomerRouter</span> <span class="keyword">extends</span> <span class="title">Router</span> </span>&#123;</span><br><span class="line">   </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(ConsumerBootstrap consumerBootstrap)</span> </span>&#123;</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">needToLoad</span><span class="params">(ConsumerBootstrap consumerBootstrap)</span> </span>&#123;</span><br><span class="line">       <span class="keyword">return</span> ture;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> List&lt;ProviderInfo&gt; <span class="title">route</span><span class="params">(SofaRequest request, List&lt;ProviderInfo&gt; providerInfos)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> providerInfos;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>新建扩展文件 META-INF/services/sofa-rpc/com.alipay.sofa.rpc.client.Router 。内容如下：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">customerRouter=com<span class="selector-class">.alipay</span><span class="selector-class">.sofa</span><span class="selector-class">.rpc</span><span class="selector-class">.custom</span>.CustomRouter</span><br></pre></td></tr></table></figure>
+<p>如上自定义了一个 CustomerRouter ，生效于所有消费者。其中 init 参数 ConsumerBootstrap 是引用服务的包装类，能够拿到 ConsumerConfig ，代理类，服务地址池等对象。 needToLoad 表示是否生效该 Router ， route 方法即筛选地址的方法。</p>
+<p>可以看到，Router 也是通过 SOFA 的扩展机制实现的，通过定义一个 SPI 文件，能够有效的解耦。</p>
+<p>然后我们再来看看他的原理。</p>
+<h2 id="源码解析"><a href="#源码解析" class="headerlink" title="源码解析"></a>源码解析</h2><p>在 SOFA  中， Router 是个抽象类，内部定义了 4 个方法：</p>
+<pre><code class="java">//初始化
+public void init(ConsumerBootstrap consumerBootstrap) &#123;
+&#125;
+
+//是否自动加载
+public boolean needToLoad(ConsumerBootstrap consumerBootstrap) &#123;
+    return true;
+&#125;
+// 筛选Provider
+public abstract List&lt;ProviderInfo&gt; route(SofaRequest request, List&lt;ProviderInfo&gt; providerInfos);
+
+//记录路由路径记录
+protected void recordRouterWay(String routerName) &#123;
+    if (RpcInternalContext.isAttachmentEnable()) &#123;
+        RpcInternalContext context = RpcInternalContext.getContext();
+        String record = (String) context.getAttachment(RpcConstants.INTERNAL_KEY_ROUTER_RECORD);
+        record = record == null ? routerName : record + &quot;&gt;&quot; + routerName;
+        context.setAttachment(RpcConstants.INTERNAL_KEY_ROUTER_RECORD, record);
+    &#125;
+&#125;
+</code></pre>
+<p>子类必须实现  route 方法，该方法的参数是 SofaRequest 和一个 ProviderInfo List。然后，返回值是筛选过的 ProviderInfo List。即用户可以在自定义的 Router 中筛选 Router 使用。负载均衡会从用户的 ProviderInfo List 中选择一个 ProviderInfo 进行调用。</p>
+<p>路由顺序按照 Extension 注解的 order 进行从小到大排序。</p>
+<p>同时， SOFA  上下文 RpcInternalContext 会记录此次调用的路径，也就是路由名字。</p>
+<p>而目前框架中有 3 个实现类：</p>
+<ol>
+<li>DirectUrlRouter 直连路由，needToLoad 判断条件是客户端是否设置了只来路由。路由规则是：从地址保持器中选取直连地址，然后添加到 List 中。</li>
+<li>ExcludeRouter 要排除的过滤器，目前暂没有定义。用户可自己扩展。</li>
+<li>RegistryRouter 从注册中心获取地址进行路由。needToLoad 条件是：如果没有设置直连地址且从注册中心订阅服务。路由规则：从地址保持器中获取默认的（注册中心）服务列表，并添加进 List 返回。</li>
+</ol>
+<p>其中，这个地址保持/管理器是什么鬼呢？</p>
+<p>每个客户端都有一个地址管理器 —— AddressHolder。管理着服务的分组。SingleGroupAddressHolder 是 AddressHolder 的具体实现类，也是通过扩展机制实现的。他是一个只支持单个分组的地址选择器（额外存一个直连分组）。</p>
+<p>他内部有 2 个 List， 一个是直连地址列表，另一个是注册中心的地址列表。</p>
+<p>在 Cluster 初始化的时候，会先初始化 routerChain Router 链，该实例中包含了一个 Router 数组，用于保存路由实例。</p>
+<p>同时还会初始化服务端列表，即调用 consumerBootstrap.subscribe() 方法，该方法在 DefaultConsumerBootstrap 中实现如下：</p>
+<ol>
+<li>如果直连地址（逗号或者分号分割）不是空，则返回一个包装了直连地址的 List<ProviderGroup>。</li>
+<li>如果直连地址是空的，则从注册中心获取服务列表。</li>
+</ol>
+<p>得到服务列表后，则添加到地址管理器中。同时向事件总线丢一个 ProviderInfoUpdateAllEvent 事件。包括建立长连接——也就是初始化 RpcClient，在调用 updateAllProviders 方法后，会异步的在一个 initPool 线程池中启动多个线程初始化长连接。</p>
+<p>好了，现在地址管理器里面已经有连接了。</p>
+<p>当客户端调用的时候，也就是 doInvoke 方法，会先从从 routerChain 中获取过滤后的 List<ProviderInfo> ，然后，调用负载均衡的 select 方法，从这些可选的路由中选取一个 ProviderInfo 进行调用。</p>
+<p>以上，就是自定义路由寻址，地址管理器的实现原理。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>SOFA 为框架用户定义了 Router ，用户可以实现 route 方法，并在该方法中实现过滤策略，从而返回一个用户设置的服务列表，值得注意的是，用户需要定义 order 属性，因为 Router 是从小到大排序的，顺序对于整体逻辑来说非常重要。</p>
+<p>和 Router 息息相关的还有地址管理器 —— AddressHolder，该类会管理服务列表，客户端在初始化的时候，会将地址都保存到 AddressHolder 中，在之后的负载均衡选择服务的时候，会从地址管理器中获取服务列表（已经路由过滤的）进行选择。</p>
+<p>还有一点需要注意：地址管理器每次 update 的时候，会全量更新连接管理器。如果有新增的服务，就会建立长连接。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/05/07/2018/2018-05-07-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E2%80%94-%E8%87%AA%E5%AE%9A%E4%B9%89%E8%B7%AF%E7%94%B1%E5%AF%BB%E5%9D%80/" data-id="ckwes9ae700bwkrs1aanh8uzk" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/05/07/2018/2018-05-07-SOFA--%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E8%87%AA%E5%8A%A8%E6%95%85%E9%9A%9C%E5%89%94%E9%99%A4/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          SOFA--源码分析-—-自动故障剔除
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/05/04/2018/2018-05-04-Java-%E5%A6%82%E4%BD%95%E8%8E%B7%E5%8F%96%E6%B3%9B%E5%9E%8B%E7%B1%BB%E5%9E%8B/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">Java-如何获取泛型类型</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

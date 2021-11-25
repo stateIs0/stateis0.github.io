@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Finalize()-原理，了解一下？ | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="Finalize()-原理，了解一下？">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/24/2018/2018-05-24-finalize()-%E5%8E%9F%E7%90%86%EF%BC%8C%E4%BA%86%E8%A7%A3%E4%B8%80%E4%B8%8B%EF%BC%9F/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-ff5f179a0cfd5024.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-05-23T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.322Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-ff5f179a0cfd5024.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-05-24-finalize()-原理，了解一下？" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/05/24/2018/2018-05-24-finalize()-%E5%8E%9F%E7%90%86%EF%BC%8C%E4%BA%86%E8%A7%A3%E4%B8%80%E4%B8%8B%EF%BC%9F/" class="article-date">
+  <time datetime="2018-05-23T18:11:11.000Z" itemprop="datePublished">2018-05-24</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Finalize()-原理，了解一下？
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 前言
+
+<p>在之前<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/f29d013c4f46">深入浅出 JVM GC（1）</a>我们知道，finalize 方法的作用是：</p>
+<blockquote>
+<p>如果对象在进行可达性分析后发现没有与 GC Roots 相连接的引用链，那他将会被第一次标记并且进行一次筛选，筛选的条件是此对象是否有必要执行 finalize 方法。<br>注意：当对象没有覆盖 finalize 方法，或者 finalize 方法已经被虚拟机调用过，虚拟机将这两种情况都视为 “没有必要执行”。也就是说，finalize 方法只会被执行一次。<br>=========================================================<br>如果这个对象被判定为有必要执行 finalize 方法，那么这个对象将会放置在一个叫做 F-Queue 的队列之中，并在稍后由一个虚拟机自动建立的，优先级为 8 的 Finalizer 线程去执行它。<br>注意：如果一个对象在 finalize 方法中运行缓慢，将会导致队列后的其他对象永远等待，严重时将会导致系统崩溃。<br>=========================================================<br>finalize 方法是对象逃脱死亡命运的最后一道关卡。稍后 GC 将对队列中的对象进行第二次规模的标记，如果对象要在 finalize 中 “拯救” 自己，只需要将自己关联到引用上即可，通常是 this。<br>如果这个对象关联上了引用，那么在第二次标记的时候他将被移除出 “即将回收” 的集合；如果对象这时候还没有逃脱，那基本上就是真的被回收了。</p>
+</blockquote>
+<p>那么，就看看这个方法的具体原理。</p>
+<h2 id="测试-demo"><a href="#测试-demo" class="headerlink" title="测试 demo"></a>测试 demo</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FinalizeTest</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    FinalizeTest f = <span class="keyword">new</span> FinalizeTest();</span><br><span class="line">    f = <span class="keyword">null</span>;</span><br><span class="line">    System.gc();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">finalize</span><span class="params">()</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;finalize&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这是我们的测试 demo，然后，我们在 finalize 方法中，打上断点。启动 JVM，得到以下堆栈。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-ff5f179a0cfd5024.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>可以看到，一个 FinalizerThread 的线程执行了我们的 finalize 方法。那么过程是如何的呢？</p>
+<h2 id="堆栈分析"><a href="#堆栈分析" class="headerlink" title="堆栈分析"></a>堆栈分析</h2><p>这个 FinalizerThread 的初始化和启动在 Finalizer 的 static 块中，由 JVM 主动访问其外部类 Finalizer 初始化这个静态块。具体访问方法是 Finalizer 的 register 方法。</p>
+<p>静态块会启动这个线程，这个线程的优先级是 8 ，比普通的线程要高一点，但是是 demon 线程。</p>
+<p>这个线程的任务则是死循环从 Finalizer 的队列中，取出 Finalizer 对象，然后调用这些对象的 runFinalizer 方法。</p>
+<p>而这个队列是一个 ReferenceQueue 队列 。里面存放的就是 Finalizer 对象，当一个对象需要执行 finalize 方法（未执行过且重写了该方法）的时候， JVM 会将这个对象包装成 Finalizer 实例，然后，链接到 Finalizer 链表中，并放入这个队列（详细的等会再讲）。</p>
+<p>  而这个 runFinalizer 方法的具体逻辑则是获取 Finalizer 对象包装的引用，即实际对象（是枚举则跳过），执行这个对象的 finalize 方法。执行完毕后，清空 Finalizer。</p>
+<p>到这里，一个对象的 finalize 方法就执行结束了。</p>
+<h2 id="如何放入队列？"><a href="#如何放入队列？" class="headerlink" title="如何放入队列？"></a>如何放入队列？</h2><p>Finalizer 继承了 Reference 类，该类和 GC  密切相关。</p>
+<p>而该类有一个高优先级的线程—— ReferenceHandler。他的任务则是死循环执行 tryHandlePending 方法。处理 Reference  的 pending 属性，而这个属性其实就是 Reference 自己。GC 的时候，会设置这个地址 pending 地址。这段代码在  Hotspot 中。有兴趣的可以看看。</p>
+<p>当这个线程发现 pending 地址不是空，就会尝试将自身放到自己的 queue 属性队列中。</p>
+<p>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ReferenceQueue&lt;? <span class="keyword">super</span> Object&gt; q = r.queue;</span><br><span class="line"><span class="keyword">if</span> (q != ReferenceQueue.NULL) q.enqueue(r);</span><br></pre></td></tr></table></figure>
+
+<p>因此，当我们构造了一个 Finalizer 对象，这个对象会被 GC 设置到自该对象的 pending 属性中，然后 ReferenceHandler 线程会处理这个  pending 属性，具体处理则是将自己添加到构造函数设置的队列中。</p>
+<p>这个时候，Finalizer 中的线程就可以从队列中取出这个 Finalizer 对象了。</p>
+<p>而这一切都是虚拟机做的。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>finalize 方法高度依赖 JVM 和 GC，当一个对象被标记后，便会被 JVM 包装成 Finalizer 对象，然后，被 JVM 设置到 Reference 的静态属性  pending 中，Reference 的内部线程则会将这个 pending 放入到构造函数的队列中。</p>
+<p>Finalizer 的内部线程则会从队列中取出 Finalizer 对象，并调用其包装的实际对象的 finalize 方法。</p>
+<p>所以，finalize 方法需要两个线程来处理他，一个是 ReferenceHandler ，一个是  FinalizerThread。</p>
+<p>前者负责将 Finalizer 对象放入到 Reference 队列中，后者负责从队列中取出 Finalizer 对象并调用实际对象的 finalize 方法。</p>
+<p>同时，GC 大概也要做 2 件事情，一个是创建 Finalizer 对象，一个是将该对象设置到自己的 pending 属性中。</p>
+<h2 id="拾遗"><a href="#拾遗" class="headerlink" title="拾遗"></a>拾遗</h2><p>在 Reference 的 tryHandlePending 方法中，有一个需要注意的地方，就是 Cleaner，相关代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">tryHandlePending</span><span class="params">(<span class="keyword">boolean</span> waitForNotify)</span> </span>&#123;</span><br><span class="line">    Reference&lt;Object&gt; r;</span><br><span class="line">    Cleaner c;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">synchronized</span> (lock) &#123;</span><br><span class="line">            <span class="keyword">if</span> (pending != <span class="keyword">null</span>) &#123;</span><br><span class="line">                r = pending;</span><br><span class="line">                c = r <span class="keyword">instanceof</span> Cleaner ? (Cleaner) r : <span class="keyword">null</span>;</span><br><span class="line">                pending = r.discovered;</span><br><span class="line">                r.discovered = <span class="keyword">null</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (waitForNotify) &#123;</span><br><span class="line">                    lock.wait();</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// retry if waited</span></span><br><span class="line">                <span class="keyword">return</span> waitForNotify;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (OutOfMemoryError x) &#123;</span><br><span class="line">        Thread.yield();</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (InterruptedException x) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (c != <span class="keyword">null</span>) &#123;</span><br><span class="line">        c.clean();</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ReferenceQueue&lt;? <span class="keyword">super</span> Object&gt; q = r.queue;</span><br><span class="line">    <span class="keyword">if</span> (q != ReferenceQueue.NULL) q.enqueue(r);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断如果，这个引用时 Cleaner  类型，执行该类的 clean 方法就可以了，就不放入队列了。而这个 Cleaner  和  NIO 的直接内存相关，这点其实在楼主分析 Netty 的 noCleaner 策略时提过。</p>
+<p>DirectByteBuffer 类中有个 Deallocator 线程，该线程的 run 方法就是调用 <code>unsafe.freeMemory(address)</code> 方法释放直接内存。</p>
+<p>当构造 DirectByteBuffer 对象的时候，会创建一个相应的 Deallocator。</p>
+<p>而这个 Cleaner 对象则包装了这个 Deallocator，当调用 Cleaner 的 clean 方法的时候，实际上，调用的是用 Deallocator 的 run 方法。这样，当 Cleaner 对象回收的时候，就可以顺手清理直接内存。</p>
+<p>由于 DirectByteBuffer 对象中的 Cleaner 目前除了自己使用外，无他人使用，那么当 DirectByteBuffer 被回收时，Cleaner 也会被回收，自然，也就会执行 Finalizer 的逻辑了。</p>
+<p>注意：这个 Deallocator 线程只有一个构造方法会创建它 —— <code>DirectByteBuffer(int cap)</code>. 对应的 ByteBuffer 构造方法应该是 <code> static ByteBuffer allocateDirect(int capacity)</code>。</p>
+<p>使用的时候需要注意。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/05/24/2018/2018-05-24-finalize()-%E5%8E%9F%E7%90%86%EF%BC%8C%E4%BA%86%E8%A7%A3%E4%B8%80%E4%B8%8B%EF%BC%9F/" data-id="ckwes9aeg00cxkrs17gr3966t" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/06/01/2018/2018-06-01-Java-%E5%A6%82%E4%BD%95%E4%B8%8D%E4%BD%BF%E7%94%A8-volatile-%E5%92%8C%E9%94%81%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E5%8F%98%E9%87%8F%E7%9A%84%E5%90%8C%E6%AD%A5%E6%93%8D%E4%BD%9C/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          Java-如何不使用-Volatile-和锁实现共享变量的同步操作
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/05/19/2018/2018-05-19-Java-%E4%B8%AD%E6%9C%80%E5%A4%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9ALinkedHashMap-%E4%BA%86%E8%A7%A3%E4%B8%80%E4%B8%8B%EF%BC%9F/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">Java-中最大的数据结构：LinkedHashMap-了解一下？</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

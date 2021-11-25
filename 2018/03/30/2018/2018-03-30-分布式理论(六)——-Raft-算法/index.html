@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>分布式理论(六)——-Raft-算法 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="分布式理论(六)——-Raft-算法">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/30/2018/2018-03-30-%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA(%E5%85%AD)%E2%80%94%E2%80%94-Raft-%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-56571f0026939037.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-484b50efc95c219a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-dced1da5a414c2a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-03-29T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.313Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-56571f0026939037.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-03-30-分布式理论(六)——-Raft-算法" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/03/30/2018/2018-03-30-%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA(%E5%85%AD)%E2%80%94%E2%80%94-Raft-%E7%AE%97%E6%B3%95/" class="article-date">
+  <time datetime="2018-03-29T18:11:11.000Z" itemprop="datePublished">2018-03-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      分布式理论(六)——-Raft-算法
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       我们之前讲述了 Paxos 一致性算法，虽然楼主尝试用最简单的算法来阐述，但仍然还是有点绕。楼主最初怀疑自己太笨，后来才直到，该算法的晦涩难懂不是只有我一个人这么认为，而是国际公认！
+
+<p>所以 Paxos 算法在 1990 就发表出来，但却得不到运用。真正的名声大噪还是在兰伯特使用 “更简单” 的方式重写了一篇论文才开始。</p>
+<p>这些和今天说的 Raft 有什么关系呢？</p>
+<p>答：Raft 也是一个一致性算法，和 Paxos 目标相同。但他还有另一个名字：易于理解的一致性算法。</p>
+<p>也就是说，他的目标就是成为一个易于理解的一致性算法。以替代 Paxos 的晦涩难懂。</p>
+<p>那我们就开始讲讲 Raft 算法吧！</p>
+<h2 id="1-什么是-Raft-算法"><a href="#1-什么是-Raft-算法" class="headerlink" title="1. 什么是 Raft 算法"></a>1. 什么是 Raft 算法</h2><p>首先说什么是 Raft 算法：<strong>Raft 是一种为了管理复制日志的一致性算法。</strong></p>
+<p>什么是一致性呢？<br>Raft 的论文这么说的：一致性算法允许一组机器像一个整体一样工作，即使其中一些机器出现故障也能够继续工作下去。</p>
+<p>这里的<code>一致性</code>针对分布式系统。</p>
+<p>什么是管理日志呢？<br>一致性算法是从复制状态机的背景下提出的，复制状态机通常都是<code>基于复制日志</code>实现的，这个日志可以理解为一个比喻，相当于一个指令。</p>
+<p>关于状态机的描述：</p>
+<blockquote>
+<p>多个节点上，从相同的初始状态开始，执行相同的一串命令，产生相同的最终状态。实际上，与其说是一致，其实可以泛化为分布式的两个节点状态存在某种约束。<br>复制状态机通常都是基于复制日志实现的，<strong>保证复制日志相同就是一致性算法的工作了。</strong><br>典型应用就是一个独立的的复制状态机去管理领导选举和存储配置信息并且在领导人宕机的情况下也要存活下来。比如 Chubby 和 ZooKeeper。</p>
+</blockquote>
+<p>对于 Raft 更重要的应该是 <code>易于理解</code>。从 Raft 的论文题目就可以看出：<code>In Search of an Understandable Consensus Algorithm (Extended Version)</code>。这里的易于理解是相对于 Paxos 的，在他的论文中，和 Paxos 做了大量针对 <code>易于理解</code> 的对比和统计测试。</p>
+<p>从楼主阅读论文的过程中来看，Raft 相较于 Paxos 确实更易于理解。为了提升可理解性，Raft 将一致性算法分解成了几个关键模块，例如领导人选举、日志复制和安全性。</p>
+<p>而和一致性最相关的就是前面 2 个模块：领导人选举和日志复制。</p>
+<h2 id="2-领导人选举"><a href="#2-领导人选举" class="headerlink" title="2. 领导人选举"></a>2. 领导人选举</h2><p>Raft 通过选举一个高贵的领导人，然后给予他全部的管理复制日志的责任来实现一致性。</p>
+<p>而每个 server 都可能会在 3 个身份之间切换：</p>
+<ul>
+<li>领导者</li>
+<li>候选者</li>
+<li>跟随者</li>
+</ul>
+<p>而影响他们身份变化的则是 <code>选举</code>。<br>当所有服务器初始化的时候，都是 <code>跟随者</code>，这个时候需要一个 <code>领导者</code>，所有人都变成 <code>候选者</code>，直到有人成功当选 <code>领导者</code>。</p>
+<p>角色轮换如下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-56571f0026939037.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="角色变化图"></p>
+<p>而领导者也有宕机的时候，宕机后引发新的 <code>选举</code>，所以，整个集群在选举和正常运行之间切换，具体如下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-484b50efc95c219a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>从上图可以看出，选举和正常运行之间切换，但请注意， 上图中的 term 3 有一个地方，后面没有跟着 <code>正常运行</code> 阶段，为什么呢?</p>
+<p>答：当一次选举失败（比如正巧每个人都投了自己），就执行一次 <code>加时赛</code>，每个 Server 会在一个随机的时间里重新投票，这样就能保证不冲突了。所以，当 term 3 选举失败，等了几十毫秒，执行 term 4 选举，并成功选举出领导人。</p>
+<p>接着，领导者周期性的向所有跟随者发送心跳包来维持自己的权威。如果一个跟随者在一段时间里没有接收到任何消息，也就是选举超时，那么他就会认为系统中没有可用的领导者,并且发起选举以选出新的领导者。</p>
+<p>要开始一次选举过程，跟随者先要增加自己的当前任期号并且<strong>转换到候选人状态</strong>。然后请求其他服务器<code>为自己投票</code>。那么会产生 3 种结果：</p>
+<p>a. 自己成功当选<br>b. 其他的服务器成为领导者<br>c. 僵住，没有任何一个人成为领导者</p>
+<p>注意：</p>
+<ol>
+<li>每一个 server 最多在一个任期内投出一张选票（有任期号约束），先到先得。</li>
+<li>要求最多只能有一个人赢得选票。</li>
+<li>一旦成功，立即成为领导人，然后广播所有服务器停止投票阻止新得领导产生。</li>
+</ol>
+<p>僵住怎么办？ Raft 通过使用随机选举超时时间（例如 150 - 300 毫秒）的方法将服务器打散投票。每个候选人在僵住的时候会随机从一个时间开始重新选举。</p>
+<p>以上，就是 Raft 所有关于领导选举的策略。</p>
+<h2 id="3-日志复制"><a href="#3-日志复制" class="headerlink" title="3. 日志复制"></a>3. 日志复制</h2><p>一旦一个领导人被选举出来，他就开始为客户端提供服务。</p>
+<p>客户端发送日志给领导者，随后领导者将日志复制到其他的服务器。如果跟随者故障，领导者将会尝试重试。直到所有的跟随者都成功存储了所有日志。</p>
+<p>下图表示了当一个客户端发送一个日志给领导者，随后领导者复制给跟随者的整个过程。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-dced1da5a414c2a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>4 个步骤：</p>
+<ol>
+<li>客户端提交</li>
+<li>复制数据到所有跟随者</li>
+<li>跟随者回复 <code>确认收到</code></li>
+<li>领导者回复客户端和所有跟随者 <code>确认提交</code>。</li>
+</ol>
+<p>可以看到，直到第四步骤，整个事务才会达成。中间任何一个步骤发生故障，都不会影响日志一致性。</p>
+<h2 id="4-总结"><a href="#4-总结" class="headerlink" title="4. 总结"></a>4. 总结</h2><p>总结一下本文吧：</p>
+<p>Raft 算法如同他的论文名字一样：<code>寻找一种易于理解的一致性算法</code>，这里的 <code>易于理解</code> 是相对于 Paxos 的，的确，Paxos 实在过于复杂了。</p>
+<p>而如何实现易于理解？</p>
+<p>答：Raft 将一致性算法分成了2部分：领导选举，日志复制。</p>
+<p>领导选举基于一个随机的时间来保证不会冲突（如果冲突的话）。<br>而日志复制则类似于 2PC。</p>
+<p>通常 5 个节点，只要不超过 2 个节点死亡都不会影响系统的运行。保证了系统的可用性，通过领导者的日志复制，实现了系统的一致性。</p>
+<p>似乎 CAP 定理已经不起作用了，当然这又是一个重大的话题。</p>
+<p>最后，以 Raft 论文的结尾结束本位：</p>
+<blockquote>
+<p>算法的设计通常会把正确性，效率或者简洁作为主要的目标。尽管这些都是很有意义的目标，但是我们相信，可理解性也是一样的重要。在开发者把算法应用到实际的系统中之前，这些目标没有一个会被实现，这些都会必然的偏离发表时的形式。除非开发人员对这个算法有着很深的理解并且有着直观的感觉，否则将会对他们而言很难在实现的时候保持原有期望的特性。</p>
+</blockquote>
+<h2 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h2><p><a target="_blank" rel="noopener" href="https://github.com/maemual/raft-zh_cn/blob/master/raft-zh_cn.md">寻找一种易于理解的一致性算法（扩展版）Raft 中文翻译</a><br><a target="_blank" rel="noopener" href="https://github.com/maemual/raft-zh_cn">Raft 英文原文</a><br><a target="_blank" rel="noopener" href="http://www.cnblogs.com/mindwind/p/5231986.html">Raft 为什么是更易理解的分布式一致性算法</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/03/30/2018/2018-03-30-%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA(%E5%85%AD)%E2%80%94%E2%80%94-Raft-%E7%AE%97%E6%B3%95/" data-id="ckwes9ade0099krs1dy75act9" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/03/31/2018/2018-03-31-%E8%87%AA%E5%B7%B1%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E4%B8%80%E8%87%B4%E6%80%A7-Hash-%E7%AE%97%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          自己实现一个一致性-Hash-算法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/03/29/2018/2018-03-29-%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA(%E4%BA%94)%E2%80%94%E2%80%94-%E4%B8%80%E8%87%B4%E6%80%A7%E7%AE%97%E6%B3%95-Paxos/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">分布式理论(五)——-一致性算法-Paxos</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

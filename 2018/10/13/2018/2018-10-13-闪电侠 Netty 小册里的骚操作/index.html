@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>闪电侠 Netty 小册里的骚操作 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="闪电侠 Netty 小册里的骚操作">
+<meta property="og:url" content="http://thinkinjava.cn/2018/10/13/2018/2018-10-13-%E9%97%AA%E7%94%B5%E4%BE%A0%20Netty%20%E5%B0%8F%E5%86%8C%E9%87%8C%E7%9A%84%E9%AA%9A%E6%93%8D%E4%BD%9C/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-10-12T16:01:01.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.332Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-10-13-闪电侠 Netty 小册里的骚操作" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/10/13/2018/2018-10-13-%E9%97%AA%E7%94%B5%E4%BE%A0%20Netty%20%E5%B0%8F%E5%86%8C%E9%87%8C%E7%9A%84%E9%AA%9A%E6%93%8D%E4%BD%9C/" class="article-date">
+  <time datetime="2018-10-12T16:01:01.000Z" itemprop="datePublished">2018-10-13</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Netty/">Netty</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      闪电侠 Netty 小册里的骚操作
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       即使这是一本小册，但基于“不提笔不读书”的理念，仍然有必要总结一下。此小册对于那些“硬杠 Netty 源码 却不曾在千万级生产环境上使用实操”的用户非常有用。当然，对那些没有 Netty 编程经验的人来说，更为有用。
+
+<p>放个小册地址：<a target="_blank" rel="noopener" href="https://juejin.im/book/5b4bc28bf265da0f60130116/section/5b4db06d5188251afc257383#heading-2"><a target="_blank" rel="noopener" href="https://juejin.im/book/5b4bc28bf265da0f60130116">Netty 入门与实战：仿写微信 IM 即时通讯系统</a>
+</a></p>
+<p>再次强烈推荐，一碗黄焖鸡/半杯 Luckin coffee/一包炫赫门 的价钱，可以让你学会使用 Java 界的 epoll 进行多路复用网络编程，不能说是不划算的 ：）</p>
+<p>本文标题含有“骚操作”，为什么这么说呢？</p>
+<p>作者是某团某评基础架构部技术专家，长期负责后台千万级别的推送系统，而这些推送系统自然是长连接实现的。可以想象，作者的这些实践经验不可谓不好用，纵然看过源码，提过 issue，本人也觉得这些操作非常好用，非常骚气。</p>
+<h2 id="开始"><a href="#开始" class="headerlink" title="开始"></a>开始</h2><p>我们挑重点讲，虽然对于强迫症来讲，每一节都有笔记才是最吼的！</p>
+<p>1 服务端启动流程</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. 通过给 bind 方法添加监听器，用以自动绑定递增端口。算骚操作吧?</span><br><span class="line">2. attr 方法，为每条连接增加属性，能够实现全单例模式哟</span><br><span class="line">3. childOption 方法，关于 TCP连接的优化，SO_KEEPALIVE 底层心跳，TCP_NODELAY 延迟发送，SO_BACKLOG 等待队列</span><br></pre></td></tr></table></figure>
+
+<p>2  客户端启动流程</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. 还是通过监听器实现重试，但是是 connect 返回的 future，且重实间隔时间左移 1 位增加（性能优化，不使用乘二 ，优秀）。</span><br><span class="line">2. 重试不在主线程，而是使用 bootstrap.config().group().schedule 搞定时任务，和我想的不一样。优秀</span><br><span class="line">3. 客户端需要 CONNECT_TIMEOUT_MILLIS 属性</span><br></pre></td></tr></table></figure>
+
+<p>3 客户端与服务端双向通信</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1.客户端在 channelActive 立刻搞事情，嗯，rpc 通信通常也会做一些处理，例如打印客户端ip之类的。</span><br></pre></td></tr></table></figure>
+
+<p>4  客户端与服务端通信协议编解码（扩展较多）</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">emm，这个其实就是自定义应用层协议。</span><br><span class="line"><span class="bullet">1.</span> 4 字节魔数校验，例如 dubbo 就使用0xdabb进行校验，Java 字节码也使用 0xcafebabe 校验字节码。</span><br><span class="line"><span class="bullet">2.</span>  版本号肯定需要的</span><br><span class="line"><span class="bullet">3.</span> 序列化算法，肯定也需要的</span><br><span class="line"><span class="bullet">4.</span> 指令，肯定也是需要的，不过，也可以使用别的方式。</span><br><span class="line"><span class="bullet">5.</span> 后面的数据长度，也是需要的，方便拆包。</span><br><span class="line"></span><br><span class="line">其实这里可以参照 RPC 协议来看，这里更像一个简化的 RPC 协议。</span><br><span class="line">一般 RPC 框架首先获取协议类型，根据这个协议类型得到协议处理器，然后再处理（一个端口处理多个协议的场景）。</span><br><span class="line">生产级别的 RPC 通常较为复杂，以 SOFABolt 为例，需要以下字段：</span><br><span class="line"><span class="bullet">1.</span> 协议版本</span><br><span class="line"><span class="bullet">2.</span> 请求类型，即指令（Request，Response， oneway）</span><br><span class="line"><span class="bullet">3.</span> 指令版本</span><br><span class="line"><span class="bullet">4.</span> RequestID 负责数据对应</span><br><span class="line"><span class="bullet">5.</span> 序列号器</span><br><span class="line"><span class="bullet">6.</span> 协议开关（例如 CRC 校验，安全校验）</span><br><span class="line"><span class="bullet">7.</span> 响应码，约定异常，简化异常</span><br><span class="line"><span class="bullet">8.</span> 类名长度，Java rpc 框架必备</span><br><span class="line"><span class="bullet">9.</span> 请求头长度（参照 http header）</span><br><span class="line"><span class="bullet">10.</span> 请求体长度（参照http body）</span><br><span class="line"><span class="bullet">11.</span> 类名</span><br><span class="line"><span class="bullet">12.</span> 业务请求头内容（一般是 Map，SOFABolt 支持自定义，SOFARPC 里面藏着是否泛化调用等信息）</span><br><span class="line"><span class="bullet">13.</span> 业务请求体内容（一般就是个Request对象或 Response对象，里面包含约定的属性，例如参数，返回值，超级多，SOFARPC 有个属性类 RemotingConstants，这里都有）</span><br><span class="line"><span class="bullet">14.</span> CRC 校验码（金融场景必备）</span><br></pre></td></tr></table></figure>
+
+<p>5  实现客户端与服务端收发消息</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span> 使用 hannel.attr(Attributes.<span class="keyword">LOGIN</span>).<span class="keyword">set</span>(<span class="keyword">true</span>) 绑定登录标识方便哟</span><br></pre></td></tr></table></figure>
+
+<p>6  构建客户端与服务端 pipeline</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 常用的 ChannelInboundHandlerAdapter 和 ChannelOutboundHandlerAdapter 但是需要强转哦，麻烦，</span><br><span class="line">   建议使用 SimpleChannelInboundHandler (还帮你释放内存哟)。</span><br><span class="line"><span class="bullet">2.</span> 不使用 MessageToByteEncoder ，可以自己编解码哦，虽然麻烦点</span><br></pre></td></tr></table></figure>
+
+<p>7  拆包粘包理论与解决方案</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 常用拆包：固定长度，行拆包（有bug，我写过文章分析），分隔符，基于长度</span><br><span class="line"><span class="bullet">2.</span> 最通用的就是基于长度，只要你的自定义协议中包含长度域字段，就可以使用</span><br><span class="line"><span class="bullet">3.</span> LengthFieldBasedFrameDecoder 代替自己继承 ByteToMessageDecoder 哟。</span><br><span class="line"><span class="bullet">4.</span> 对 LengthFieldBasedFrameDecoder 扩展一下，校验魔数关闭错误连接美滋滋。</span><br></pre></td></tr></table></figure>
+
+<p>8  channelHandler 的生命周期 </p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 在 channelReadComplete 方法里执行 flush，批量刷新，性能提升美滋滋。</span><br><span class="line"><span class="bullet">2.</span> channelActive 和 channelInActive 增减连接，RPC 都这么干</span><br></pre></td></tr></table></figure>
+
+<p>9 使用 channelHandler 的热插拔实现客户端身份校验</p>
+<figure class="highlight basic"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1</span>. ctx.pipeline().<span class="comment">remove(this) 删除没有必要的 handler 美滋滋</span></span><br><span class="line"><span class="number">2</span>. handler<span class="comment">Removed 回调美滋滋</span></span><br></pre></td></tr></table></figure>
+
+<p>10  客户端互聊原理与实现</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span> <span class="keyword">Session</span> 通过 channel.attr(Attributes.<span class="keyword">SESSION</span>).<span class="keyword">set</span>(<span class="keyword">session</span>) 绑定连接美滋滋。</span><br><span class="line"><span class="number">2.</span> channel.attr(Attributes.<span class="keyword">SESSION</span>).<span class="keyword">set</span>(<span class="keyword">null</span>) 删除 <span class="keyword">session</span> 美滋滋</span><br><span class="line"><span class="number">3.</span> channel.attr(Attributes.<span class="keyword">SESSION</span>).<span class="keyword">get</span>() 美滋滋</span><br></pre></td></tr></table></figure>
+
+<p>11 群聊的发起与通知 </p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span> ChannelGroup c = ChannelGroup channelGroup = <span class="keyword">new</span> <span class="constructor">DefaultChannelGroup(<span class="params">ctx</span>.<span class="params">executor</span>()</span>) 批量处理连接美滋滋</span><br><span class="line"><span class="number">2.</span> channelGroup.writeAndFlush 批量写连接美滋滋</span><br></pre></td></tr></table></figure>
+<h3 id="高能预警！！！！"><a href="#高能预警！！！！" class="headerlink" title="高能预警！！！！"></a>高能预警！！！！</h3><p>12  牛逼的性能优化</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 共享 handler</span><br><span class="line"><span class="bullet">2.</span> 压缩 handler - 合并编解码器 —— MessageToMessageCodec</span><br><span class="line"><span class="bullet">3.</span> 虽然有状态的 handler 不能搞单例，但是你可以绑定到 channel 属性上，强行单例</span><br><span class="line"><span class="bullet">4.</span> 缩短事件传播路径—— 放 Map 里，在第一个 handler 里根据指令来找具体 handler。</span><br><span class="line"><span class="bullet">5.</span> 更改事件传播源—— 用 ctx.writeAndFlush() 不要用 ctx.channel().writeAndFlush()</span><br><span class="line"><span class="bullet">6.</span> 减少阻塞主线程的操作—— 使用业务线程池，RPC 优化重点</span><br><span class="line"><span class="bullet">7.</span> 计算耗时，使用回调 Future</span><br></pre></td></tr></table></figure>
+
+<p>13 心跳和空闲检测</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 空闲检测 IdleStateHandler 用起来很爽， channelIdle 和 userEventTriggered 都可以处理</span><br><span class="line"><span class="bullet">2.</span> 定时心跳 ctx.executor().scheduleAtFixedRate 很优秀</span><br><span class="line"><span class="bullet">3.</span> 通常空闲检测时间要比发送心跳的时间的两倍要长一些（3倍），这也是为了排除偶发的公网抖动，防止误判。美滋滋</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>小小短文，无法尽数 Netty 精华，但对于新手来说，已经足够使用了。而我这里仅仅是做简单的阅读总结，更多的内容，还需要读者自己去研究小册，研究源码，研究 Netty 在 RPC 里的运用，方能成为 Netty 多路复用网络编程高手。</p>
+<p>关于 RPC 里使用 Netty 的最佳范例，推荐蚂蚁金服开源框架 <a target="_blank" rel="noopener" href="https://github.com/alipay/sofa-bolt">SOFABolt</a>，可以说是对 Netty 编程最佳实践的提炼，和此文相辅相成进行学习，可助汝纵横 Java 各种面试。</p>
+<p>good luck！！！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/10/13/2018/2018-10-13-%E9%97%AA%E7%94%B5%E4%BE%A0%20Netty%20%E5%B0%8F%E5%86%8C%E9%87%8C%E7%9A%84%E9%AA%9A%E6%93%8D%E4%BD%9C/" data-id="ckwes9af300ffkrs1fvpoe26w" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/10/16/2018/2018-10-16-%E6%9C%AC%E4%BA%BA%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE%20Lu-Rpc/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          本人开源项目 Lu-Rpc
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/10/08/2018/2018-10-08-%E9%9D%A2%E8%AF%95%E8%A2%AB%E9%97%AE%E7%83%82%E7%9A%84%20Spring%20IOC(%E6%B1%82%E6%B1%82%E4%BD%A0%E5%88%AB%E5%86%8D%E9%97%AE%E4%BA%86)/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">面试被问烂的 Spring IOC(求求你别再问了)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

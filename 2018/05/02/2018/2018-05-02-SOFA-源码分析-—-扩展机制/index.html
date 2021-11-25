@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>SOFA-源码分析-—-扩展机制 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="SOFA-源码分析-—-扩展机制">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/02/2018/2018-05-02-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E6%89%A9%E5%B1%95%E6%9C%BA%E5%88%B6/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-05-01T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.318Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-05-02-SOFA-源码分析-—-扩展机制" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/05/02/2018/2018-05-02-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E6%89%A9%E5%B1%95%E6%9C%BA%E5%88%B6/" class="article-date">
+  <time datetime="2018-05-01T18:11:11.000Z" itemprop="datePublished">2018-05-02</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/SOFA/">SOFA</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      SOFA-源码分析-—-扩展机制
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       ## 前言
+
+<p>我们在之前的文章中已经稍微了解过 SOFA 的扩展机制，我们也说过，一个好的框架，必然是易于扩展的。那么 SOFA 具体是怎么实现的呢？</p>
+<p>一起来看看。</p>
+<h2 id="如何使用？"><a href="#如何使用？" class="headerlink" title="如何使用？"></a>如何使用？</h2><p>看官方的 demo：</p>
+<p>1.定义扩展点。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Extensible</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Person</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">getName</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.定义扩展实现</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Extension(&quot;A&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PersonA</span> <span class="keyword">implements</span> <span class="title">Person</span></span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">getName</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;li wei&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>3.编写扩展描述文件：META-INF/services/sofa-rpc/com.alipay.sofa.rpc.extension.Person。文件内容如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">A=com.alipay.sofa.rpc.extension.PersonA</span><br></pre></td></tr></table></figure>
+
+<p>4.加载扩展点，获取到扩展实现类使用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Person person = ExtensionLoaderFactory.getExtensionLoader(Person.class).getExtension(<span class="string">&quot;A&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+
+<p>很简单对不对，只需要 2 个注解，一个配置文件，然后使用工厂方法通过接口名称和扩展点名称就能够获取到实例。So，我们今天要看的就是这些东西，其实挺简单的，如果用过 Java 自带的 SPI 就会很熟悉了。</p>
+<h2 id="源码实现"><a href="#源码实现" class="headerlink" title="源码实现"></a>源码实现</h2><p>从哪里下手呢？当然是这个工厂方法。</p>
+<p>源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">ExtensionLoader&lt;T&gt; <span class="title">getExtensionLoader</span><span class="params">(Class&lt;T&gt; clazz)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> getExtensionLoader(clazz, <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用的是重载的另一个方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">ExtensionLoader&lt;T&gt; <span class="title">getExtensionLoader</span><span class="params">(Class&lt;T&gt; clazz, ExtensionLoaderListener&lt;T&gt; listener)</span> </span>&#123;</span><br><span class="line">    ExtensionLoader&lt;T&gt; loader = LOADER_MAP.get(clazz);</span><br><span class="line">    <span class="keyword">if</span> (loader == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">synchronized</span> (ExtensionLoaderFactory.class) &#123;</span><br><span class="line">            loader = LOADER_MAP.get(clazz);</span><br><span class="line">            <span class="keyword">if</span> (loader == <span class="keyword">null</span>) &#123;</span><br><span class="line">                loader = <span class="keyword">new</span> ExtensionLoader&lt;T&gt;(clazz, listener);</span><br><span class="line">                LOADER_MAP.put(clazz, loader);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> loader;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>很简单，从 Map 中取出，如果没有，创建一个，放入缓存。这里使用了双重检查锁。</p>
+<p>注意，这里有个参数，ExtensionLoaderListener ，作用是当加载完毕的的时候，回调他的 onLoad 方法，通常是在异步的时候使用。</p>
+<p>所以，看出来了吧，关键过程在 new ExtensionLoader（）。</p>
+<h2 id="ExtensionLoader-的创建过程"><a href="#ExtensionLoader-的创建过程" class="headerlink" title="ExtensionLoader 的创建过程"></a>ExtensionLoader 的创建过程</h2><p>构造方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">ExtensionLoader</span><span class="params">(Class&lt;T&gt; interfaceClass, ExtensionLoaderListener&lt;T&gt; listener)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>(interfaceClass, <span class="keyword">true</span>, listener);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>重载：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="title">ExtensionLoader</span><span class="params">(Class&lt;T&gt; interfaceClass, <span class="keyword">boolean</span> autoLoad, ExtensionLoaderListener&lt;T&gt; listener)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (RpcRunningState.isShuttingDown()) &#123;</span><br><span class="line">        <span class="keyword">this</span>.interfaceClass = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">this</span>.interfaceName = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">this</span>.listener = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">this</span>.factory = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">this</span>.extensible = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">this</span>.all = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 接口为空，既不是接口，也不是抽象类</span></span><br><span class="line">    <span class="keyword">if</span> (interfaceClass == <span class="keyword">null</span> ||</span><br><span class="line">        !(interfaceClass.isInterface() || Modifier.isAbstract(interfaceClass.getModifiers()))) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Extensible class must be interface or abstract class!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.interfaceClass = interfaceClass;</span><br><span class="line">    <span class="keyword">this</span>.interfaceName = ClassTypeUtils.getTypeStr(interfaceClass);</span><br><span class="line">    <span class="keyword">this</span>.listener = listener;</span><br><span class="line">    Extensible extensible = interfaceClass.getAnnotation(Extensible.class);</span><br><span class="line">    <span class="keyword">if</span> (extensible == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(</span><br><span class="line">            <span class="string">&quot;Error when load extensible interface &quot;</span> + interfaceName + <span class="string">&quot;, must add annotation @Extensible.&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">this</span>.extensible = extensible;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 非单例则是空</span></span><br><span class="line">    <span class="keyword">this</span>.factory = extensible.singleton() ? <span class="keyword">new</span> ConcurrentHashMap&lt;String, T&gt;() : <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">this</span>.all = <span class="keyword">new</span> ConcurrentHashMap&lt;String, ExtensionClass&lt;T&gt;&gt;();</span><br><span class="line">    <span class="keyword">if</span> (autoLoad) &#123;</span><br><span class="line">        List&lt;String&gt; paths = RpcConfigs.getListValue(RpcOptions.EXTENSION_LOAD_PATH);</span><br><span class="line">        <span class="keyword">for</span> (String path : paths) &#123;</span><br><span class="line">            loadFromFile(path);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里有个地方需要注意，autoLoad 属性默认是 ture，也就是默认自动加载。当然，基本上都是自动加载的，这里的参数用于测试用的。</p>
+<p>来看这个构造方法。首先是一波赋值操作。</p>
+<p>然后检查参数。检查是否是抽象类或者接口，检查是否有 Extensible 注解。</p>
+<p>如果是单例，创建一个 Map 保存这个对象，如果不是，Map 就是 null，每次都创建新的。</p>
+<p>其中，会有一个  <code>RpcConfigs.getListValue(RpcOptions.EXTENSION_LOAD_PATH)</code> 的操作，用于从获取配置好的路径，通过全局搜索，找到 rpc-config-default.json。包含以下内容：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 扩展点加载的路径</span></span><br><span class="line"><span class="string">&quot;extension.load.path&quot;</span>: [</span><br><span class="line">  <span class="string">&quot;META-INF/services/sofa-rpc/&quot;</span>,</span><br><span class="line">  <span class="string">&quot;META-INF/services/&quot;</span></span><br><span class="line">],</span><br></pre></td></tr></table></figure>
+<p>两个路径。所以返回值是个 List。</p>
+<p>for 循环解析 list 中的 path，即调用 loadFromFile 方法。</p>
+<p>方法内容如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">loadFromFile</span><span class="params">(String path)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 默认如果不指定文件名字，就是接口名</span></span><br><span class="line">    String file = StringUtils.isBlank(extensible.file()) ? interfaceName : extensible.file().trim();</span><br><span class="line">    String fullFileName = path + file;</span><br><span class="line">    ClassLoader classLoader = ClassLoaderUtils.getClassLoader(getClass());</span><br><span class="line">    loadFromClassLoader(classLoader, fullFileName);  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先判断注解的 file 属性是否为空，如果是空，则使用接口名，否则使用 file 指定的名称。</p>
+<p>然后，将配置文件中 path 和 file 属性拼接。这里其实可以使用 StringBuilder。</p>
+<p>然后呢？获取 ClassLoader，默认使用当下线程的 ClassLoader，如果为空，使用当前 ExtensionLoader 的 ClassLoader ，若给定的 class 是空，则使用 SystemClassLoader。</p>
+<p>从这里可以看出 SPI 设计的好处，如果使用策略模式实现的话，那么 ClassLoader 必定相同，而类似  SPI 的设计，可以让上层应用和下层应用的 ClassLoader 隔离开来。</p>
+<p>拿到 ClassLoader 和 全路径的接口名后，开始加载文件。</p>
+<p>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">loadFromClassLoader</span><span class="params">(ClassLoader classLoader, String fullFileName)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    Enumeration&lt;URL&gt; urls = classLoader != <span class="keyword">null</span> ? classLoader.getResources(fullFileName)</span><br><span class="line">        : ClassLoader.getSystemResources(fullFileName);</span><br><span class="line">    <span class="comment">// 可能存在多个文件。</span></span><br><span class="line">    <span class="keyword">if</span> (urls != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">while</span> (urls.hasMoreElements()) &#123;</span><br><span class="line">            <span class="comment">// 读取一个文件</span></span><br><span class="line">            URL url = urls.nextElement();</span><br><span class="line">            BufferedReader reader = <span class="keyword">null</span>;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                reader = <span class="keyword">new</span> BufferedReader(<span class="keyword">new</span> InputStreamReader(url.openStream(), <span class="string">&quot;UTF-8&quot;</span>));</span><br><span class="line">                String line;</span><br><span class="line">                <span class="keyword">while</span> ((line = reader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    readLine(url, line);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (reader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    reader.close();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先通过 ClassLoader 获取 classpath 下的文件 URL 集合。然后遍历这些 URL，通过流读取文件，并通过  readLine 方法解析每一行读取出的字符串。这里的字符串就是 SPI 配置文件中的，类似下面的：</p>
+<p>文件名称：<code>com.alipay.sofa.rpc.extension.Person</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">A=com.alipay.sofa.rpc.extension.PersonA</span><br></pre></td></tr></table></figure>
+<p>通过加载指定路径 + 接口名（或 Extensible 指定 file），得到文件名，然后读取文件中的文本。由于按行读取，可能读取多次。</p>
+<p>然后看 readLine 方法处理解析出来的字符串。</p>
+<p>这个方法就比较长了，主要是数据校验，就不贴出来了，说说逻辑。</p>
+<ol>
+<li><p>首先解析该行的数据，parseAliasAndClassName 方法，如果是 # 号，就是注释之类的处理。根据 = 号分割，得到 ClassName，创建一个数据，下标 0 是别名，例如上面的 A，下标 1 是全类名。</p>
+</li>
+<li><p>使用 Class.forName 反射加载该类。</p>
+</li>
+<li><p>获取该类的 Extension 注解，</p>
+</li>
+</ol>
+<ul>
+<li>如果是 null，抛出异常，</li>
+<li>如果不是，获取 value 值，value 值不能是空。</li>
+<li>如果 SPI 文件中没有配置别名，使用注解上的。</li>
+<li>如果SPI 文件配置了，则校验和注解上的是否一致，</li>
+<li>如果不一致，抛出异常。</li>
+<li>如果接口的注解声明需要编码，而实现类没有配置，抛出异常。</li>
+<li>如果别名是 default 或者 * ，抛出异常。</li>
+</ul>
+<ol start="4">
+<li>检查当前系统中，是否已经含有相同的别名的类，注意：这里是一个接口对应一个 Map，因此这里的校验是相对于这个接口，也就是检查当前接口的同名（别名）实现。</li>
+</ol>
+<ul>
+<li>如果有同名的，且<strong>当前实现类扩展</strong> override 是 ture（可以覆盖），且新的实现类的优先级没有老的高，忽略这个新的，反之，加载这个新类。</li>
+<li>如果<strong>当前实现类扩展</strong> 不能覆盖，判断，如果旧的实现类扩展可覆盖，且旧优先级大于等于新的。忽略新的，反之，如果旧的扩展类不能覆盖或者优先级小于新的，抛出已存在异常，因为系统不知道该怎么办（新的不能覆盖，老的也不能覆盖且优先级低）。</li>
+</ul>
+<ol start="5">
+<li><p>如果没有老的，直接加载新的实现类，创建一个 extensionClass 对象。</p>
+</li>
+<li><p>如果加载创建成功，检查是否有互斥的扩展点，循环该接口中缓存的所有的实现。</p>
+</li>
+</ol>
+<ul>
+<li>如果当前的实现类的优先级大于等于已存在的，检查新的扩展是否排除老的扩展，这个<code>排除扩展</code>是个别名数组，如果有，循环删除缓存中的 extensionClass。</li>
+<li>如果当前的实现类的优先级小于已存在的，则检查已存在的<code>排除扩展</code> 是否包含当前扩展点，如果包含，就不会放入到缓存中了。</li>
+</ul>
+<ol start="7">
+<li>调用 loadSuccess 方法，将刚刚创建的 extensionClass 和对应的别名放入到 all map 中，也就是缓存中。如果配置了监听器，调用监听器的 onLoad 方法，告知监听器：加载完毕，请指示！</li>
+</ol>
+<p>关闭流。</p>
+<p>到这里，一个完整的扩展点就加载完毕了！！！</p>
+<p>回到  ExtensionLoaderFactory 的 getExtesionLoader 方法，构造方法结束，通过接口名称，成功从SPI 文件中加载了实现类，然后呢？将接口和对应的 ExtensionLoader 对象放入到缓存中，下次使用。</p>
+<p>最后，返回 ExtensionLoader 对象。</p>
+<p>通常，紧接着就会调用这个对象的 getExtension 方法。类似下面这样的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Person person = ExtensionLoaderFactory.getExtensionLoader(Person.class).getExtension(<span class="string">&quot;A&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>通过别名获取实例。</p>
+<p>可以猜到，肯定是从这个实例的缓存中获取别名对应的 ExtensionClass 对象。如果没有，则抛出 Not Found 异常.</p>
+<p>代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> T <span class="title">getExtension</span><span class="params">(String alias)</span> </span>&#123;</span><br><span class="line">    ExtensionClass&lt;T&gt; extensionClass = getExtensionClass(alias);</span><br><span class="line">    <span class="keyword">if</span> (extensionClass == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> SofaRpcRuntimeException(<span class="string">&quot;Not found extension of &quot;</span> + interfaceName + <span class="string">&quot; named: \&quot;&quot;</span> + alias + <span class="string">&quot;\&quot;!&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (extensible.singleton() &amp;&amp; factory != <span class="keyword">null</span>) &#123;</span><br><span class="line">            T t = factory.get(alias);</span><br><span class="line">            <span class="keyword">if</span> (t == <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">                    t = factory.get(alias);</span><br><span class="line">                    <span class="keyword">if</span> (t == <span class="keyword">null</span>) &#123;</span><br><span class="line">                        t = extensionClass.getExtInstance();</span><br><span class="line">                        factory.put(alias, t);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> t;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> extensionClass.getExtInstance();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>如果接口标识是单例的且缓存不是空，则从缓存中取出，这里使用双重检查锁，拿到 ExtensionClass 对象后，对应他的 getExtInstance 方法，方法内容就是使用反射创建一个对象实例。并将别名和对应的对象放入到缓存中。</p>
+</li>
+<li><p>注意：ExtensionLoader 有 2 个缓存，一个是 <code>ConcurrentHashMap&lt;String, ExtensionClass&lt;T&gt;&gt; all</code> 缓存是别名和对应的 ExtensionClass，表示一个接口可以有多个实现。另一个是 ConcurrentHashMap&lt;String, T&gt;， 这个 Map 保存的是对应别名的单例对象。</p>
+</li>
+<li><p>如果不是单例的，使用反射创建一个新的。</p>
+</li>
+</ul>
+<p>好了，到这里，一个完整的对象就创建出来了。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>借用一下 SOFA  官方对扩展点的介绍：</p>
+<blockquote>
+<h1 id="为了对-SOFARPC-各个环节的都有充足的可扩展性，SOFA-RPC定义了一套十分灵活的扩展机制，所有扩展实现都是平等的。"><a href="#为了对-SOFARPC-各个环节的都有充足的可扩展性，SOFA-RPC定义了一套十分灵活的扩展机制，所有扩展实现都是平等的。" class="headerlink" title="为了对 SOFARPC 各个环节的都有充足的可扩展性，SOFA-RPC定义了一套十分灵活的扩展机制，所有扩展实现都是平等的。"></a>为了对 SOFARPC 各个环节的都有充足的可扩展性，SOFA-RPC定义了一套十分灵活的扩展机制，所有扩展实现都是平等的。</h1><p>这套机制不管是对SOFA-RPC本身的开发者其使用者而言都是非常有用的。SOFA-RPC将其自身抽象为了多个模块，各个模块之间无显式依赖，通过SPI的方式进行交互。</p>
+</blockquote>
+<p>SOFA  的扩展点没有使用 Java 的  SPI ，而是使用了 Java 的设计进行了扩展。比如：</p>
+<ul>
+<li>可以使用别名，</li>
+<li>可以有优先级（排序），</li>
+<li>可以覆盖，</li>
+<li>可以控制是否单例，</li>
+<li>是否编码。</li>
+<li>可以自定义文件位置。</li>
+<li>是否排斥其他扩展点。</li>
+</ul>
+<p>相比较 JDK 的 SPI ，功能强大了太多。值得借鉴。</p>
+<p>好了。关于 SOFA  扩展点的设计分析就到这里。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/05/02/2018/2018-05-02-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E6%89%A9%E5%B1%95%E6%9C%BA%E5%88%B6/" data-id="ckwes9ae200bckrs12mrnh5ys" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/05/03/2018/2018-05-03-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E2%80%94-%E4%BA%8B%E4%BB%B6%E6%80%BB%E7%BA%BF/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          SOFA-源码分析—-事件总线
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/05/02/2018/2018-05-02-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8E%9F%E7%90%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">SOFA-源码分析-—-自定义线程池原理</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

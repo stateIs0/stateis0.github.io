@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>深入浅出-JVM-GC（1） | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="深入浅出-JVM-GC（1）">
+<meta property="og:url" content="http://thinkinjava.cn/2018/02/17/2018/2018-02-17-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%881%EF%BC%89/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-3a9d215518f7954c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-02-16T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.306Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-3a9d215518f7954c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-02-17-深入浅出-JVM-GC（1）" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/02/17/2018/2018-02-17-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%881%EF%BC%89/" class="article-date">
+  <time datetime="2018-02-16T18:11:11.000Z" itemprop="datePublished">2018-02-17</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/JVM/">JVM</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      深入浅出-JVM-GC（1）
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## # 前言
+
+<p>初级 Java 程序员步入中级程序员的有一个无法绕过的阶段——GC（Garbage Collection）。作为 Java 程序员，说实话，很幸福，不用像 C 程序员那样，时刻关心着内存，就像网上有句名言——<strong>生活从来都不容易，只不过是有人替你负重前行！</strong>是的，GC 在替我们做这些脏活累活，GC 像让我们把精力都放在业务上，而不用每时每刻都在想着内存。现在，GC 也是每个语言的标准配置了。不然谁会去使用这个语言呢？</p>
+<p>然而，作为一个合格的程序员，对底层的好奇是进步的动力，如果一个程序员失去了好奇心，那就可以说他在程序员这条道路上就结束了。</p>
+<p>难道我们不好奇 GC 到底是怎么做的吗？接下来，我们就分析 GC 做了哪些事情。</p>
+<p>实际上，GC 主要做3件事情：</p>
+<ol>
+<li>哪些内存需要回收？</li>
+<li>什么时候回收？</li>
+<li>如何回收？</li>
+</ol>
+<p>说到底，GC 就是做这3件事情，如果你能解决这3个问题，那么你也可以实现一个 GC。</p>
+<p>那我们就一个一个问题来看看。</p>
+<h2 id="1-哪些内存需要回收"><a href="#1-哪些内存需要回收" class="headerlink" title="1. 哪些内存需要回收"></a>1. 哪些内存需要回收</h2><p>还记得我们之前分享的关于 JVM 运行时数据区吗？有堆，有栈，有方法区（永久代），还有直接内存，还有 PC 寄存器。其中，GC 的主要战场就是堆，当然，方法区也是需要 GC 的。但重点还是堆。</p>
+<p>我们知道，堆中内存是共享的，基本所有的对象都是在堆中创建。当一个对象不需要使用了，理论上我们就需要释放他所占用的内存。</p>
+<p>问题来了，如何分辨一个对象不需要使用了呢？答案是：不可能被任何途径使用的对象。也就是说他没有了任何引用。我们知道，引用在栈中，实例在堆中，当一个实例没有了指向他的引用，我们认为，这个实例就需要清除并释放他所占用的内存了。</p>
+<p>那么 GC 是如何实现的呢？一般而言有2种方法：</p>
+<ol>
+<li>引用计数法（有缺陷，无法解决循环引用问题，JVM 没有采用）</li>
+<li>可达性分析（解决了引用计数的缺陷，被 JVM 采用）</li>
+</ol>
+<p>什么是引用计数法呢？</p>
+<blockquote>
+<p>给对象中添加一个引用计数器，每当有一个地方引用他是，计数器值就加1；当引用失效时，计数器值就减1；任何时刻计数器为0的对象就是不可能在被使用的。</p>
+</blockquote>
+<p>虽然乍看这个算法简单，效率也高，但有一个问题这个算法无法解决，就是循环引用。试想一下：A 对象引用了 B，B 对象也引用了 A，但 A 和 B 都不被别的地方使用，也就是说，实际上这两个对象是垃圾对象，但是由于他们互相持有引用，导致他们的引用计数器都不为0，因此系统无法判断是垃圾，也无法回收他们。</p>
+<p>所以，在现在的 JVM 中，是没有使用这个算法的。我们知道就行。</p>
+<p>引用计数法不行，那就再说说可达性分析算法。</p>
+<p>这个算法的基本思想就是通过一系列的称为 “GC Roots” 的对象作为起始点，从这些节点开始向下搜索，所有所走过的路径称为<strong>引用链（Reference Chain）</strong>，当一个对象到 GC Roots 没有任何引用链相连（也就是对象不可达）时，则证明此对象是不可用的。如下图所示，obj5 , obj6, obj7 虽然互相有关联，但是他们到 GC Roots 是不可达的，所以他们将会判定为是可回收的对象。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-3a9d215518f7954c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="可达性分析算法"></p>
+<p>那么哪些对象可以作为 GC Roots 对象呢？</p>
+<ol>
+<li>虚拟机栈（栈帧中的本地变量表）中引用的对象。</li>
+<li>方法区中类静态属性引用的对象。</li>
+<li>方法区中常量引用的对象。</li>
+<li>本地方法栈中 JNI （即 native 方法）引用的对象。</li>
+</ol>
+<h2 id="2-什么时候回收？"><a href="#2-什么时候回收？" class="headerlink" title="2. 什么时候回收？"></a>2. 什么时候回收？</h2><p>注意：即使是在可达性分析算法中不可达的对象，也并非是”非死不可的”，这时候他们实际上是处于 “缓刑” 阶段。因为要真正宣告一个对象的死亡，至少需要经历两次标记过程：</p>
+<blockquote>
+<h1 id="如果对象在进行可达性分析后发现没有与-GC-Roots-相连接的引用链，那他将会被第一次标记并且进行一次筛选，筛选的条件是此对象是否有必要执行-finalize-方法。注意：当对象没有覆盖-finalize-方法，或者-finalize-方法已经被虚拟机调用过，虚拟机将这两种情况都视为-“没有必要执行”。也就是说，finalize-方法只会被执行一次。"><a href="#如果对象在进行可达性分析后发现没有与-GC-Roots-相连接的引用链，那他将会被第一次标记并且进行一次筛选，筛选的条件是此对象是否有必要执行-finalize-方法。注意：当对象没有覆盖-finalize-方法，或者-finalize-方法已经被虚拟机调用过，虚拟机将这两种情况都视为-“没有必要执行”。也就是说，finalize-方法只会被执行一次。" class="headerlink" title="如果对象在进行可达性分析后发现没有与 GC Roots 相连接的引用链，那他将会被第一次标记并且进行一次筛选，筛选的条件是此对象是否有必要执行 finalize 方法。注意：当对象没有覆盖 finalize 方法，或者 finalize 方法已经被虚拟机调用过，虚拟机将这两种情况都视为 “没有必要执行”。也就是说，finalize 方法只会被执行一次。"></a>如果对象在进行可达性分析后发现没有与 GC Roots 相连接的引用链，那他将会被第一次标记并且进行一次筛选，筛选的条件是此对象是否有必要执行 finalize 方法。注意：<strong>当对象没有覆盖 finalize 方法，或者 finalize 方法已经被虚拟机调用过，虚拟机将这两种情况都视为 “没有必要执行”。也就是说，finalize 方法只会被执行一次。</strong></h1><h1 id="如果这个对象被判定为有必要执行-finalize-方法，那么这个对象将会放置在一个叫做-F-Queue-的队列之中，并在稍后由一个虚拟机自动建立的，低优先级的-Finalizer-线程去执行它。注意：如果一个对象在-finalize-方法中运行缓慢，将会导致队列后的其他对象永远等待，严重时将会导致系统崩溃。"><a href="#如果这个对象被判定为有必要执行-finalize-方法，那么这个对象将会放置在一个叫做-F-Queue-的队列之中，并在稍后由一个虚拟机自动建立的，低优先级的-Finalizer-线程去执行它。注意：如果一个对象在-finalize-方法中运行缓慢，将会导致队列后的其他对象永远等待，严重时将会导致系统崩溃。" class="headerlink" title=" 如果这个对象被判定为有必要执行 finalize 方法，那么这个对象将会放置在一个叫做 F-Queue 的队列之中，并在稍后由一个虚拟机自动建立的，低优先级的 Finalizer 线程去执行它。注意：如果一个对象在 finalize 方法中运行缓慢，将会导致队列后的其他对象永远等待，严重时将会导致系统崩溃。"></a> 如果这个对象被判定为有必要执行 finalize 方法，那么这个对象将会放置在一个叫做 F-Queue 的队列之中，并在稍后由一个虚拟机自动建立的，低优先级的 Finalizer 线程去执行它。<strong>注意：如果一个对象在 finalize 方法中运行缓慢，将会导致队列后的其他对象永远等待，严重时将会导致系统崩溃。</strong></h1><p>finalize 方法是对象逃脱死亡命运的最后一道关卡。稍后 GC 将对队列中的对象进行第二次规模的标记，<strong>如果对象要在 finalize 中 “拯救” 自己，只需要将自己关联到引用上即可，通常是 this。</strong>如果这个对象关联上了引用，那么在第二次标记的时候他将被移除出 “即将回收” 的集合；如果对象这时候还没有逃脱，那基本上就是真的被回收了。</p>
+</blockquote>
+<p>这里需要注意的一点就是：<strong>一个对象如果重写了 finalize 方法，那么这个方法最多只会被执行一次。</strong></p>
+<p>建议：<strong>如非必要，不要重写该方法。</strong>可以使用 try-finally 代替，此方式更好，更及时。同时注意：在 Mysql 的 JDBC 驱动中，com.mysql.jdbc.ConnectionImpl 就实现了 finalize 方法，作用是：当一个 JDBC Connection 被回收时，需要进行连接的关闭，如果开发人员忘记了关闭，则在 finalize 方法中进行关闭。但是，由于其调用的不确定性，这不能单独作为可靠的资源回收手段。</p>
+<p>到这里，我们知道了什么时候进行回收：如果一个对象重写了 finalize 方法且这个方法没有被 JVM 调用过，那么这个对象会被放入一个队列等待被一个低优先级的线程执行 finalize 方法，如果在这个方法中对象不能自救，则这个对象在第二次标记过程中就会被标记死亡，等待 GC 回收。</p>
+<h2 id="3-如何回收？"><a href="#3-如何回收？" class="headerlink" title="3. 如何回收？"></a>3. 如何回收？</h2><p>如何回收，这个问题非常的大，涉及到各种垃圾回收算法，各种垃圾收集器。限于本篇的篇幅，楼主将不会在这篇文章里深入探讨，这里只会列出一些大纲，这些大纲将是后面文章的摘要，我们将在后面的文章中深入探讨如何回收。</p>
+<p>那么，有哪些摘要呢？</p>
+<h5 id="3-1-垃圾回收算法"><a href="#3-1-垃圾回收算法" class="headerlink" title="3.1 垃圾回收算法"></a>3.1 垃圾回收算法</h5><ol>
+<li>标记清除算法</li>
+<li>复制算法</li>
+<li>标记整理算法</li>
+<li>分代收集算法（堆如何分代）</li>
+</ol>
+<p>这些算法是 GC 的基础，所有 GC 的实现都是基于这些算法来清除无用对象，然后释放内存空间。我们将会在后面的文章一个一个讲解。</p>
+<h5 id="3-2-有哪些垃圾收集器"><a href="#3-2-有哪些垃圾收集器" class="headerlink" title="3.2 有哪些垃圾收集器"></a>3.2 有哪些垃圾收集器</h5><ol>
+<li>Serial 串行收集器（只适用于堆内存256m 一下的 JVM ）</li>
+<li>ParNew 并行收集器（Serial 收集器的多线程版本）</li>
+<li>Parallel Scavenge （PS 收集器，该收集器以吞吐量为主要目的，是1.8的默认 GC）</li>
+<li>CMS 收集器（该收集器全称 Concurrent Mark Sweep，是一种关注最短停顿时间的垃圾收集器）</li>
+<li>G1 收集器（JDK 9 的默认 GC）</li>
+</ol>
+<h5 id="3-3-有哪些GC"><a href="#3-3-有哪些GC" class="headerlink" title="3.3 有哪些GC"></a>3.3 有哪些GC</h5><ol>
+<li>Young GC（又称 YGC，minor GC，年轻代 GC）</li>
+<li>Old GC （老年代 GC，只有 CMS 才会单独回收 Old 区）</li>
+<li>Full GC（又称 major GC）</li>
+<li>Mixed GC（混合 GC，G1 收集器独有）</li>
+</ol>
+<p>好，以上就是如何回收的大纲，我们将在后面的文章中慢慢讲解。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这篇文章主要总结了什么是 GC ，以及 GC 的作用，GC 主要做了3件事情，哪些内存需要回收，什么时候回收，如何回收。我们知道了 GC 通过可达性分析知道了哪些内存需要回收，那什么时候回收呢？执行 finalize 方法后如果还没有复活，将被回收。第三个问题：如何回收呢？这个问题是一个大课题，我们只是列出了一些大纲，比如有哪些垃圾收集器，有哪些垃圾算法，有哪些 GC 过程。这些细节我们将在后面慢慢讲解，逐步深入。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/02/17/2018/2018-02-17-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%881%EF%BC%89/" data-id="ckwes9acv0074krs11iih2o01" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/02/18/2018/2018-02-18-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%883%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          深入浅出-JVM-GC（3）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/02/16/2018/2018-02-16-JVM-%E7%BB%BC%E8%BF%B0/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">JVM-综述</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

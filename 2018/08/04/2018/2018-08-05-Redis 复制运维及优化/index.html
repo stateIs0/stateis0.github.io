@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Redis 复制运维及优化 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="Redis 复制运维及优化">
+<meta property="og:url" content="http://thinkinjava.cn/2018/08/04/2018/2018-08-05-Redis%20%E5%A4%8D%E5%88%B6%E8%BF%90%E7%BB%B4%E5%8F%8A%E4%BC%98%E5%8C%96/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-08-04T07:01:01.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.327Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-08-05-Redis 复制运维及优化" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/08/04/2018/2018-08-05-Redis%20%E5%A4%8D%E5%88%B6%E8%BF%90%E7%BB%B4%E5%8F%8A%E4%BC%98%E5%8C%96/" class="article-date">
+  <time datetime="2018-08-04T07:01:01.000Z" itemprop="datePublished">2018-08-04</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Redis/">Redis</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Redis 复制运维及优化
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 前言
+
+<p>在理解了 Redis 的复制原理之后，一起来看看 Redis 复制有哪些坑，以及如何避免。</p>
+<hr>
+<h2 id="规避全量复制"><a href="#规避全量复制" class="headerlink" title="规避全量复制"></a>规避全量复制</h2><p>全量复制是一个非常耗费资源的操作，从一个经验来看，一个 6GB 的从节点发起全量复制的总耗时在 2 分钟所有，感受一下。</p>
+<p>因此当数据量达到一定规模以后，由于全量复制涉及到多次持久化操作和网络数据传输，这期间会消耗大量 CPU，内存，硬盘，带宽，所以除了第一次全量复制不可避免，应当尽力避免其他场景发生的全量复制。</p>
+<p>全量复制通常有 3 种情况：第一次全量复制，节点运行 ID 不匹配，复制积压缓冲区不足。</p>
+<p><strong>第一次全量复制</strong>：由于是第一次建立复制，从节点没有数据，所以这个操作不可避免。当对数据量较大，网络流量较高的主节点添加从节点时，建议在低峰时进行操作，或者尽量避免规避大数据量的 Redis 节点。</p>
+<p><strong>节点运行 ID 不匹配</strong>：当主从关系建立后，从节点会保存主节点的运行 ID，如果此时主节点因故障重启，那么他的运行 ID 会改变，从节点发现主节点运行 ID 不匹配时，会认为这是一个新的主节点，从而进行全量复制，并清空之前的数据。对于这种情况，应当从架构上进行规避，比如提供故障转移功能：当主节点发生故障后，手动提升从节点，或者采用支持自动故障转移的哨兵或集群方案。</p>
+<p><strong>复制积压缓冲区不足</strong>：当主从节点网络中断后，从节点再次连上主节点时会发送 psync {runId} {offset} 命令请求部分复制，如果请求的偏移量不再主节点的积压缓冲区内，则无法提供给从节点数据，因此<strong>部分复制会退化成全量复制</strong>，针对这种情况，需要根据网络中断时长，写命令数据量，分析出合理的缓冲区大小，然后修改 repl_backlog_size 配置。从而避免因复制积压缓冲区不足造成的全量复制。</p>
+<hr>
+<h2 id="规避复制风暴"><a href="#规避复制风暴" class="headerlink" title="规避复制风暴"></a>规避复制风暴</h2><p>复制风暴指的是，大量从节点向同一个 Redis 主节点或者同一台物理机发起全量复制，此时将导致被发起的主节点或机器产生大量开销，例如 CPU，内存，硬盘，带宽等。</p>
+<p>我们可以通过分析场景，然后做合理的规避。</p>
+<p><strong>单主节点复制风暴：</strong>单主节点复制风暴指的是，一个主节点挂载多个从节点，当主节点重启恢复后，从节点会发起全量复制流程，这时主节点就会为从节点创建 RDB 快照，如果在快照创建完毕之前，有多个从节点都尝试与主节点记性全量同步，那么其他从节点将共享这份 RDB 快照。这点 Redis 做了优化。有效避免了创建多个快照。但是，同时向多个从节点发送 RDB 文件，仍然会导致网络带宽消耗严重，造成主节点的延迟变大。极端情况导致主从连接断开，导致复制失败。</p>
+<p>解决方案首先可以减少主节点上挂载从节点的数量，或者采用树状结构。</p>
+<p><strong>单机器</strong>：由于 Redis 是单线程架构，所以，通常会在一台物理机上部署多个实例，如果这台机器出现故障或网络长时间中断，当他重启恢复时，会有大量从节点针对这台机器的主节点进行全量复制，会造成当前机器带宽耗尽。<br>优化方案：1. 应当把主节点尽量分散在多台机器上，避免在单台机器上部署过多的主节点。2. 当主节点所在机器故障后提供<strong>故障恢复转移</strong>机制，避免机器恢复后进行密集的全量复制。</p>
+<h2 id="读写分离"><a href="#读写分离" class="headerlink" title="读写分离"></a>读写分离</h2><ol>
+<li>数据延迟<br>Redis 复制数据的延迟由于异步特性是无法避免的，延迟多少取决于网络带宽和命令阻塞情况，例如出现刚刚在主节点写入数据后立刻在从节点上读取可能获取不到。</li>
+</ol>
+<p>而具体延迟多少，可以通过 info replication  的  offset 指标进行排查。</p>
+<p>也可以通过监控程序通知客户端，让客户端换一个节点获取数据。</p>
+<p>建议在进行读写分离架构前了解一下 Redis Cluster。</p>
+<ol start="2">
+<li>读到过期数据</li>
+</ol>
+<p>当主节点存到大量设置超时的数据，Redis 内部需要维护过期数据删除策略，删除策略主要由 2 种：惰性删除和定时删除。</p>
+<p>惰性删除：每次访问数据的时候，主节点都检查是否过期，如果过期则执行 del 命令，然后异步发送 del 命令给从节点，注意：从节点永远不会主动删除数据，这也是为了保证数据一致性。</p>
+<p>定时删除：Redis 主节点在内部定时任务会循环采样一定数量的键，当发现采样的键过期时执行 del 命令，之后再同步给从节点。<br>如果此时大量数据超时，定时任务速度更不上，且主节点没有被访问，也就无法执行 del，进而从节点也无法执行 del。客户端就会读到从节点的过期数据。Redis 3.2 版本已经解决了这个问题，在从节点读取数据时，会检查键的过期时间。</p>
+<ol start="3">
+<li>从节点故障问题</li>
+</ol>
+<p>对于从节点的故障问题，需要在客户端维护一个可用从节点可用列表，当从节点故障时，立刻切换到其他从节点或主节点。也可以通过 zk 等协调者解决。</p>
+<p><strong>建议</strong>：综上所述，使用 Redis 做读写分离有一定的成本，Redis 本身的性能非常高，如果已经解决了使用不当等问题，单机 Redis 还是无法满足，那么笔者建议调研 Redis  Cluster 分布式解决方案，这样不止扩展读性能还可以扩展写性能，并且一致性和故障转移也可以得到保证。对于客户端的维护逻辑也相对容易。</p>
+<h2 id="主从配置不一致"><a href="#主从配置不一致" class="headerlink" title="主从配置不一致"></a>主从配置不一致</h2><p>这个总体来说是比较简单的，同时也是一个容易忽视的问题，对于有些配置可以不一样，例如从节点开启 AOF，主节点关闭 AOF。但是，关于内存方面的配置一定要相同，例如 <code>maxmemory</code>，<code>hash-max-ziplist-entries</code> 等参数，当从节点的内存小于主节点，如果复制的数据量超过了从节点的 maxmemory，他会根据淘汰策略（maxmemory-policy）进行内存溢出控制，此时从节点数据已经丢失，但主从复制流程依然正常进行，复制偏移量也正常，但主从数据已经不一致。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文主要总结了 Redis 复制的运维及优化，包括规避全量复制，规避复制风暴，读写分离的优化，主从配置不一致。使用 Redis 不仅仅是 set get，能够合理的运维也是非常重要的。</p>
+<h2 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h2><p>《Redis 开发与运维》</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/08/04/2018/2018-08-05-Redis%20%E5%A4%8D%E5%88%B6%E8%BF%90%E7%BB%B4%E5%8F%8A%E4%BC%98%E5%8C%96/" data-id="ckwes9aes00ebkrs11xd61nui" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/08/06/2018/2018-08-07-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Cluster/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          Jedis 如何支持 Cluster
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/08/04/2018/2018-08-06-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Sentinel/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">Jedis 如何支持 Sentinel</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

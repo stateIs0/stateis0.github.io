@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>并发编程之死锁解析 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之死锁解析">
+<meta property="og:url" content="http://thinkinjava.cn/2017/12/29/2017/2017-12-29-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B%E6%AD%BB%E9%94%81%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-12-28T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.301Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2017/2017-12-29-并发编程之死锁解析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/12/29/2017/2017-12-29-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B%E6%AD%BB%E9%94%81%E8%A7%A3%E6%9E%90/" class="article-date">
+  <time datetime="2017-12-28T18:11:11.000Z" itemprop="datePublished">2017-12-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      并发编程之死锁解析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       在 Java 的并发编程中，有一个问题需要特别注意，那就是死锁，如果发生了死锁，基本就是重启，而重启将会丢失运行中的数据。所以，了解死锁的形成并排查死锁到预防死锁成了一个重要的问题。
+
+<p>我们了解任何一个事情的步骤是：what，how，why，why not。</p>
+<h2 id="1-什么是死锁？"><a href="#1-什么是死锁？" class="headerlink" title="1. 什么是死锁？"></a>1. 什么是死锁？</h2><p>我们还是直接写一段代码来看看：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> hello;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DeadLock</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">         <span class="keyword">new</span> DeadLock().resource1();</span><br><span class="line">      &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    ).start();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">         <span class="keyword">new</span> DeadLock().resource2();</span><br><span class="line">      &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    ).start();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">resource1</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="string">&quot;resource1&quot;</span>) &#123;</span><br><span class="line">      System.out.println(<span class="string">&quot;获取资源1&quot;</span>);</span><br><span class="line">       <span class="comment">// 等待 1 秒让另一个线程拿到锁</span></span><br><span class="line">      Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">      resource2();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">resource2</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="string">&quot;resource2&quot;</span>) &#123;</span><br><span class="line">      System.out.println(<span class="string">&quot;获取资源2&quot;</span>);</span><br><span class="line">      <span class="comment">// 等待 1 秒让另一个线程拿到锁</span></span><br><span class="line">      Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">      resource1();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>上面的代码中，我们启用了两个线程，分别抢占2个资源，但这两个资源又分别被不同的对象（字符串）锁住了。当第一个线程调用 resource1 方法，进入同步块，拿到锁，并等待 1 秒钟让另一个线程进入 resource2 同步块，当第二个线程进入同步块后，注意：此时， 拿着 resourec1 锁的线程企图拿到 resource2 的锁，但这个时候，拿着 resource2 的线程也想去拿 resource1 的锁。于是就出现了互相僵持的情况，谁也无法拿到对方的锁，整个系统就卡死了。</p>
+<p>这种情况就是死锁。</p>
+<p>像我们现在写的代码是自己故意造出来的死锁，我们能够发现，那如果是线上环境怎么办，假如我们的系统卡死了，我们怎么知道到底是哪一段代码出现了问题，有没有可能使死锁的问题。也就是如何检测死锁。</p>
+<h2 id="2-如何检测死锁？"><a href="#2-如何检测死锁？" class="headerlink" title="2. 如何检测死锁？"></a>2. 如何检测死锁？</h2><p>由于死锁极难通过人工的方式查出来，因此JDK 提供了命令来检测某个java进程中心线程的情况，并排查有没有死锁。上面命令呢？ jps , 用来查看java 程序的进程号，当然在 Linux 中也可以通过别的方式获取，   jstack <code>进程号</code>命令则可以答应对应进程的栈信息，并找到死锁。</p>
+<p>我们就刚刚的程序，在 windows 上使用该命令。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br></pre></td><td class="code"><pre><span class="line">C:\Users\stateis0&gt;jps</span><br><span class="line"><span class="number">11060</span></span><br><span class="line"><span class="number">2084</span> Launcher</span><br><span class="line"><span class="number">10712</span> RemoteMavenServer</span><br><span class="line"><span class="number">18040</span> Jps</span><br><span class="line"><span class="number">11820</span> DeadLock</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">C:\Users\stateis0&gt;jstack <span class="number">11820</span></span><br><span class="line"><span class="number">2017</span>-<span class="number">12</span>-<span class="number">29</span> <span class="number">18</span>:<span class="number">52</span>:<span class="number">38</span></span><br><span class="line"><span class="function">Full thread dump Java <span class="title">HotSpot</span><span class="params">(TM)</span> Client <span class="title">VM</span> <span class="params">(<span class="number">25.131</span>-b11 mixed mode)</span>:</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">&quot;DestroyJavaVM&quot; #11 prio</span>=<span class="number">5</span> os_prio=<span class="number">0</span> tid=<span class="number">0x051fe800</span> nid=<span class="number">0x1e0c</span> waiting on condition [<span class="number">0x00000000</span>]</span><br><span class="line">   java.lang.Thread.State: RUNNABLE</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;Thread-1&quot;</span> #<span class="number">10</span> prio=<span class="number">5</span> os_prio=<span class="number">0</span> tid=<span class="number">0x18777800</span> nid=<span class="number">0x5664</span> waiting <span class="keyword">for</span> monitor entry [<span class="number">0x18e0f000</span>]</span><br><span class="line">   java.lang.Thread.State: BLOCKED (on object monitor)</span><br><span class="line">        at hello.DeadLock.resource1(DeadLock.java:<span class="number">31</span>)</span><br><span class="line">        - waiting to lock &lt;<span class="number">0x07415a50</span>&gt; (a java.lang.String)</span><br><span class="line">        at hello.DeadLock.resource2(DeadLock.java:<span class="number">43</span>)</span><br><span class="line">        - locked &lt;<span class="number">0x0742bd18</span>&gt; (a java.lang.String)</span><br><span class="line">        at hello.DeadLock.lambda$main$<span class="number">1</span>(DeadLock.java:<span class="number">20</span>)</span><br><span class="line">        at hello.DeadLock$$Lambda$<span class="number">2</span>/<span class="number">4983748.</span>run(Unknown Source)</span><br><span class="line">        at java.lang.Thread.run(Thread.java:<span class="number">748</span>)</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;Thread-0&quot;</span> #<span class="number">9</span> prio=<span class="number">5</span> os_prio=<span class="number">0</span> tid=<span class="number">0x18776c00</span> nid=<span class="number">0x4dc4</span> waiting <span class="keyword">for</span> monitor entry [<span class="number">0x18d7f000</span>]</span><br><span class="line">   java.lang.Thread.State: BLOCKED (on object monitor)</span><br><span class="line">        at hello.DeadLock.resource2(DeadLock.java:<span class="number">41</span>)</span><br><span class="line">        - waiting to lock &lt;<span class="number">0x0742bd18</span>&gt; (a java.lang.String)</span><br><span class="line">        at hello.DeadLock.resource1(DeadLock.java:<span class="number">33</span>)</span><br><span class="line">        - locked &lt;<span class="number">0x07415a50</span>&gt; (a java.lang.String)</span><br><span class="line">        at hello.DeadLock.lambda$main$<span class="number">0</span>(DeadLock.java:<span class="number">11</span>)</span><br><span class="line">        at hello.DeadLock$$Lambda$<span class="number">1</span>/<span class="number">5592464.</span>run(Unknown Source)</span><br><span class="line">        at java.lang.Thread.run(Thread.java:<span class="number">748</span>)</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;Service Thread&quot;</span> #<span class="number">8</span> daemon prio=<span class="number">9</span> os_prio=<span class="number">0</span> tid=<span class="number">0x186e4c00</span> nid=<span class="number">0x172c</span> runnable [<span class="number">0x00000000</span>]</span><br><span class="line">   java.lang.Thread.State: RUNNABLE</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;C1 CompilerThread0&quot;</span> #<span class="number">7</span> daemon prio=<span class="number">9</span> os_prio=<span class="number">2</span> tid=<span class="number">0x186af000</span> nid=<span class="number">0x53f8</span> waiting on condition [<span class="number">0x00000000</span>]</span><br><span class="line">   java.lang.Thread.State: RUNNABLE</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;Monitor Ctrl-Break&quot;</span> #<span class="number">6</span> daemon prio=<span class="number">5</span> os_prio=<span class="number">0</span> tid=<span class="number">0x1861e800</span> nid=<span class="number">0x3928</span> runnable [<span class="number">0x18b3f000</span>]</span><br><span class="line">   java.lang.Thread.State: RUNNABLE</span><br><span class="line">        at java.net.SocketInputStream.socketRead0(Native Method)</span><br><span class="line">        at java.net.SocketInputStream.socketRead(SocketInputStream.java:<span class="number">116</span>)</span><br><span class="line">        at java.net.SocketInputStream.read(SocketInputStream.java:<span class="number">171</span>)</span><br><span class="line">        at java.net.SocketInputStream.read(SocketInputStream.java:<span class="number">141</span>)</span><br><span class="line">        at sun.nio.cs.StreamDecoder.readBytes(StreamDecoder.java:<span class="number">284</span>)</span><br><span class="line">        at sun.nio.cs.StreamDecoder.implRead(StreamDecoder.java:<span class="number">326</span>)</span><br><span class="line">        at sun.nio.cs.StreamDecoder.read(StreamDecoder.java:<span class="number">178</span>)</span><br><span class="line">        - locked &lt;<span class="number">0x07861da0</span>&gt; (a java.io.InputStreamReader)</span><br><span class="line">        at java.io.InputStreamReader.read(InputStreamReader.java:<span class="number">184</span>)</span><br><span class="line">        at java.io.BufferedReader.fill(BufferedReader.java:<span class="number">161</span>)</span><br><span class="line">        at java.io.BufferedReader.readLine(BufferedReader.java:<span class="number">324</span>)</span><br><span class="line">        - locked &lt;<span class="number">0x07861da0</span>&gt; (a java.io.InputStreamReader)</span><br><span class="line">        at java.io.BufferedReader.readLine(BufferedReader.java:<span class="number">389</span>)</span><br><span class="line">        at com.intellij.rt.execution.application.AppMainV2$<span class="number">1.</span>run(AppMainV2.java:<span class="number">64</span>)</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;Attach Listener&quot;</span> #<span class="number">5</span> daemon prio=<span class="number">5</span> os_prio=<span class="number">2</span> tid=<span class="number">0x179c0800</span> nid=<span class="number">0x40a0</span> waiting on condition [<span class="number">0x00000000</span>]</span><br><span class="line">   java.lang.Thread.State: RUNNABLE</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;Signal Dispatcher&quot;</span> #<span class="number">4</span> daemon prio=<span class="number">9</span> os_prio=<span class="number">2</span> tid=<span class="number">0x17985c00</span> nid=<span class="number">0x5004</span> runnable [<span class="number">0x00000000</span>]</span><br><span class="line">   java.lang.Thread.State: RUNNABLE</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;Finalizer&quot;</span> #<span class="number">3</span> daemon prio=<span class="number">8</span> os_prio=<span class="number">1</span> tid=<span class="number">0x17972400</span> nid=<span class="number">0x41a8</span> in Object.wait() [<span class="number">0x17cff000</span>]</span><br><span class="line">   java.lang.Thread.State: WAITING (on object monitor)</span><br><span class="line">        at java.lang.Object.wait(Native Method)</span><br><span class="line">        - waiting on &lt;<span class="number">0x0ca1b830</span>&gt; (a java.lang.ref.ReferenceQueue$Lock)</span><br><span class="line">        at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:<span class="number">143</span>)</span><br><span class="line">        - locked &lt;<span class="number">0x0ca1b830</span>&gt; (a java.lang.ref.ReferenceQueue$Lock)</span><br><span class="line">        at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:<span class="number">164</span>)</span><br><span class="line">        at java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:<span class="number">209</span>)</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;Reference Handler&quot;</span> #<span class="number">2</span> daemon prio=<span class="number">10</span> os_prio=<span class="number">2</span> tid=<span class="number">0x17960000</span> nid=<span class="number">0x4ef0</span> in Object.wait() [<span class="number">0x17c6f000</span>]</span><br><span class="line">   java.lang.Thread.State: WAITING (on object monitor)</span><br><span class="line">        at java.lang.Object.wait(Native Method)</span><br><span class="line">        - waiting on &lt;<span class="number">0x0ca1b9d0</span>&gt; (a java.lang.ref.Reference$Lock)</span><br><span class="line">        at java.lang.Object.wait(Object.java:<span class="number">502</span>)</span><br><span class="line">        at java.lang.ref.Reference.tryHandlePending(Reference.java:<span class="number">191</span>)</span><br><span class="line">        - locked &lt;<span class="number">0x0ca1b9d0</span>&gt; (a java.lang.ref.Reference$Lock)</span><br><span class="line">        at java.lang.ref.Reference$ReferenceHandler.run(Reference.java:<span class="number">153</span>)</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;VM Thread&quot;</span> os_prio=<span class="number">2</span> tid=<span class="number">0x1795a800</span> nid=<span class="number">0x3f54</span> runnable</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;VM Periodic Task Thread&quot;</span> os_prio=<span class="number">2</span> tid=<span class="number">0x18739400</span> nid=<span class="number">0x4a14</span> waiting on condition</span><br><span class="line"></span><br><span class="line">JNI global references: <span class="number">229</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 找到一个死锁</span></span><br><span class="line">Found one Java-level deadlock:</span><br><span class="line">=============================</span><br><span class="line"><span class="string">&quot;Thread-1&quot;</span>:</span><br><span class="line">  waiting to lock monitor <span class="number">0x17978de4</span> (object <span class="number">0x07415a50</span>, a java.lang.String),</span><br><span class="line">  which is held by <span class="string">&quot;Thread-0&quot;</span></span><br><span class="line"><span class="string">&quot;Thread-0&quot;</span>:</span><br><span class="line">  waiting to lock monitor <span class="number">0x1797a974</span> (object <span class="number">0x0742bd18</span>, a java.lang.String),</span><br><span class="line">  which is held by <span class="string">&quot;Thread-1&quot;</span></span><br><span class="line"></span><br><span class="line">Java stack information <span class="keyword">for</span> the threads listed above:</span><br><span class="line">===================================================</span><br><span class="line"><span class="string">&quot;Thread-1&quot;</span>:</span><br><span class="line">        at hello.DeadLock.resource1(DeadLock.java:<span class="number">31</span>)</span><br><span class="line">         <span class="comment">// 等待 0x07415a50 锁</span></span><br><span class="line">        - waiting to lock &lt;<span class="number">0x07415a50</span>&gt; (a java.lang.String)</span><br><span class="line">        at hello.DeadLock.resource2(DeadLock.java:<span class="number">43</span>)</span><br><span class="line">        <span class="comment">// 持有 0x0742bd18</span></span><br><span class="line">        - locked &lt;<span class="number">0x0742bd18</span>&gt; (a java.lang.String)</span><br><span class="line">        at hello.DeadLock.lambda$main$<span class="number">1</span>(DeadLock.java:<span class="number">20</span>)</span><br><span class="line">        at hello.DeadLock$$Lambda$<span class="number">2</span>/<span class="number">4983748.</span>run(Unknown Source)</span><br><span class="line">        at java.lang.Thread.run(Thread.java:<span class="number">748</span>)</span><br><span class="line"><span class="string">&quot;Thread-0&quot;</span>:</span><br><span class="line">        at hello.DeadLock.resource2(DeadLock.java:<span class="number">41</span>)</span><br><span class="line">        <span class="comment">// 等待 0x0742bd18 锁</span></span><br><span class="line">        - waiting to lock &lt;<span class="number">0x0742bd18</span>&gt; (a java.lang.String)</span><br><span class="line">        at hello.DeadLock.resource1(DeadLock.java:<span class="number">33</span>)</span><br><span class="line">        <span class="comment">// 持有 0x07415a50</span></span><br><span class="line">        - locked &lt;<span class="number">0x07415a50</span>&gt; (a java.lang.String)</span><br><span class="line">        at hello.DeadLock.lambda$main$<span class="number">0</span>(DeadLock.java:<span class="number">11</span>)</span><br><span class="line">        at hello.DeadLock$$Lambda$<span class="number">1</span>/<span class="number">5592464.</span>run(Unknown Source)</span><br><span class="line">        at java.lang.Thread.run(Thread.java:<span class="number">748</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 发现了一个死锁</span></span><br><span class="line">Found <span class="number">1</span> deadlock.</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">C:\Users\stateis0&gt;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>Thread-1  waiting to lock &lt;0x07415a50&gt;      locked &lt;0x0742bd18&gt;<br>Thread-0  waiting to lock &lt;0x0742bd18&gt;       locked &lt;0x07415a50&gt; </p>
+</blockquote>
+<p>我们首先使用 jps 命令找到 java 进程号，然后使用 jstack <code>进程号</code> 打印进程栈的信息，其中，在最后的部分，jstack 告诉我们，他找到了一个死锁，其中又详细的信息：Thread-1 线程（这里我们没有给线程其合适的名字，如果在线上，给线程起一个合适的名字将更有利于排查）持有 String 类型的编号为 0x07415a50 的锁，等待编号为 0x07415a50 的锁 ， 但这个锁由 Thread-0 持有，于此同时，Thread-0 和 Thread-1 相反。Thread-0 线程持有 0x07415a50 的锁，等待 0x07415a50 的锁。我们的注释里也写上了。</p>
+<p>那么发生了死锁，该怎么办呢？最简单的办法就是重启，重启之后，对 jstack 中打印的堆栈信息中的代码进行修改。重新发布。当然还有一些高级策略，比如让进程回滚到死锁前的状态，然后让他们顺序进入同步块。</p>
+<h2 id="3-死锁有哪些形成的原因"><a href="#3-死锁有哪些形成的原因" class="headerlink" title="3. 死锁有哪些形成的原因"></a>3. 死锁有哪些形成的原因</h2><p>一般来说，要出现死锁问题需要满足以下条件：</p>
+<ol>
+<li><p>互斥条件：一个资源每次只能被一个线程使用。</p>
+</li>
+<li><p>请求与保持条件：一个进程因请求资源而阻塞时，对已获得的资源保持不放。</p>
+</li>
+<li><p>不剥夺条件：进程已获得的资源，在未使用完之前，不能强行剥夺。</p>
+</li>
+<li><p>循环等待条件：若干进程之间形成一种头尾相接的循环等待资源关系。</p>
+</li>
+</ol>
+<p>死锁是由四个必要条件导致的，所以一般来说，只要破坏这四个必要条件中的一个条件，死锁情况就应该不会发生。</p>
+<p>如果想要打破互斥条件，我们需要允许进程同时访问某些资源，这种方法受制于实际场景，不太容易实现条件；</p>
+<p>打破不可抢占条件，这样需要允许进程强行从占有者那里夺取某些资源，或者简单一点理解，占有资源的进程不能再申请占有其他资源，必须释放手上的资源之后才能发起申请，这个其实也很难找到适用场景；</p>
+<p>进程在运行前申请得到所有的资源，否则该进程不能进入准备执行状态。这个方法看似有点用处，但是它的缺点是可能导致资源利用率和进程并发性降低；</p>
+<p>避免出现资源申请环路，即对资源事先分类编号，按号分配。这种方式可以有效提高资源的利用率和系统吞吐量，但是增加了系统开销，增大了进程对资源的占用时间。</p>
+<h2 id="4-总结"><a href="#4-总结" class="headerlink" title="4 总结"></a>4 总结</h2><p>并发编程中的坑很多，尤其死锁，造成的问题基本只能靠重启来解决，如果遇到了数据保存在内存中但没有持久化的话，那么重启将出现很大的问题。因此我们在用锁的时候，一定要小心。避免出现死锁，如果出现了死锁，则可以使用 jstack 命令查看线程是否有死锁。用以排查问题。</p>
+<p>总之并发的坑很多，楼主以后将会多多分析。</p>
+<p>good luck  ！！！！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2017/12/29/2017/2017-12-29-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B%E6%AD%BB%E9%94%81%E8%A7%A3%E6%9E%90/" data-id="ckwes9abq003bkrs1cslb6dha" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/12/30/2017/2017-12-30-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-hashcode-%E5%92%8C-hash-%E7%AE%97%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          深入理解-Hashcode-和-Hash-算法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/12/25/2017/2017-12-25-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Spring-%E4%B9%8B-SpringBoot-%E4%BA%8B%E5%8A%A1%E5%8E%9F%E7%90%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">深入理解-Spring-之-SpringBoot-事务原理</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

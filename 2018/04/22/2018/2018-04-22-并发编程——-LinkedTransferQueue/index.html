@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>并发编程——-LinkedTransferQueue | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程——-LinkedTransferQueue">
+<meta property="og:url" content="http://thinkinjava.cn/2018/04/22/2018/2018-04-22-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E2%80%94%E2%80%94-LinkedTransferQueue/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-e05e37fd57cd9fd3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-c6909b571f094dcf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-d60a5b0368dd8d8c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-04-21T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.316Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-e05e37fd57cd9fd3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-04-22-并发编程——-LinkedTransferQueue" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/04/22/2018/2018-04-22-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E2%80%94%E2%80%94-LinkedTransferQueue/" class="article-date">
+  <time datetime="2018-04-21T18:11:11.000Z" itemprop="datePublished">2018-04-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      并发编程——-LinkedTransferQueue
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       ## 1. 前言
+
+<p>Java 中总的算起来有 8 种阻塞队列。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-e05e37fd57cd9fd3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>我们分析了：</p>
+<ul>
+<li><a href="http://thinkinjava.cn/article/95">并发编程之 SynchronousQueue 核心源码分析</a></li>
+<li><a href="http://thinkinjava.cn/article/47">并发编程之 ConcurrentLinkedQueue 源码剖析</a></li>
+<li><a href="http://thinkinjava.cn/article/45">并发编程之 LinkedBolckingQueue 源码剖析</a></li>
+<li>在  <a href="http://thinkinjava.cn/article/110">并发编程 —— ScheduledThreadPoolExecutor</a> 中顺带分析了 DelayWorkQueue。</li>
+</ul>
+<p><code>ArrayBlockingQueue</code> 数组队列，我们在 <a href="http://thinkinjava.cn/article/97">使用 ReentrantLock 和 Condition 实现一个阻塞队列</a> 看过了 JDK 写的一个例子，就是该类的基本原理和实现。楼主不准备分析了。</p>
+<p><code>LinkedBlockingDeque </code>是一个双向链表的队列。常用于 “工作窃取算法”，有机会再分析。</p>
+<p><code>DelayQueue</code> 是一个支持延时获取元素的无界阻塞队列。内部用 <code>PriorityQueue</code> 实现。有机会再分析。</p>
+<p><code>PriorityBlockingQueue</code> 是一个支持优先级的无界阻塞队列，和 <code>DelayWorkQueue</code> 类似。有机会再分析。</p>
+<p>今天要分析的是剩下的一个比较有意思的队列：<code>LinkedTransferQueue</code>。</p>
+<p>为什么说有意思呢？他可以算是 <code>LinkedBolckingQueue</code> 和 <code>SynchronousQueue</code> 和合体。</p>
+<p>我们知道 <code>SynchronousQueue</code> 内部无法存储元素，当要添加元素的时候，需要阻塞，不够完美，<code>LinkedBolckingQueue</code> 则内部使用了大量的锁，性能不高。</p>
+<p>两两结合，岂不完美？性能又高，又不阻塞。</p>
+<p>我们一起来看看。</p>
+<h2 id="2-LinkedTransferQueue-介绍"><a href="#2-LinkedTransferQueue-介绍" class="headerlink" title="2. LinkedTransferQueue 介绍"></a>2. LinkedTransferQueue 介绍</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-c6909b571f094dcf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>该类实现了一个 TransferQueue。该接口定义了几个方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">TransferQueue</span>&lt;<span class="title">E</span>&gt; <span class="keyword">extends</span> <span class="title">BlockingQueue</span>&lt;<span class="title">E</span>&gt; </span>&#123;</span><br><span class="line">    <span class="comment">// 如果可能，立即将元素转移给等待的消费者。 </span></span><br><span class="line">    <span class="comment">// 更确切地说，如果存在消费者已经等待接收它（在 take 或 timed poll（long，TimeUnit）poll）中，则立即传送指定的元素，否则返回 false。</span></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">tryTransfer</span><span class="params">(E e)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将元素转移给消费者，如果需要的话等待。 </span></span><br><span class="line">    <span class="comment">// 更准确地说，如果存在一个消费者已经等待接收它（在 take 或timed poll（long，TimeUnit）poll）中，则立即传送指定的元素，否则等待直到元素由消费者接收。</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">transfer</span><span class="params">(E e)</span> <span class="keyword">throws</span> InterruptedException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 上面方法的基础上设置超时时间</span></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">tryTransfer</span><span class="params">(E e, <span class="keyword">long</span> timeout, TimeUnit unit)</span> <span class="keyword">throws</span> InterruptedException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果至少有一位消费者在等待，则返回 true</span></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">hasWaitingConsumer</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回等待消费者人数的估计值</span></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">getWaitingConsumerCount</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>相比较普通的阻塞队列，增加了这么几个方法。</p>
+<h2 id="3-关键源码分析"><a href="#3-关键源码分析" class="headerlink" title="3. 关键源码分析"></a>3. 关键源码分析</h2><p>阻塞队列不外乎<code>put ，take，offer ，poll</code>等方法，再加上<code>TransferQueue</code>的 几个 <code>tryTransfer</code>  方法。我们看看这几个方法的实现。</p>
+<p><code>put </code>方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(E e)</span> </span>&#123;</span><br><span class="line">     xfer(e, <span class="keyword">true</span>, ASYNC, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>take </code>方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> E <span class="title">take</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    E e = xfer(<span class="keyword">null</span>, <span class="keyword">false</span>, SYNC, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (e != <span class="keyword">null</span>)</span><br><span class="line">        <span class="keyword">return</span> e;</span><br><span class="line">    Thread.interrupted();</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> InterruptedException();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>offer</code> 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">offer</span><span class="params">(E e)</span> </span>&#123;</span><br><span class="line">    xfer(e, <span class="keyword">true</span>, ASYNC, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>poll</code> 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> E <span class="title">poll</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> xfer(<span class="keyword">null</span>, <span class="keyword">false</span>, NOW, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>tryTransfer</code> 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">tryTransfer</span><span class="params">(E e)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> xfer(e, <span class="keyword">true</span>, NOW, <span class="number">0</span>) == <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p><code>transfer</code> 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">transfer</span><span class="params">(E e)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (xfer(e, <span class="keyword">true</span>, SYNC, <span class="number">0</span>) != <span class="keyword">null</span>) &#123;</span><br><span class="line">        Thread.interrupted(); <span class="comment">// failure possible only due to interrupt</span></span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> InterruptedException();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可怕，所有方法都指向了<code> xfer</code> 方法，只不过传入的不同的参数。</p>
+<p>第一个参数，如果是 <code>put</code> 类型，就是实际的值，反之就是 null。<br>第二个参数，是否包含数据，put 类型就是 true，take 就是 false。<br>第三个参数，执行类型，有立即返回的<code> NOW</code>，有异步的<code> ASYNC</code>，有阻塞的<code> SYNC</code>， 有带超时的 <code>TIMED</code>。<br>第四个参数，只有在 <code>TIMED </code>类型才有作用。</p>
+<p>So，这个类的关键方法就是 xfer 方法了。</p>
+<h2 id="4-xfer-方法分析"><a href="#4-xfer-方法分析" class="headerlink" title="4. xfer 方法分析"></a>4. xfer 方法分析</h2><p>源码加注释：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> E <span class="title">xfer</span><span class="params">(E e, <span class="keyword">boolean</span> haveData, <span class="keyword">int</span> how, <span class="keyword">long</span> nanos)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (haveData &amp;&amp; (e == <span class="keyword">null</span>))</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException();</span><br><span class="line">    Node s = <span class="keyword">null</span>;                        <span class="comment">// the node to append, if needed</span></span><br><span class="line"></span><br><span class="line">    retry:</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;                            <span class="comment">// restart on append race</span></span><br><span class="line">        <span class="comment">// 从  head 开始</span></span><br><span class="line">        <span class="keyword">for</span> (Node h = head, p = h; p != <span class="keyword">null</span>;) &#123; <span class="comment">// find &amp; match first node</span></span><br><span class="line">            <span class="comment">// head 的类型。</span></span><br><span class="line">            <span class="keyword">boolean</span> isData = p.isData;</span><br><span class="line">            <span class="comment">// head 的数据</span></span><br><span class="line">            Object item = p.item;</span><br><span class="line">            <span class="comment">// item != null 有 2 种情况,一是 put 操作, 二是 take 的 itme 被修改了(匹配成功)</span></span><br><span class="line">            <span class="comment">// (itme != null) == isData 要么表示 p 是一个 put 操作, 要么表示 p 是一个还没匹配成功的 take 操作</span></span><br><span class="line">            <span class="keyword">if</span> (item != p &amp;&amp; (item != <span class="keyword">null</span>) == isData) &#123; </span><br><span class="line">                <span class="comment">// 如果当前操作和 head 操作相同，就没有匹配上，结束循环，进入下面的 if 块。</span></span><br><span class="line">                <span class="keyword">if</span> (isData == haveData)   <span class="comment">// can&#x27;t match</span></span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="comment">// 如果操作不同,匹配成功, 尝试替换 item 成功,</span></span><br><span class="line">                <span class="keyword">if</span> (p.casItem(item, e)) &#123; <span class="comment">// match</span></span><br><span class="line">                    <span class="comment">// 更新 head</span></span><br><span class="line">                    <span class="keyword">for</span> (Node q = p; q != h;) &#123;</span><br><span class="line">                        Node n = q.next;  <span class="comment">// update by 2 unless singleton</span></span><br><span class="line">                        <span class="keyword">if</span> (head == h &amp;&amp; casHead(h, n == <span class="keyword">null</span> ? q : n)) &#123;</span><br><span class="line">                            h.forgetNext();</span><br><span class="line">                            <span class="keyword">break</span>;</span><br><span class="line">                        &#125;                 <span class="comment">// advance and retry</span></span><br><span class="line">                        <span class="keyword">if</span> ((h = head)   == <span class="keyword">null</span> ||</span><br><span class="line">                            (q = h.next) == <span class="keyword">null</span> || !q.isMatched())</span><br><span class="line">                            <span class="keyword">break</span>;        <span class="comment">// unless slack &lt; 2</span></span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">// 唤醒原 head 线程.</span></span><br><span class="line">                    LockSupport.unpark(p.waiter);</span><br><span class="line">                    <span class="keyword">return</span> LinkedTransferQueue.&lt;E&gt;cast(item);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 找下一个</span></span><br><span class="line">            Node n = p.next;</span><br><span class="line">            p = (p != n) ? n : (h = head); <span class="comment">// Use head if p offlist</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果这个操作不是立刻就返回的类型    </span></span><br><span class="line">        <span class="keyword">if</span> (how != NOW) &#123;                 <span class="comment">// No matches available</span></span><br><span class="line">            <span class="comment">// 且是第一次进入这里</span></span><br><span class="line">            <span class="keyword">if</span> (s == <span class="keyword">null</span>)</span><br><span class="line">                <span class="comment">// 创建一个 node</span></span><br><span class="line">                s = <span class="keyword">new</span> Node(e, haveData);</span><br><span class="line">            <span class="comment">// 尝试将 node 追加对队列尾部，并返回他的上一个节点。</span></span><br><span class="line">            Node pred = tryAppend(s, haveData);</span><br><span class="line">            <span class="comment">// 如果返回的是 null, 表示不能追加到 tail 节点,因为 tail 节点的模式和当前模式相反.</span></span><br><span class="line">            <span class="keyword">if</span> (pred == <span class="keyword">null</span>)</span><br><span class="line">                <span class="comment">// 重来</span></span><br><span class="line">                <span class="keyword">continue</span> retry;           <span class="comment">// lost race vs opposite mode</span></span><br><span class="line">            <span class="comment">// 如果不是异步操作(即立刻返回结果)</span></span><br><span class="line">            <span class="keyword">if</span> (how != ASYNC)</span><br><span class="line">                <span class="comment">// 阻塞等待匹配值</span></span><br><span class="line">                <span class="keyword">return</span> awaitMatch(s, pred, e, (how == TIMED), nanos);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> e; <span class="comment">// not waiting</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>代码有点长，其实逻辑很简单。</p>
+<p>逻辑如下:<br>找到 <code>head</code> 节点,如果 <code>head</code> 节点是匹配的操作,就直接赋值,如果不是,添加到队列中。</p>
+<p>注意：队列中永远只有一种类型的操作,要么是 <code>put</code> 类型, 要么是 <code>take</code> 类型.</p>
+<p>整个过程如下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-d60a5b0368dd8d8c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>相比较 <code>SynchronousQueue</code> 多了一个可以存储的队列，相比较 <code>LinkedBlockingQueue</code> 多了直接传递元素，少了用锁来同步。</p>
+<p>性能更高，用处更大。</p>
+<h2 id="5-总结"><a href="#5-总结" class="headerlink" title="5. 总结"></a>5. 总结</h2><p><code>LinkedTransferQueue </code>是 <code>SynchronousQueue</code> 和 <code>LinkedBlockingQueue</code> 的合体，性能比 <code>LinkedBlockingQueue</code> 更高（没有锁操作），比 <code>SynchronousQueue </code>能存储更多的元素。</p>
+<p>当 <code>put</code> 时，如果有等待的线程，就直接将元素 “交给” 等待者， 否则直接进入队列。</p>
+<p><code>put </code>和 <code>transfer</code> 方法的区别是，put 是立即返回的， transfer 是阻塞等待消费者拿到数据才返回。<code>transfer </code>方法和 <code>SynchronousQueue </code>的 put 方法类似。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/04/22/2018/2018-04-22-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E2%80%94%E2%80%94-LinkedTransferQueue/" data-id="ckwes9adt00aqkrs1bjfih9ve" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/04/23/2018/2018-04-23-%E8%9A%82%E8%9A%81-RPC-%E6%A1%86%E6%9E%B6-SOFA-RPC-%E5%88%9D%E4%BD%93%E9%AA%8C/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          蚂蚁-RPC-框架-SOFA-RPC-初体验
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/04/21/2018/2018-04-21-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B-%E2%80%94%E2%80%94-ScheduledThreadPoolExecutor/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">并发编程-——-ScheduledThreadPoolExecutor</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

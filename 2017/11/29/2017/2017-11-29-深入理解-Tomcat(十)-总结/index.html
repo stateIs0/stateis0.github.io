@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>深入理解-Tomcat(十)-总结 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="深入理解-Tomcat(十)-总结">
+<meta property="og:url" content="http://thinkinjava.cn/2017/11/29/2017/2017-11-29-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat(%E5%8D%81)-%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-11-28T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.297Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2017/2017-11-29-深入理解-Tomcat(十)-总结" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/11/29/2017/2017-11-29-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat(%E5%8D%81)-%E6%80%BB%E7%BB%93/" class="article-date">
+  <time datetime="2017-11-28T18:11:11.000Z" itemprop="datePublished">2017-11-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Tomcat/">Tomcat</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      深入理解-Tomcat(十)-总结
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       这篇文章是我们深入理解 Tomcat 的第十篇文章,也是总结文章, 学习就是这样,先是理论,再是实践,最后是总结, 楼主习惯了在每次学习之后总结, 让从脑海中过的知识能够再扎实一点.
+
+<p>我们的第一篇文章 <code>&lt;&lt; 深入理解 Tomcat（一）源码环境搭建和 How Tomcat works 源码&gt;&gt; </code>中介绍了楼主下载的源码和 git 地址, 方便大家去 clone 源码,不然怎么来依据理论去剖析源码实现呢? 楼主认为, 任何一门技术都要借助文档和源码一起去理解(可能是楼主比较菜).  而楼主也放了2个源码,一个是使用 maven 改过的 tomcat 7 源码,一个是名著 &lt;<How Tomcat Works>&gt; 的实例源码, 方便我们更深入的理解 tomcat.</p>
+<p>源码环境搭建好了,楼主从网上,从早上… 额,不, 从各个地方看文章, 想了解 tomcat 的结构设计和文档, 当然也搭配楼主从图书馆借来的 <code>&lt;&lt;How Tomcat Works&gt;&gt;</code> 书, 最终写了一篇 <code>&lt;&lt;深入理解 Tomcat (二) 从宏观上理解 Tomcat 组件及架构&gt;&gt;</code>, 我们讲了我们准备如何学习, 以及什么是 Tomcat ,  什么是 Servlet, tomcat 源码目录的解释, tomcat 整体框架的层次结构和架构图, 分析每个组件, 包括 Connector, Container,  Component, 也从接口和类的角度(UML 类图)看架构. 这让我们对 tomcat 整体也有了一个大致的了解, 为我们接下来的分析源码做了铺垫.</p>
+<p>我们在大致了解了 tomcat 的整体架构和设计后, 我们想了解一个最简单的 web 服务器是如何实现的, 我们写了一篇<code>&lt;&lt; 深入理解 Tomcat（三）Tomcat 底层实现原理&gt;&gt;</code>, 参照<code>&lt;&lt;How Tomcat Works&gt;&gt;</code>源码实现了一个简单的阻塞式的 Web 服务器, 虽然现在最新的 Tomcat 9 已经将阻塞 socket 去除了,全部使用 NIO 和 JNI 以提高速度, 但他仍是我们学习的一个很好的例子.</p>
+<p>在了解原理之后, 我们开始循序渐进, 我们的第一个研究的就是著名的 Tomcat 的类加载机制, 于是我们写了一篇 <code>&lt;&lt; 深入理解 Tomcat（四）Tomcat 类加载器之为何违背双亲委派模型&gt;&gt;,</code> 先从 java 的类加载器开始分析, 分析双亲委任模型的原理, 以及类加载机制的发展及变化,  最后讲 Tomcat 的类加载机制的设计, 讲 Tomcat 为何破坏双亲委派模型. 也讲了 Tomcat 中每个类加载器的功能. 从理论上了解了 Tomcat 类加载器的设计. 为我们从源码层面理解做了铺垫.</p>
+<p>在了解了 Tomcat 的类加载器理论后, 我们第一次开始 debug tomcat 的源码, 写了一篇<code>&lt;&lt;深入理解 Tomcat（五）源码剖析Tomcat 启动过程----类加载过程&gt;&gt;</code>, 从 BootStrap 开始, 我们一步步分析 Tomcat 是如何加载类,加载 jar 包, 是如何将公用的 jar 包使用 common 类加载器, 而私有的 jar 包及 web 应用使用<br> WebAppClassLoader 的. 并且知道了 WebAppClassLoader的加载时间和另外几个的时间不一致. 从源码层面知道了 Tomcat 的类加载设计和机制.</p>
+<p>我们继续深入 tomcat, 开始按照我们在第二篇文章中的计划去阅读源码, 我们写了 <code>&lt;&lt; 深入理解 Tomcat（六）源码剖析Tomcat 启动过程----生命周期和容器组件&gt;&gt;</code>,  深入源码去了解 tomcat 是如何设计容器,容器是如何初始化的, 又是如何交给 JMX 去管理对象的. tomcat 的众多容器又是如何通过观察者模式来管理他们的生命周期的. </p>
+<p>在了解了 tomcat 的生命周期组件和容器初始化过程后, 我们决定从整体上看看 tomcat 是如何启动的又是如何关闭的, 我们写了 <code>&lt;&lt;深入理解 Tomcat（七）源码剖析 Tomcat 完整启动过程&gt;&gt;</code>并且也见到 tomcat 传说中的钩子. tomcat 的关闭很有趣, 靠着启动一个 socket 去发送SHUTDOWN命令.</p>
+<p>之后我们决定去深入另一个很重要的组件—-连接器, 在 <code>&lt;&lt;深入理解 Tomcat（八）源码剖析之连接器&gt;&gt;</code>中, 我们深入源码,  理解了连接器 Connector 的构造过程, 连接器是如何初始化的, 又是如何启动, 启动之后如何监听 Http 请求端口的. 如何处理浏览器发送过来的 socket 请求的.这些实在是太有意思了.</p>
+<p>最后我们以一个最常见的请求为基础, 写了 <code>&lt;&lt;深入理解 Tomcat（九）源码剖析之请求过程&gt;&gt;</code>, 理解了一个 HTTP 请求是如何从 socket 到达我们编写的 Servlet 的, 并且了解了tomcat 是如何设计各个容器直接的通信—-使用管道和阀门. 也知道了 tomcat 是如何解析消息头, 如何设计过滤器. 让我们对 tomcat 的认识可以说更加的清晰.我们无意中也发现了 tomcat 7 中关于单例模式的一个潜在 bug(最新的 tomcat 已经修复).</p>
+<p>最后, 就到了我们这篇总结的文章, 总的来说, 我们完成了我们最初定制的任务, 剖析了最重要的几个组件, 包括类加载器, 容器, 生命周期管理, 连接器, 管道, 阀门, 从启动过程和请求过程这两条路线去分析源码, 让我们不会在浩瀚的源码世界迷路. 虽然还要一些源码没有阅读, 但我们相信, 我们已经体会到了 tomcat 最重要的东西, 我们也不可能将所有的源码全都阅读一遍, 楼主是万万做不到的.</p>
+<p>想想楼主最初阅读源码的目的, 就是好奇 tomcat 到底是如何实现的. 现在, 楼主认为楼主的疑问已经被解答, 接下来, 楼主就要研究另一个 Java 世界中有名的框架了, 楼主不要做个只知道 know how 不知道 know why 的人. </p>
+<p>加油!!! good luck !!!!</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2017/11/29/2017/2017-11-29-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat(%E5%8D%81)-%E6%80%BB%E7%BB%93/" data-id="ckwes9abi002fkrs1bbwneaxl" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/12/04/2017/2017-12-04-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Spring-%E4%B9%8B%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90IOC-/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          深入理解-Spring-之源码剖析IOC-
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/11/27/2017/2017-11-27-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat%EF%BC%88%E4%B9%9D%EF%BC%89%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90%E4%B9%8B%E8%AF%B7%E6%B1%82%E8%BF%87%E7%A8%8B/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">深入理解-Tomcat（九）源码剖析之请求过程</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

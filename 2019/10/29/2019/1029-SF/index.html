@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>如何编写一个 SendFile 服务器和客户端 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="如何编写一个 SendFile 服务器和客户端">
+<meta property="og:url" content="http://thinkinjava.cn/2019/10/29/2019/1029-SF/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/006y8mN6ly1g8esdrp8fhj30zr0u00u2.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/006y8mN6ly1g8etjmkuejj30vv0u0wg2.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/006y8mN6ly1g8exv1xxa5j30gg0bk0ux.jpg">
+<meta property="article:published_time" content="2019-10-28T18:01:02.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.338Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/006y8mN6ly1g8esdrp8fhj30zr0u00u2.jpg">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2019/1029-SF" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/10/29/2019/1029-SF/" class="article-date">
+  <time datetime="2019-10-28T18:01:02.000Z" itemprop="datePublished">2019-10-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a>►<a class="article-category-link" href="/categories/my-open-source/">my open source</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      如何编写一个 SendFile 服务器和客户端
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>     
+
+
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>之前讨论零拷贝的时候，我们知道，两台机器之间传输文件，最快的方式就是 send file，众所周知，在 Java 中，该技术对应的则是 FileChannel 类的 transferTo 和 transferFrom 方法。</p>
+<p>在平时使用服务器的时候，比如 nginx ，tomcat ，都有 send file 的选项，利用此技术，可大大提高文件传输效能。</p>
+<p>另外，可能也有人谈论 send file 的缺点，例如不能利用 gzip 压缩，不能加密。这里本文不做探讨。</p>
+<p>纸上得来终觉浅，绝知此事要躬行。</p>
+<p>那么，如何使用这两个 api 实现一个 send file 服务器和客户端呢？</p>
+<p>想象一下，你写的 send file 服务器利用 send file 技术，利用万兆网卡，从各个 client 端 copy 海量文件，瞬间打爆你那 1TB 的磁盘和 48核的 CPU。并且，注意：只需很小的 JVM  内存就可以实现这样一台强悍的服务器。为什么？如果你知道 send file 的原理，就会知道，使用 send file 技术时， 在用户态中，是不需要多少内存的，数据都在内核态。</p>
+<p>是不是很有成就感？什么？没有？那打扰了 🤣。</p>
+<p>另外，关于 send file，我们都知道，由于是直接从内核缓冲区进入到网卡驱动，我们几乎可以称之为 “零拷贝”，他的性能十分强劲。</p>
+<p>但是。</p>
+<p>除了这个，还有其他的吗？答案是有的，send file 利用 DMA 的方式 copy 数据，而不是利用 CPU。注意，不利用 CPU 意味着什么？意味着数据不会进入“缓存行”，进一步，不会进入缓存行，代表着缓存行不会因为这个被污染，再进一步，就是不需要维护缓存一致性。</p>
+<p>还记得我们因为这个特性搞的那些关于 “伪共享” 的各种黑科技吗？是不是又学到了一点呢？😎</p>
+<h1 id="理念"><a href="#理念" class="headerlink" title="理念"></a>理念</h1><p>作为一个纯粹的，高尚的，有趣的 sendFile 服务器或者客户端，使用场景是嵌入到某个服务中，或者某个中间件中，不需要搞成夸张的容器。我们可以借鉴一下，客户端可以做成 Jedis 那样的，如果你想搞个连接池也不是不可以，但 client 自身实例，还是单连接的。服务端可以做成 sun 的 httpServer 那种轻量的，随时启动，随时关闭。</p>
+<p>同时， 支持 oneway 的高性能发送，因为，只要机器不宕机，发送到网卡就意味着发送成功，这样能大幅提高发送速度，减少客户端阻塞时间。</p>
+<p>另外，也支持带有 ack 的稳定发送，即只有返回 ack 了，才能确认数据已经写到目标服务器磁盘了。</p>
+<p>server 端支持海量连接，必须得是  reactor 网络模型，但我们不想在这么小的组件里用 netty，太重了，还容易和使用方有 jar 冲突。所以，我们可以利用 Java 的 selector + nio 自己实现 Reactor 模型。</p>
+<h1 id="设计"><a href="#设计" class="headerlink" title="设计"></a>设计</h1><h3 id="IO-模型设计"><a href="#IO-模型设计" class="headerlink" title="IO 模型设计"></a>IO 模型设计</h3><p>设计图：</p>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8esdrp8fhj30zr0u00u2.jpg"></p>
+<p>如上图，Server 端支持海量客户端连接。</p>
+<p>server 端含有 多个处理器，其中包括 accept 处理器，read 处理器 group， write 处理器 group。</p>
+<p>accept 处理器将 serverSocketChannel 作为 key 注册到一个单独的 selector 上。专门用于监听 accept 事件。类似 netty 的 boss 线程。</p>
+<p>当 accept 处理器成功连接了一个 socket 时，会随机将其交给一个 readProcessor（netty worker 线程？） 处理器，readProcessor 又会将其注册到 readSelector 上，当发生 read 事件时，readProcessor 将接受数据。</p>
+<p>可以看到，readProcessor 可以认为是一个多路复用的线程，利用 selector 的能力，他高效的管理着多个 socket。</p>
+<p>readProcessor 在读到数据后，会将其写入到磁盘中（DMA 的方式，性能炸裂）。</p>
+<p>然后，如果 client 在 RPC 协议中声明“需要回复（id 不为 -1）” 时，那就将结果发送到 Reply Queue 中，反之不必。</p>
+<p>当结果发送到  Reply Queue 后，writer 组中的 写线程，则会从 Queue 中拉取回复包，然后将结果按照 RPC 协议，写回到 client socket 中。</p>
+<p>client socket 也会监听着 read 事件，注意：client 是不需要 select 的，因为没必要，selector 只是性能优化的一种方式——即一个线程管理海量连接，如果没有 select， 应用层无法用较低的成本处理海量连接，注意，不是不能处理，只是不能高效处理。</p>
+<p>回过来，当 client socket  得到 server 的数据包，会进行解码反序列化，并唤醒阻塞在客户端的线程。从而完成一次调用。</p>
+<h3 id="线程模型"><a href="#线程模型" class="headerlink" title="线程模型"></a>线程模型</h3><p>设计图：</p>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8etjmkuejj30vv0u0wg2.jpg" alt="image-20191029093524267"></p>
+<p>如上图所示。</p>
+<h4 id="在-client-端："><a href="#在-client-端：" class="headerlink" title="在 client 端："></a>在 client 端：</h4><p> 每个 Client 实例，维护一个 TCP 连接。该 Client 的写入方法是线程安全的。</p>
+<p>当用户并发写入时，可并发写的同时并发回复，因为写和回复是异步的（此时可能会出现，线程 A 先 send ，线程 B 后 send，但由于网络延迟，B 先返回）。</p>
+<h4 id="在-server-端："><a href="#在-server-端：" class="headerlink" title="在 server 端："></a>在 server 端：</h4><p>server 端维护着一个 ServerSocketChannel 实例，该实例的作用就是接收 accep 事件，且由一个线程维护这个 accept selector 。</p>
+<p>当有新的 client 连接事件时，accept selector 就将这个连接“交给“ read 线程（默认 server 有 4 个 read 线程）。</p>
+<h4 id="什么是“交给”？"><a href="#什么是“交给”？" class="headerlink" title="什么是“交给”？"></a>什么是“交给”？</h4><p>注意：每个 read 线程都维护着一个单独的 selector。 4 个 read 线程，就维护了 4 个 selector。</p>
+<p>当 accept 得到新的客户端连接时，先从 4 个read 线程组里 get 一个线程，然后将这个 客户端连接 作为 key 注册到这个线程所对应的 read selector 上。从而将这个 Socket “交给” read 线程。</p>
+<p>而这个 read 线程则使用这个 selector 轮询事件，如果 socket 可读，那么就进行读，读完之后，利用 DMA 写进磁盘。</p>
+<h1 id="RPC-协议"><a href="#RPC-协议" class="headerlink" title="RPC 协议"></a>RPC 协议</h1><h4 id="Server-RPC-回复包协议"><a href="#Server-RPC-回复包协议" class="headerlink" title="Server RPC 回复包协议"></a>Server RPC 回复包协议</h4><table>
+<thead>
+<tr>
+<th>字段名称</th>
+<th>字段长度(byte)</th>
+<th>字段作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>magic_num</td>
+<td>4</td>
+<td>魔数校验，fast fail</td>
+</tr>
+<tr>
+<td>version</td>
+<td>1</td>
+<td>rpc 协议版本</td>
+</tr>
+<tr>
+<td>id</td>
+<td>8</td>
+<td>Request id， TCP 多路复用 id</td>
+</tr>
+<tr>
+<td>length</td>
+<td>8</td>
+<td>rpc 实际消息内容的长度</td>
+</tr>
+<tr>
+<td>Content</td>
+<td>length</td>
+<td>rpc 实际消息内容(JSON 序列化协议)</td>
+</tr>
+</tbody></table>
+<h4 id="Client-RPC-发送包协议"><a href="#Client-RPC-发送包协议" class="headerlink" title="Client RPC 发送包协议"></a>Client RPC 发送包协议</h4><table>
+<thead>
+<tr>
+<th>字段名称</th>
+<th>字段长度(byte)</th>
+<th>字段作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>magic_num</td>
+<td>4</td>
+<td>魔数校验，fast fail</td>
+</tr>
+<tr>
+<td>id</td>
+<td>8</td>
+<td>Request id， TCP 多路复用 id, 默认 -1，表示不回复</td>
+</tr>
+<tr>
+<td>nameContent</td>
+<td>2</td>
+<td>Request id， TCP 多路复用 id</td>
+</tr>
+<tr>
+<td>bodyLength</td>
+<td>8</td>
+<td>rpc 实际消息内容的长度</td>
+</tr>
+<tr>
+<td>nameContent</td>
+<td>bodyLength</td>
+<td>文件名 UTF-8 数组</td>
+</tr>
+</tbody></table>
+<p>为什么 发送包和返回包协议不同？为了高效。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>注意：这是一个能用的，性能不错的，轻量的 SendFile 服务器实现，本地测试时， IO写盘达到  824MB/S，4c 4.2g inter i7 CPU 满载。</p>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8exv1xxa5j30gg0bk0ux.jpg" alt="image-20191029120446781"></p>
+<p>代码地址：<a target="_blank" rel="noopener" href="https://github.com/stateIs0/send_file">https://github.com/stateIs0/send_file</a></p>
+<p>同时，欢迎大家 star， pr，issue。我来改进。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2019/10/29/2019/1029-SF/" data-id="ckwes9ac1004bkrs1htz52i1o" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/10/30/2019/1030SFimpl/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          Java sendFile 底层实现
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/10/19/2019/1019-fuzadujisuan/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">递归时间复杂度 递归树 推演计算</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

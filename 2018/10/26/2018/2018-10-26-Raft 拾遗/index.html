@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Raft 拾遗 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="Raft 拾遗">
+<meta property="og:url" content="http://thinkinjava.cn/2018/10/26/2018/2018-10-26-Raft%20%E6%8B%BE%E9%81%97/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-754f5c02d51687d7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-5033370cadf1e6f5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-88e260a766505eca.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-24284f83959f529a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-37b901ccf4f5564f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-02cf63a2ba756a84.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-0bdb58d871591bf7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-10-25T20:01:01.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.335Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-754f5c02d51687d7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-10-26-Raft 拾遗" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/10/26/2018/2018-10-26-Raft%20%E6%8B%BE%E9%81%97/" class="article-date">
+  <time datetime="2018-10-25T20:01:01.000Z" itemprop="datePublished">2018-10-26</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Raft 拾遗
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       ## 背景
+
+<p>本文关注实现 Raft 的关键参数。仅做备忘。</p>
+<h3 id="1-跟随者和候选人崩溃"><a href="#1-跟随者和候选人崩溃" class="headerlink" title="1. 跟随者和候选人崩溃"></a>1. 跟随者和候选人崩溃</h3><p>  相比较 leader 崩溃，这个要简单的多，当 follower 崩溃，leader 只需要不断重试即可，当 follower 重启，RPC 重试会成功，注意：RPC 重试是幂等的，因此重试不会造成任何问题。</p>
+<h3 id="2-时间和可用性"><a href="#2-时间和可用性" class="headerlink" title="2. 时间和可用性"></a>2. 时间和可用性</h3><p>在 Raft 中，关于时间，有 3 种类型：</p>
+<ol>
+<li>广播时间（broadcastTime）：指一个节点并行的发送 RPC 给其他节点并收到响应的平均时间。</li>
+<li>选举超时时间（electionTimeout）：如果一个跟随者在一段时间里没有接收到任何消息，也就是选举超时。</li>
+<li>平均故障间隔时间（MTBF）：平均故障间隔时间就是对于一台服务器而言，两次故障之间的平均时间。</li>
+</ol>
+<p>Raft 规定，只要系统满足下面的时间要求，就可以选举并维持一个稳定的领导人。</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">广播时间（<span class="keyword">broadcastTime） </span>&lt;&lt; 选举超时时间（electionTimeout） &lt;&lt; 平均故障间隔时间（MTBF）</span><br></pre></td></tr></table></figure>
+
+<p>通常广播时间比选举超时时间小一个数量级，这样 leader 才能发送稳定的心跳来阻止跟随者进入选举状态；</p>
+<p>选举超时时间一般比 MTBF 小几个数量级，这样整个系统才能正常运行。当 leader 崩溃后，整个系统的不可用时间，大约相当于选举时间超时时间。</p>
+<p>广播时间和 MTBF 是由系统决定的，只有选举超时时间是我们自己选择的，通常广播时间大约是 0.5 毫秒到 20 毫秒（持久化需要时间），那么，选举超时时间通常在 10 毫秒 到 500 毫秒之间。</p>
+<p>而 MTBF 时间，通常平均故障时间在几个月甚至更长，君不见美团的服务器可用性达到 7 个九 ：）因此很容易满足时间的需求。</p>
+<h3 id="3-Raft-算法细节："><a href="#3-Raft-算法细节：" class="headerlink" title="3. Raft 算法细节："></a>3. Raft 算法细节：</h3><h5 id="1-状态"><a href="#1-状态" class="headerlink" title="1. 状态"></a>1. 状态</h5><ul>
+<li>所有服务器上持久存在的</li>
+</ul>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-754f5c02d51687d7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<ul>
+<li><p> 所有服务器上经常变的<br><img src="https://upload-images.jianshu.io/upload_images/4236553-5033370cadf1e6f5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+</li>
+<li><p>在领导人里经常变化的（选举后重新初始化）<br><img src="https://upload-images.jianshu.io/upload_images/4236553-88e260a766505eca.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+</li>
+</ul>
+<h6 id="2-附加日志-RPC"><a href="#2-附加日志-RPC" class="headerlink" title="2. 附加日志 RPC"></a>2. 附加日志 RPC</h6><ul>
+<li>具体指令</li>
+</ul>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-24284f83959f529a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="由领导人负责调用来复制日志指令，也会用作心跳"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-37b901ccf4f5564f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<ul>
+<li>接受者实现<ol>
+<li>如果 <code>term &lt; currentTerm</code> 就返回 false </li>
+<li>如果日志在 prevLogIndex 位置处的日志条目的任期号和 prevLogTerm 不匹配，则返回 false </li>
+<li>如果已经存在的日志条目和新的产生冲突（索引值相同但是任期号不同），删除这一条和之后所有的 </li>
+<li>附加任何在已有的日志中不存在的条目</li>
+<li>如果 <code>leaderCommit &gt; commitIndex</code>，令 commitIndex 等于 leaderCommit 和 新日志条目索引值中较小的一个</li>
+</ol>
+</li>
+</ul>
+<h6 id="3-请求投票-RPC"><a href="#3-请求投票-RPC" class="headerlink" title="3. 请求投票 RPC"></a>3. 请求投票 RPC</h6><ol>
+<li>参数详情</li>
+</ol>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-02cf63a2ba756a84.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="由候选人负责调用用来征集选票"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-0bdb58d871591bf7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<ol start="2">
+<li>接收者实现<ol>
+<li>如果term &lt; currentTerm返回 false </li>
+<li>如果 votedFor 为空或者就是 candidateId，并且候选人的日志至少和自己一样新，那么就投票给他</li>
+</ol>
+</li>
+</ol>
+<h5 id="4-所有服务器需遵守的规则"><a href="#4-所有服务器需遵守的规则" class="headerlink" title="4. 所有服务器需遵守的规则"></a>4. 所有服务器需遵守的规则</h5><ol>
+<li>所有服务器</li>
+</ol>
+<ul>
+<li>如果commitIndex &gt; lastApplied，那么就 lastApplied 加一，并把log[lastApplied]应用到状态机中</li>
+<li>如果接收到的 RPC 请求或响应中，任期号T &gt; currentTerm，那么就令 currentTerm 等于 T，并切换状态为跟随者</li>
+</ul>
+<ol start="2">
+<li>跟随者</li>
+</ol>
+<ul>
+<li>响应来自候选人和领导者的请求</li>
+<li>如果在超过选举超时时间的情况之前都没有收到领导人的心跳，或者是候选人请求投票的，就自己变成候选人</li>
+</ul>
+<ol start="3">
+<li>候选人</li>
+</ol>
+<ul>
+<li>在转变成候选人后就立即开始选举过程<ul>
+<li> 自增当前的任期号（currentTerm）</li>
+<li>给自己投票</li>
+<li>重置选举超时计时器</li>
+<li>发送请求投票的 RPC 给其他所有服务器</li>
+</ul>
+</li>
+<li>如果接收到大多数服务器的选票，那么就变成领导人</li>
+<li>如果接收到来自新的领导人的附加日志 RPC，转变成跟随者</li>
+<li>如果选举过程超时，再次发起一轮选举</li>
+</ul>
+<ol start="4">
+<li>领导人</li>
+</ol>
+<ul>
+<li><p>一旦成为领导人：发送空的附加日志 RPC（心跳）给其他所有的服务器；在一定的空余时间之后不停的重复发送，以阻止跟随者超时</p>
+</li>
+<li><p>如果接收到来自客户端的请求：附加条目到本地日志中，在条目被应用到状态机后响应客户端</p>
+</li>
+<li><p>如果对于一个跟随者，最后日志条目的索引值大于等于 nextIndex，那么：发送从 nextIndex 开始的所有日志条目：<br>如果成功：更新相应跟随者的 nextIndex 和 matchIndex<br>如果因为日志不一致而失败，减少 nextIndex 重试</p>
+</li>
+<li><p>如果存在一个满足 <code>N &gt; commitIndex</code> 的 N，并且大多数的<code>matchIndex[i] ≥ N</code> 成立，并且 <code>log[N].term == currentTerm</code>成立，那么令 <code>commitIndex</code> 等于这个 N </p>
+</li>
+</ul>
+<h3 id="4-日志压缩"><a href="#4-日志压缩" class="headerlink" title="4. 日志压缩"></a>4. 日志压缩</h3><p><a target="_blank" rel="noopener" href="https://github.com/maemual/raft-zh_cn/blob/master/raft-zh_cn.md#7-%E6%97%A5%E5%BF%97%E5%8E%8B%E7%BC%A9">中文论文“日志压缩”</a></p>
+<p>因为这这块功能不是核心功能，暂时不考虑实现，后面再说 ：）</p>
+<ol>
+<li>快照的设计</li>
+<li>快照的基础思想</li>
+</ol>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://ramcloud.atlassian.net/wiki/download/attachments/6586375/raft.pdf">英文 paper  pdf 地址</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/maemual/raft-zh_cn/blob/master/raft-zh_cn.md">Raft paper 中文翻译 —— 寻找一种易于理解的一致性算法（扩展版）</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=YbZ3zDzDnrw&feature=youtu.be">Raft 作者讲解视频</a></p>
+<p><a target="_blank" rel="noopener" href="http://www2.cs.uh.edu/~paris/6360/PowerPoint/Raft.ppt">Raft 作者讲解视频对应的 PPT</a></p>
+<p><a target="_blank" rel="noopener" href="http://thesecretlivesofdata.com/raft/">一个简单的讲解 Raft 协议的动画</a></p>
+<p>EOF</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/10/26/2018/2018-10-26-Raft%20%E6%8B%BE%E9%81%97/" data-id="ckwes9afa00g7krs1gw5zbmmb" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/10/26/2018/2018-10-26-Raft%20%E9%85%8D%E7%BD%AE%E5%8F%98%E6%9B%B4%20Configuration%20changes%20%E6%8B%BE%E9%81%97/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          Raft 配置变更 Configuration Changes 拾遗
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/10/26/2018/2018-10-26-Raft%20%E7%AE%97%E6%B3%95%E6%B5%93%E7%BC%A9/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">Raft 算法浓缩</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

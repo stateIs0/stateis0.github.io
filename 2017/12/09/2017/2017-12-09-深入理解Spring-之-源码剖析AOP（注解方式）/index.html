@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>深入理解Spring-之-源码剖析AOP（注解方式） | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="深入理解Spring-之-源码剖析AOP（注解方式）">
+<meta property="og:url" content="http://thinkinjava.cn/2017/12/09/2017/2017-12-09-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Spring-%E4%B9%8B-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90AOP%EF%BC%88%E6%B3%A8%E8%A7%A3%E6%96%B9%E5%BC%8F%EF%BC%89/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-8f7b7e8cbc75bd8b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-e701dd5d103ed2b0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-bfe7da9a3822fafd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-9cc1dfc406fe22bc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-b3be043ca9c4dd64.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-24378f87337615ad.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-46b4346d53d57b3c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-93afd4512e1ce792.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-a0bdae69da37cb7a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-a871bbe51757ee51.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-dcb8067d88ae0e46.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-6ebd125978fb6d76.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-c9a53c9c01e81754.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-44e7e4e5ccc84ecf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2017-12-08T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.299Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-8f7b7e8cbc75bd8b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2017/2017-12-09-深入理解Spring-之-源码剖析AOP（注解方式）" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/12/09/2017/2017-12-09-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Spring-%E4%B9%8B-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90AOP%EF%BC%88%E6%B3%A8%E8%A7%A3%E6%96%B9%E5%BC%8F%EF%BC%89/" class="article-date">
+  <time datetime="2017-12-08T18:11:11.000Z" itemprop="datePublished">2017-12-09</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Spring/">Spring</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      深入理解Spring-之-源码剖析AOP（注解方式）
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       上一篇文章我们从XML 配置文件的方式剖析了AOP的源码，我们也说了，虽然现在用XML配置的几乎没有了，但作为学习的例子，XML配置仍然是我们理解Spring AOP 的一个绝好的样本，但作为一个由追求的程序员，我们天天使用的注解方式的AOP 肯定也是要去看看到底是如何实现的。现在有了之前阅读 XML 配置的源码的基础，今天我们来阅读注解方式的源码也变得轻松起来。
+
+<p>还记得我们之前说过，XML 配置的AOP是使用 ProxyFactoryBean ，实现了 FactoryBean的接口，而FactoryBean是Spring特意留给开发者们扩展的接口，而Spring 留给开发者们不止一个扩展接口，比如 BeanPostProcess 接口，实现着接口就可以在每个Bean的生成前后做一些增强或自定义（具体Spring 留给我们有哪些扩展接口，楼主有机会将会再写一篇文章解析）。</p>
+<p>接下来就要好好讲讲我们上篇文章漏讲的接口设计。这是我们理解 AOP 的基础。</p>
+<p>先从 ProxyFactoryBean 讲起，这个熟悉的哥们。</p>
+<h2 id="1-ProxyFactoryBean-类结构"><a href="#1-ProxyFactoryBean-类结构" class="headerlink" title="1. ProxyFactoryBean 类结构"></a>1. ProxyFactoryBean 类结构</h2><p><img src="http://upload-images.jianshu.io/upload_images/4236553-8f7b7e8cbc75bd8b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<h3 id="1-1-ProxyCreatorSupport-类结构图"><a href="#1-1-ProxyCreatorSupport-类结构图" class="headerlink" title="1.1 ProxyCreatorSupport  类结构图"></a>1.1 ProxyCreatorSupport  类结构图</h3><p>它继承了 ProxyCreatorSupport 这个类，这个类很重要，我们看看该类结构</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-e701dd5d103ed2b0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>该类有2个重要的方法，分别是获取代理工厂，创建代理。那么代理工厂是什么呢？AopProxyFactory ，是个接口，只定义了一个方法：AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException， 并且该接口目前只有一个默认实现类：DefaultAopProxyFactory，该类主要重写了接口方法 createAopProxy， 内部逻辑是根据给定的类配置来创建不同的代理 AopProxy，那么 AopProxy 是什么呢？就是真正创建代理的工厂，他是一个接口，有3个实现：</p>
+<h3 id="1-2-AopProxy-接口"><a href="#1-2-AopProxy-接口" class="headerlink" title="1.2  AopProxy  接口"></a>1.2  AopProxy  接口</h3><p><img src="http://upload-images.jianshu.io/upload_images/4236553-bfe7da9a3822fafd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<h3 id="1-3-AopProxy-继承结构"><a href="#1-3-AopProxy-继承结构" class="headerlink" title="1.3 AopProxy  继承结构"></a>1.3 AopProxy  继承结构</h3><p><img src="http://upload-images.jianshu.io/upload_images/4236553-9cc1dfc406fe22bc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>从名字上可以看出来，一个是 JDK 动态代理，一个是 Cglib 代理，ObjenesisCglibAopProxy 扩展了它的父类 CglibAopProxy，在 DefaultAopProxyFactory 的实现里，使用的就是 ObjenesisCglibAopProxy 来实现 Cglib 的代理。他们分别实现了自己的getProxy 方法用以创建代理。我们看看这两个类的继承结构：</p>
+<h3 id="1-4-JdkDynamicAopProxy-继承结构"><a href="#1-4-JdkDynamicAopProxy-继承结构" class="headerlink" title="1.4 JdkDynamicAopProxy 继承结构"></a>1.4 JdkDynamicAopProxy 继承结构</h3><p><img src="http://upload-images.jianshu.io/upload_images/4236553-b3be043ca9c4dd64.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<h3 id="1-5-CglibAopProxy-继承结构没什么，主要是众多内部类"><a href="#1-5-CglibAopProxy-继承结构没什么，主要是众多内部类" class="headerlink" title="1.5 CglibAopProxy 继承结构没什么，主要是众多内部类"></a>1.5 CglibAopProxy 继承结构没什么，主要是众多内部类</h3><p><img src="http://upload-images.jianshu.io/upload_images/4236553-24378f87337615ad.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>可以看到哟非常多的内部类，这些内部类是为了实现了 Cglib 的各种回调而实现的。主要实现了 MethodInterceptor 接口，<br>Callback 接口，Joinpoint 接口，Invocation 接口等待，总之是实现了Spring 的 cglib 模块的各种接口。</p>
+<p>说了那么多，我们回来看看 ProxyCreatorSupport  ，下面是 ProxyCreatorSupport  的继承结构</p>
+<h2 id="2-ProxyCreatorSupport-类继承图"><a href="#2-ProxyCreatorSupport-类继承图" class="headerlink" title="2. ProxyCreatorSupport   类继承图"></a>2. ProxyCreatorSupport   类继承图</h2><p><img src="http://upload-images.jianshu.io/upload_images/4236553-46b4346d53d57b3c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>该类有3个子类， 其中就有一个我们熟悉的 ProxyFactoryBean，该类实现了我们熟悉的 FactoryBean，还有一个可以获取容器内Bean的 BeanFactoyAware 接口，第二个是陌生的 AspectJProxyFactory 类，该类是用于集成 Spring 和 AspectJ 的。而最后一个类ProxyFactory 就是我们今天的主角，Spring 的类注释说：<code>用于编程使用的AOP代理，而不是在bean工厂中通过声明式设置。这个类提供了一种简单的方法，可以在定制的用户代码中获取和配置AOP代理实例</code>，大概意思就是通过编程的方式获取Bean 代理吧，而不是通过配置文件的方式。我们今天就可以见识到。</p>
+<h2 id="3-AnnotationAwareAspectJAutoProxyCreator-类"><a href="#3-AnnotationAwareAspectJAutoProxyCreator-类" class="headerlink" title="3. AnnotationAwareAspectJAutoProxyCreator 类"></a>3. AnnotationAwareAspectJAutoProxyCreator 类</h2><p>这个类的名字很长，为什么要说这个类呢？还记得我们刚开始说的 BeanPostProcessor 扩展接口吗？我们说该接口是spring 留给开发人员自定义增强bean的接口。而该类则实现了该接口，看名字也知道，该类是根据注解自动创建代理的创建者类。我们看看他的类图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-93afd4512e1ce792.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>可以看到，最底层的该类实现了 BeanPostProcessor 接口，可以在每个bena生成前后做操作。该类由 Rod Johnson 编写，注释上是这么说的：<code>任何AspectJ注释的类都将自动被识别，它们也会被识别</code>。和我们预想的一致。</p>
+<p>我们知道了 AnnotationAwareAspectJAutoProxyCreator 是根据注解自动创建代理，而该类也算是 ProxyBean 的代理，那么，和它一样继承抽象父类的其他几个类的作用是什么呢？来都来了，就看看吧！我们看看类图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-a0bdae69da37cb7a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>可以看到该类由4个实现：他们实现了不同的创建代理的方式：</p>
+<ol>
+<li>匹配Bean的名称自动创建匹配到的Bean的代理，实现类BeanNameAutoProxyCreator</li>
+<li>根据Bean中的AspectJ注解自动创建代理，实现类AnnotationAwareAspectJAutoProxyCreator，也就是我们今天说的注解类。</li>
+<li>根据Advisor的匹配机制自动创建代理，会对容器中所有的Advisor进行扫描，自动将这些切面应用到匹配的Bean中，实现类DefaultAdvisorAutoProxyCreator</li>
+<li>InfrastructureAdvisorAutoProxyCreator，该类只在 AopConfigUtils 中的静态块用到，该类的注释：自动代理创建者只考虑基础设施顾问bean，忽略任何应用程序定义的顾问。意思应该是只是Sprnig的基础代理，开发者的应用会忽略。有知道的同学可以告诉我。</li>
+</ol>
+<p>加上我们的ProxyFactoryBean，一共5种实现方法。从这里可以看出Spring 对于扩展的软件设计是多么优秀。</p>
+<p>那么我们就来看看 AnnotationAwareAspectJAutoProxyCreator 是如何创建代理的。我们说 BeanPostProcessor 是Spring 留给我们扩展的接口，那么他是如何定义的呢？我们看看该接口：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">BeanPostProcessor</span> </span>&#123;</span><br><span class="line">	<span class="function">Object <span class="title">postProcessBeforeInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line">	<span class="function">Object <span class="title">postProcessAfterInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该接口定义了两个方法，一个是在bean初始化之前执行，一个是在bean初始化之后执行。也就是说，开发者可以在这两个方法中做一些有趣的事情。我们看看 AnnotationAwareAspectJAutoProxyCreator 是如何实现该方法的。实际上 AnnotationAwareAspectJAutoProxyCreator 的抽象父类已经实现了该方法，我们看看是如何实现的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">postProcessBeforeInitialization</span><span class="params">(Object bean, String beanName)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> bean;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Create a proxy with the configured interceptors if the bean is</span></span><br><span class="line"><span class="comment"> * identified as one to proxy by the subclass.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> #getAdvicesAndAdvisorsForBean</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">postProcessAfterInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (bean != <span class="keyword">null</span>) &#123;</span><br><span class="line">		Object cacheKey = getCacheKey(bean.getClass(), beanName);</span><br><span class="line">		<span class="keyword">if</span> (!<span class="keyword">this</span>.earlyProxyReferences.contains(cacheKey)) &#123;</span><br><span class="line">			<span class="keyword">return</span> wrapIfNecessary(bean, beanName, cacheKey);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> bean;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>before 方法直接返回了bean，并没有做什么增强操作，重点在after方法，我们可以看该方法的注释：如果bean是由子类标识的，那么就创建一个配置的拦截器的代理。Spring 就是在这里创建了代理，我们进入关键方法 wrapIfNecessary 看看。该方法用来包装给定的Bean。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">wrapIfNecessary</span><span class="params">(Object bean, String beanName, Object cacheKey)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (beanName != <span class="keyword">null</span> &amp;&amp; <span class="keyword">this</span>.targetSourcedBeans.contains(beanName)) &#123;</span><br><span class="line">		<span class="keyword">return</span> bean;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> (Boolean.FALSE.equals(<span class="keyword">this</span>.advisedBeans.get(cacheKey))) &#123;</span><br><span class="line">		<span class="keyword">return</span> bean;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> (isInfrastructureClass(bean.getClass()) || shouldSkip(bean.getClass(), beanName)) &#123;</span><br><span class="line">		<span class="keyword">this</span>.advisedBeans.put(cacheKey, Boolean.FALSE);</span><br><span class="line">		<span class="keyword">return</span> bean;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Create proxy if we have advice.</span></span><br><span class="line">	Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, <span class="keyword">null</span>);</span><br><span class="line">	<span class="keyword">if</span> (specificInterceptors != DO_NOT_PROXY) &#123;</span><br><span class="line">		<span class="keyword">this</span>.advisedBeans.put(cacheKey, Boolean.TRUE);</span><br><span class="line">		Object proxy = createProxy(</span><br><span class="line">				bean.getClass(), beanName, specificInterceptors, <span class="keyword">new</span> SingletonTargetSource(bean));</span><br><span class="line">		<span class="keyword">this</span>.proxyTypes.put(cacheKey, proxy.getClass());</span><br><span class="line">		<span class="keyword">return</span> proxy;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">this</span>.advisedBeans.put(cacheKey, Boolean.FALSE);</span><br><span class="line">	<span class="keyword">return</span> bean;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们已将可以看到一个关键一行代码：Object proxy = createProxy(bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean))，创建一个代理，该方法携带了bean的Class对象，benaName， 通知器数组，还有一个包装过的单例Bean，我们看看该方法实现（该方法对于我们来说已经到终点了），</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">createProxy</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">		Class&lt;?&gt; beanClass, String beanName, Object[] specificInterceptors, TargetSource targetSource)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (<span class="keyword">this</span>.beanFactory <span class="keyword">instanceof</span> ConfigurableListableBeanFactory) &#123;</span><br><span class="line">		AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) <span class="keyword">this</span>.beanFactory, beanName, beanClass);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	ProxyFactory proxyFactory = <span class="keyword">new</span> ProxyFactory();</span><br><span class="line">	proxyFactory.copyFrom(<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!proxyFactory.isProxyTargetClass()) &#123;</span><br><span class="line">		<span class="keyword">if</span> (shouldProxyTargetClass(beanClass, beanName)) &#123;</span><br><span class="line">			proxyFactory.setProxyTargetClass(<span class="keyword">true</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			evaluateProxyInterfaces(beanClass, proxyFactory);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);</span><br><span class="line">	proxyFactory.addAdvisors(advisors);</span><br><span class="line">	proxyFactory.setTargetSource(targetSource);</span><br><span class="line">	customizeProxyFactory(proxyFactory);</span><br><span class="line"></span><br><span class="line">	proxyFactory.setFrozen(<span class="keyword">this</span>.freezeProxy);</span><br><span class="line">	<span class="keyword">if</span> (advisorsPreFiltered()) &#123;</span><br><span class="line">		proxyFactory.setPreFiltered(<span class="keyword">true</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> proxyFactory.getProxy(getProxyClassLoader());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们能够看到其中有一行让我们激动的代码，就是 ProxyFactory proxyFactory = new ProxyFactory()，创建了一个ProxyFactory 对象，我们刚刚说过，该对象和ProxyFactoryBean一样，继承了 ProxyCreatorSupport， 因此也就和 ProxyFactoryBean 一样拥有了 getProxy 方法，到这里，我们的一切都豁然开朗。当然上面几行代码是设置了通知器链。我们先按下不表。</p>
+<blockquote>
+<p>ProxyFactoryBean 扩展了 FactoryBean 接口， AnnotationAwareAspectJAutoProxyCreator 扩展了 BenaPostProcessor 了接口，其目的都是在Bean生成的时候做增强操作，Spring 通过这两种方式，完成了两种不同的代理生成方式，但最终都是继承了 ProxyCreatorSupport 类，该类才是生成代理的核心类。</p>
+</blockquote>
+<p>我们可以看看XML 配置方式和 注解方式的方法堆栈调用图，从中我们可以看出一些端倪：</p>
+<p><strong>XML 配置方式堆栈图</strong></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-a871bbe51757ee51.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p><strong>注解配置方法堆栈图</strong></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-dcb8067d88ae0e46.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>我们可以看到两者在AbstractBeanFactory 的 doGetBean 方法开始分道扬镳，走向了不同的逻辑，那么我们看看到底哪里不同，直接看代码：我们看XML配置堆栈，在258行：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-6ebd125978fb6d76.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>从这里进入，该方法做了些什么呢？为什么让他们走向不同的路线？我们看看该方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-c9a53c9c01e81754.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>该方法有个重要的判断：是否是 FactoryBean 的子类型，很明显，我们的XML配置的ProxyFacoroyBean 返回 false，而注解方式的Bean则返回 false，ProxyFacoroyBean 会一直向下走，直到创建代理，而注解方式则会直接返回。走到302行：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-44e7e4e5ccc84ecf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>注解方式会执行 getSingleton 方法，最后触发 createBean 回调方法，完成创建代理的过程。</p>
+<p>到此为止，现在我们知道了到 XML 配置方式的 AOP 和注解的方式AOP 的生成区别。我们可以开始总结了。</p>
+<h2 id="4-总结"><a href="#4-总结" class="headerlink" title="4. 总结"></a>4. 总结</h2><p>首先，通过分析源码我们知道注解方式和 XML 配置方式的底层实现都是一样的，都是通过继承 ProxyCreatorSupport 来实现的，不同的通过扩展不同的 Spring 提供的接口，XML 扩展的是FactoryBean 接口， 而注解方式扩展的是 BenaPostProcessor 接口，通过Spring 的扩展接口，能够对特定的Bean进行增强。而 AOP 正式通过这种方式实现的。这也提醒了我们，我们也可以通过扩展 Spring  的某些接口来增强我们需要的 Bean 的某些功能。当然，篇幅有限，我们这篇文章只是了解了XML 配置方式和注解方式创建代理的区别，关于如何 @Aspect 和 @Around 的底层实现，还有通知器的底层实现，我们还没有分析，但我们隐隐的感觉到，其实万变不离其宗，底层的也是通过扩展 advice 和 pointcut  接口来实现的。 我们将会在后面的文章继续分析 AOP 是如何编织通知的。</p>
+<p>good luck ！！！！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2017/12/09/2017/2017-12-09-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Spring-%E4%B9%8B-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90AOP%EF%BC%88%E6%B3%A8%E8%A7%A3%E6%96%B9%E5%BC%8F%EF%BC%89/" data-id="ckwes9abk002rkrs14sowbx2d" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/12/11/2017/2017-12-11-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Spring-%E4%B9%8B-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-SpringBoot-Aop-%E5%88%87%E9%9D%A2%E7%BC%96%E7%BB%87%E8%BF%87%E7%A8%8B%E5%92%8C%E4%BB%A3%E7%90%86%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          深入理解Spring-之-源码剖析-SpringBoot-Aop-切面编织过程和代理执行过程
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/12/07/2017/2017-12-07-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Spring-%E4%B9%8B-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90AOP%EF%BC%88XML%E9%85%8D%E7%BD%AE%E6%96%B9%E5%BC%8F%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">深入理解Spring-之-源码剖析AOP（XML配置方式）</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

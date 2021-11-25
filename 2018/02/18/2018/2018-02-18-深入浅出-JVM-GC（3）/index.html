@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>深入浅出-JVM-GC（3） | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="深入浅出-JVM-GC（3）">
+<meta property="og:url" content="http://thinkinjava.cn/2018/02/18/2018/2018-02-18-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%883%EF%BC%89/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-4dddb48f13d54c0a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/700">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-561c63cde0b5272e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-2e8ba996a8146c5a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-02-17T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.306Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-4dddb48f13d54c0a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/700">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-02-18-深入浅出-JVM-GC（3）" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/02/18/2018/2018-02-18-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%883%EF%BC%89/" class="article-date">
+  <time datetime="2018-02-17T18:11:11.000Z" itemprop="datePublished">2018-02-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/JVM/">JVM</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      深入浅出-JVM-GC（3）
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## # 前言
+
+<p>在  <a target="_blank" rel="noopener" href="https://www.jianshu.com/p/18931fbdac05">深入浅出 JVM GC（2）</a> 中，我们介绍了一些 GC 算法，GC 名词，同时也留下了一个问题，就是每个 GC 收集器的具体作用。有哪些 GC 收集器呢？</p>
+<ol>
+<li>Serial 串行收集器（只适用于堆内存 256M 以下的 JVM ）</li>
+<li>ParNew 并行收集器（Serial 收集器的多线程版本）</li>
+<li>Parallel Scavenge （PS 收集器，该收集器以吞吐量为主要目的，是1.8的默认 GC）</li>
+<li>CMS 收集器（该收集器全称 Concurrent Mark Sweep，是一种关注最短停顿时间的垃圾收集器）</li>
+<li>G1 收集器（JDK 9 的默认 GC）</li>
+</ol>
+<p>再回顾一下我们的那张图吧：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-4dddb48f13d54c0a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/700"></p>
+<p>下面我们就一一介绍这些垃圾收集器吧！</p>
+<h2 id="1-Serial-串行收集器（只适用于堆内存256m-以下的-JVM-）"><a href="#1-Serial-串行收集器（只适用于堆内存256m-以下的-JVM-）" class="headerlink" title="1. Serial 串行收集器（只适用于堆内存256m 以下的 JVM ）"></a>1. Serial 串行收集器（只适用于堆内存256m 以下的 JVM ）</h2><p>什么是串行收集器呢？</p>
+<blockquote>
+<p>串行收集器是指使用单线程进行垃圾回收的回收器。每次回收时，串行收集器只有一个工作线程，对于并行能力较弱的计算机来说，串行回收器的专注性和独占性往往有更好的性能表现。串行回收器可以在新生代和老年代使用，根据作用于不同的堆空间，分为新生代串行回收器和老年代串行回收器。</p>
+</blockquote>
+<p>串行回收器可以说是最古老的垃圾回收器了，主要由2个特点：</p>
+<ol>
+<li>他仅仅使用单线程进行垃圾回收。</li>
+<li>他是独占式的垃圾回收器。</li>
+</ol>
+<p>什么是独占式呢？</p>
+<blockquote>
+<p>在串行收集器金进行垃圾回收时，Java 应用程序中的线程都要暂停，等待垃圾回收的完成。这种现象称之为 “Stop-The-World”，他将造成非常糟糕的用户体验，在实时性较高的应用场景中，这种现象往往是不能接受的。</p>
+</blockquote>
+<p>即便如此，串行回收期却是一个成熟且经过长时间生产环境考验的极为高效的收集器。<strong>新生代串行收集器使用复制算法</strong>，实现相对简单，且没有线程切换的开销。在单 CPU 环境下性能表现良好。</p>
+<p>我们可以使用 -XX：UseSerialGC 参数，指定<strong>使用新生代串行收集器和老年代串行收集器</strong>。注意，当虚拟机在 client 模式下，它是默认的垃圾收集器。</p>
+<p>当然还有老年代串行收集器。</p>
+<p><strong>老年代串行收集器使用的标记压缩算法</strong>，也是一个独占式的单线程的垃圾收集器。由于老年代的垃圾回收通常比新生代垃圾回收需要更多的时间，因此，一旦老年代垃圾回收期启动，系统将停顿很长时间。</p>
+<p>即便如此，Serial 老年代处理器也是大名鼎鼎的 CMS 处理器的备用处理器。</p>
+<h2 id="2-ParNew-并行收集器（Serial-收集器的多线程版本）"><a href="#2-ParNew-并行收集器（Serial-收集器的多线程版本）" class="headerlink" title="2. ParNew 并行收集器（Serial 收集器的多线程版本）"></a>2. ParNew 并行收集器（Serial 收集器的多线程版本）</h2><p>上面我们说 Serial 是单线程的处理器，在单核 CPU 情况下，Serial 是个不错的选择，但现代计算机普遍都是多核，因此需要并行的处理器。</p>
+<p>ParNew 就是 Serial 的并行版本。多个线程同时回收，有效缩短垃圾回收所需要的实际时间。</p>
+<p>ParNew 是一个工作在新生代的垃圾收集器，他只是简单的将串行收集器多线程化，他的回收策略，算法以及参数和新生代串行收集器是相同的。同时也是独占式的收集器，在收集过程总，应用会全部暂停。但由于并行回收期用多线程回收，因此，在并发能力比较强的 CPU 上，他产生的停顿时间要短于串行回收器。反之，如果 CPU 并行能力弱，不如使用串行收集器。</p>
+<p>同时，既然是多线程的，虚拟机给我们提供了指定线程数量的参数 -XX:ParallelGCThreads，一般，最好和 CPU 数量相当，默认情况下，当 CPU 数量小于8，ParallelGCThreads 等于 CPU 数量，当 CPU 数量大于 8时，公式是： 3 + （（5 * CPU——Count）/8)。</p>
+<h2 id="3-Parallel-Scavenge-（PS-收集器，该收集器以吞吐量为主要目的，是1-8的默认-GC）"><a href="#3-Parallel-Scavenge-（PS-收集器，该收集器以吞吐量为主要目的，是1-8的默认-GC）" class="headerlink" title="3. Parallel Scavenge （PS 收集器，该收集器以吞吐量为主要目的，是1.8的默认 GC）"></a>3. Parallel Scavenge （PS 收集器，该收集器以吞吐量为主要目的，是1.8的默认 GC）</h2><p>Parallel Scavenge 收集器，又称 PS 收集器，也是多线程的，和 ParNew 类似，但是，PS 收集器更关注吞吐量。</p>
+<p>因此，PS 处理器特意提供了连个参数用于设置吞吐量相关。<br>-XX:MaxGCPauseMillis ：设置最大垃圾收集停顿时间，他的值是一个大于0的整数，ParallelGC 在工作时，会调整 Java 堆大小或者其他一些参数，尽可能的把停顿时间控制在 XX:MaxGCPauseMillis 以内。如果设置的很小，对应的，PS 收集器会将堆设置的很小（小堆比大堆回收快），导致垃圾回收变得频繁，从而降低了吞吐量。</p>
+<p>-XX:GCTimeRatio: 设置吞吐量大小，他的值是一个0 - 100 之间的整数，假设 GCTimeRatio 的值为 n，那么系统将花费不超过 1/(1+n)的时间用于垃圾收集，比如 n 是 19，则系统用于垃圾收集的时间不超过 1/(1+19) = 5%的时间用于垃圾收集，默认情况下，取值为99，即不超过 1% 的时间用于垃圾收集。</p>
+<p>注意：PS 收集器是一个自适应的收集器，使用 -XX：UseAdaptiveSizePolicy 可以打开自适应 GC 策略。在这种模式下，新生代的大小，eden 和 Survivor 的比例，晋升老年代的年龄阈值将会别自动调整<br>，以达到在堆大小，吞吐量和停顿时间的平衡点。在手工调优比较困难的场合，可以直接使用这种自适应的方式，仅指定虚拟机的最大堆，目标吞吐量（GCTimeTatio）和停顿时间（MaxGCPauseMillis），让虚拟机自己完成调优工作。</p>
+<p>也许大家也看到了，GCTimeRatio 和 MaxGCPauseMillis 两个参数有冲突的，通常如果减少一次垃圾收集的停顿时间，意味着你的吞吐量就会下降，如果吞吐量设置的很高，那么你的垃圾收集停顿时间又会变大。</p>
+<h6 id="Parallel-Old"><a href="#Parallel-Old" class="headerlink" title="Parallel Old"></a>Parallel Old</h6><p>有新生代 Parallel Scavenge 收集器，也有老年代 Parallel Old 收集器，他也是一种关注吞吐量的垃圾收集器。故名思意，他是一种工作在 Old 区的垃圾收集器，并且和 Parallel Scavenge 一起使用。Parallel Old 收集器使用的标记压缩算法。</p>
+<h2 id="4-CMS-收集器（该收集器全称-Concurrent-Mark-Sweep，是一种关注最短停顿时间的垃圾收集器）"><a href="#4-CMS-收集器（该收集器全称-Concurrent-Mark-Sweep，是一种关注最短停顿时间的垃圾收集器）" class="headerlink" title="4. CMS 收集器（该收集器全称 Concurrent Mark Sweep，是一种关注最短停顿时间的垃圾收集器）"></a>4. CMS 收集器（该收集器全称 Concurrent Mark Sweep，是一种关注最短停顿时间的垃圾收集器）</h2><p>我们上面说  Parallel Scavenge 和 Parallel Old 收集器都是关注吞吐量的，而现在说的 CMS 处理器则是关注停顿时间的。CMS 是 Concurrent Mark Sweep 的缩写，意味并发标记清除，从名称上可以得知，他使用的是标记清除算法（缺点是产生内存碎片），同时他又是一个使用多线程并行回收的垃圾收集器。</p>
+<p>相对于 Serial Old, Parallel Old 这两个老年代处理器，CMS 比较复杂，为了实现更短的停顿时间，将 GC 的流程更加的细化。</p>
+<p>我们仔细思考，GC 有标记和清理两个过程，事实上，清理的过程是不要 STW（Stop-The-World）的，只有在标记的时候，需要暂停所有应用线程，防止引用关系更改。因此 CMS 做了如下的设计：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-561c63cde0b5272e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="CMS 工作过程"></p>
+<p>上图有6个步骤，但大部分书中都是4个步骤，也就是绿色方框中的，注意，其中初始标记和重新标记都是要系统停顿的，而并发标记和重并发清理都是和系统应用程序并发执行的，因此，相对于上面的两个收集器，CMS 收集器的停顿时间要小的多。</p>
+<p>那么我们就详细说说这几个步骤。</p>
+<ol>
+<li>初始标记，初始标记仅仅是标记一下 GC Roots 能直接关联到的对象，速度很快。</li>
+<li>并发标记阶段就是进行 GC Roots 的跟踪过程。</li>
+<li>预处理，由于并发标记阶段是和应用程序并发执行的，因此，极有可能会产生大量新生的对象指向老年代的对象，引用关系发生变化，同时，后续的 remark 阶段是独占式的，如果不处理那些新生对象和老年代对象的关系，那么 remark 阶段将非常耗时，严重影响性能。因此，在预处理阶段，将会尽量处理那些变化的老年代对象，默认5秒之内，在这段时间内，CMS 会尽量处理那些变化的对象，特别是新生代中的对象，其实这5秒，实际上是在等待一次 YGC，希望 YGC 能够把那些新生的对象消除，避免后面的 remark 阶段扫描导致长时间暂停。不过，这个功能可以通过 -XX:-CMSPrecleaningenabled 关闭。当然也可以通过参数 CMSScavengeBeforeRemark 强制在此阶段发生 YGC。注意：虚拟机还会预估下次的 YGC 发生时间，尽量不让 remark 阶段和下一次 YGC 阶段重叠，防止停顿时间过长。</li>
+<li>重新标记，为了修正并发标记期间因用户线程继续运作而导致标记产生变动的那一部分对象的标记记录。这个阶段的暂停时间一般会比初始标记时间稍长一些，但远比并发标记的时间短。</li>
+<li>并发清理，没啥说的。</li>
+<li>重置之前的状态。</li>
+</ol>
+<p>可以说 CMS 还是比之前的稍微的复杂了一点。同时，CMS 还有3个地方需要注意：</p>
+<ol>
+<li>CMS 对 CPU 资源敏感，什么意思呢？由于 CMS 是并发执行的，虽然不会导致应用程序暂，但是会抢夺 CPU 的资源，应用程序的性能会受到影响。默认线程数是 （CPU + 3）/ 4。所以需要妥当设定好 ParallelGCThreads 参数。</li>
+<li>由于并发清理阶段程序会继续运行，会产生大量的对象，如果内存不够，将会出现 Concurrent Mode Failure 同时 Full GC，并使用备用收集器 Serial ，停顿时间将会非常的长。当出现这种情况的时候，使用 -XX:CMSInitiatingOccupancyFraction 的值来设定老年代的空间使用的百分率来触发 CMS，如果 Old 区内存增长很快，则设置的低一些，防止 Full GC，反之，则可以设置的高一些，尽量减少Old GC。</li>
+<li>由于 CMS 基于标记清除算法，肯定会有内存碎片，因此虚拟机提供了 -XX:+UseCMSCompactAtFullCollection 开关参数（默认开启）,用于在 CMS 顶不住要进行 FGC 的最后进行碎片整理，但停顿时间会变长，因此，虚拟机还提供了一个参数 -XX:CMSFullGCsBeforeCompaction ，这个参数是用于设置执行了多少次不压缩的 FGC 后，跟着来一次整理的（默认是0，也就是每次都整理）。</li>
+</ol>
+<h2 id="5-G1-收集器（Garbage-First，JDK-9-的默认-GC）"><a href="#5-G1-收集器（Garbage-First，JDK-9-的默认-GC）" class="headerlink" title="5. G1 收集器（Garbage-First，JDK 9 的默认 GC）"></a>5. G1 收集器（Garbage-First，JDK 9 的默认 GC）</h2><p>G1 远比 CMS 复杂。</p>
+<p>G1 收集器是 Java9 的默认收集器，Oracle 声称 G1 将会替代 CMS。为什么叫 G1 呢，G1 全称 Garbage-First，也就是垃圾优先。这和他的回收策略有关。我们慢慢往下看。</p>
+<p>G1有5个特点：</p>
+<ol>
+<li>并行性，G1在回收期间，可以让多个线程同时工作，这点其实上述几个收集器都可以（除了 Serial）。</li>
+<li>并发性，G1 拥有和CMS相同的作用，也就是和应用程序部分并发执行。</li>
+<li>分代 GC，G1 最大的区别就是他既工作在年轻代和工作在老年代，和之前的 GC 收集器完全不同。</li>
+<li>空间整理，我们上面说 CMS 有一个缺点是内存碎片，虽然可以通过一些参数解决，但还是不够完美，而 G1 从某种角度看不是基于标记清除算法，而是基于复制算法。因此不会产生碎片。</li>
+<li>可预测的停顿，由于分区的原因，G1可以只选取部分区域进行内存回收，缩小了范围，相应的减少了系统停顿。</li>
+</ol>
+<p>那么 G1 到底是怎么做到这些的呢？</p>
+<p>在 G1之前，垃圾收集器的工作范围都是整个新生代或者老年代，但它不是。它的内存布局和其他收集器不同，它将整个 Java 堆分为多个大小相等的独立区域（Region），虽然还保留有新生代和老年代的概念，但新生代和老年代不再是物理隔离的了，他们都是一部分 Region 的集合。</p>
+<p>G1 只所以可以预测停顿时间，是因为它不再像别的收集器那样收集整个新生代或者老年代，而是回收一部分 Region。</p>
+<p>G1 跟踪各个 Region 里面的垃圾的价值大小（回收所获得空间大小以及回收所需时间的经验值），在后台维护一个优先列表，每次根据允许的收集时间，优先回收价值最大的 Region（这也是 Garbage-First的由来）。这种根据垃圾价值来回收 Region 的方式保证了 G1在有限的时间里回收更多的内存。</p>
+<p>这其实就是“化整为零”。</p>
+<p>在 JVM 启动时不需要立即指定哪些 Region 属于年轻代，哪些 Region 属于老年代，因为无论是年轻代还是老年代，他们都不需要一大块连续的内存，只是由一系列 Region 组成而已。随着时间的流逝，Region 有时属于新生代，有时属于老年代，来回变动。例如开始的时候，Region A 被分配给年轻代，一个年轻代回收结束后，这个 Region 又被放回了空闲/可用Region 队列，可能下一次就被分配给了一个老年代对象使用。</p>
+<p>但是一切并不是那么容易。</p>
+<p>Region 不可能是孤立的，一个对象分配在某个 Region 中，他并非只能被本 Region 中的其他对象引用，而是可以与整个 Java 堆任意的对象发生引用关系。在做可达性判断的时候，难道要扫描整个堆吗？也就是说，如果回收新生代的时候同时也扫描老年代，那么 YGC 的效率将会大打折扣。</p>
+<p>G1 如何处理这个问题的呢？Region 之间的对象引用以及其他收集器中的新生代和老年代之间的对象引用，JVM 都是使用 Remembered Set 来避免全堆扫描的。<strong>G1 中每个 Region 都有一个与之对应的 Remembered Set</strong>。当Region 中的引用发生变化的时候，G1 将会把这些信息记录到一个 CardTable 数据结构中并存到被引用对象所属Region 的 RSet 中。当进行内存回收哦时，在 GC 根节点的枚举范围中加入  RSet 即可保证不对全堆扫描也不会有遗漏。一般来说，RSet 的大小占整个 Java 堆空间的1% - 20%。</p>
+<p>G1 把整个 Java 堆划分成若干个Region，每个 Region 大小为2的倍数，范围在 1MB-32MB 之间，可能是1MB，2MB，4MB，8MB，16MB，32MB。所有的 Region 有一样的大小，最多可以有 2048 个 Region，在 JVM 生命周期内都不会改变。</p>
+<p><strong># G1 的收集过程</strong></p>
+<p>G1  收集过程分为4个阶段：</p>
+<ol>
+<li>新生代 GC。</li>
+<li>并发标记周期</li>
+<li>混合收集</li>
+<li>如果需要，将进行 FGC</li>
+</ol>
+<p>G1 YGC 的过程和之前的YGC 基本相同：当 Eden 区占满，YGC 就会启动，YGC 只处理 Eden 和 Survivor 区，回收后，所有的 Eden 区都应该被清空，而 Survivor 区会被收集一部分数据，但是应用至少仍然存在一个 Survivor 区。另外，老年代的 Region 会增多，因为通常YGC 后会有大量的对象晋升到老年代。</p>
+<p>当老年代的使用率达到了一定的阈值，则会触发并发标记，而并发标记的主要目的则是为了标记出那些垃圾比例较高的 Region，为后面的混合收集服务，即收集整个新生代和部分老年代。而并发标记的过程和 CMS 相似。可以参考 CMS 的过程。</p>
+<p>在之前的并发标记过程中，已经标记出来垃圾比例较高的 Region，此时轮到混合回收出场了，而这也是 G1 的由来，Garbage First ，优先回收垃圾比例较高的 Region。之所以叫混合回收，是因为既执行正常的年轻代 GC，又会选取一些被标记的老年代 Region 进行回收。被清理的区域中的存货对象会被拷贝到其他区域，消除了 CMS 产生的内存碎片。<br>混合 GC 会执行多次，直到回收了足够多的内存空间，然后，他会触发一次 YGC，YGC 后，又可能会发生一次并发周期的处理，最后，又会引起混合 GC 的执行，循环反复。如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-2e8ba996a8146c5a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="混合 GC 过程"></p>
+<p>如果内存增长的很快，而混合 GC 的速度又跟不上，老年代被填满，则进行一次FGC。而 G1 和 FGC 算法是单线程的 Serial GC，因此会造成长时间的停顿，所以，一定要避免 FGC 出现。</p>
+<p><strong># 什么时候使用 G1？</strong><br>如果一个应用程序员具有如下特征，那么将 CMS 或 ParallelOldGC 切换到G1将会大大提高性能。否则还请继续使用 CMS。</p>
+<ol>
+<li>Full GC 次数太频繁或者消耗时间太长。</li>
+<li>对象分配的频率或代数（promotion）显著变化。</li>
+<li>受够了太长的垃圾回收或内存整理时间（超过0.5s-1s）。</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="#总结"></a>#总结</h2><p>到这里，我们的5个垃圾收集器大致也就介绍完了。注意，我们这里只是一些 概念性的介绍，甚至没有贴出 GC 日志和大家一起分析。但 GC 的调优是一门艺术，需要不断的试错，才能针对当前的应用找到一个完美的配置，什么是完美的配置？YGC  时间尽量短，FGC 尽量没有，如果有 CMS 或者 G1，尽量保证停顿时间尽可能的短。</p>
+<p>我们将会在后面的文章继续学习 GC 的只是，这里只是抛砖引玉。如果有不对的地方，还请指出。感谢！</p>
+<p>good luck!!!</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/02/18/2018/2018-02-18-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%883%EF%BC%89/" data-id="ckwes9acx0079krs182s7gmbm" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/02/18/2018/2018-02-18-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%882%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          深入浅出-JVM-GC（2）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/02/17/2018/2018-02-17-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%881%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">深入浅出-JVM-GC（1）</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

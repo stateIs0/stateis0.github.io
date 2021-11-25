@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>框架设计原则（梁飞） | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="框架设计原则（梁飞）">
+<meta property="og:url" content="http://thinkinjava.cn/2018/10/20/2018/2018-10-20-%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99%EF%BC%88%E6%A2%81%E9%A3%9E%EF%BC%89/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-cdc90616f48ca317.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-1cc980030bdcc3d1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-f1c8ef84562c176c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-85cf6df6bdac6163.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-e38bd0a40b19206d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-231023fac9a633b6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-60328aeaccfc19cf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-10-20T15:03:01.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.333Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-cdc90616f48ca317.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-10-20-框架设计原则（梁飞）" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/10/20/2018/2018-10-20-%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99%EF%BC%88%E6%A2%81%E9%A3%9E%EF%BC%89/" class="article-date">
+  <time datetime="2018-10-20T15:03:01.000Z" itemprop="datePublished">2018-10-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      框架设计原则（梁飞）
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 大纲
+
+<p>1 模块分包原则<br>2 框架扩展原则<br>3 领域划分原则<br>4 接口分离原则<br>5 组件协作原则<br>6 功能演进原则</p>
+<p>我将对每个原则进行自己的解读，如有不对，还请指教 ：）</p>
+<hr>
+<h2 id="1-模块分包原则"><a href="#1-模块分包原则" class="headerlink" title="1 模块分包原则"></a>1 模块分包原则</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-cdc90616f48ca317.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>说说我的理解。这里其实是从框架结构的解读来解读，这里的包指的是 Maven 的 module。</p>
+<p>复用度，指的是 maven 包的复用。可以理解为工具类。这个工具类不应该变化无常。</p>
+<p>稳定度：被依赖的包应该保持稳定，或者说，被依赖者应当比依赖者稳定，且不能成环状依赖。如果不稳定，将会影响其他的包。</p>
+<p>抽象度，越抽象，越稳定。越具体，越容易变化。</p>
+<p>同时，梁飞给出了一个公式，但是实践起来有点麻烦…….</p>
+<p>关于模块分包，可以参见更详细的博客。 <a target="_blank" rel="noopener" href="http://javatar.iteye.com/blog/1188028">以HTTL为例讲讲模块分包&amp;领域模型&amp;扩展框架</a></p>
+<hr>
+<h2 id="2-框架扩展原则"><a href="#2-框架扩展原则" class="headerlink" title="2 框架扩展原则"></a>2 框架扩展原则</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-1cc980030bdcc3d1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>这是其实是说的比较多的东西了。</p>
+<p>什么是微核心 + 插件？按照作者的说法，核心只负责装配插件。这样，无论是作者自己的功能，还是第三方的功能，都是平等的，再多的插件也不会影响软件架构，因为没有硬编码，且都是可以卸载的。甚至微核也是可以扩展的。：）</p>
+<p>同时，插件的组装规则是统一的。说到这里，你应该想到了 IDEA，Maven，Eclipse 等等。</p>
+<p>然后说外置生命周期。这个其实我是有一点不理解的。按照作者的说法，其实是说，框架只负责管理对象，对象的出生和死亡不由框架负责。即，用户应将实例注册到框架中。</p>
+<p>但 Spring 似乎不是这么做的。同时，如果使用注册机制，那么就需要硬编码。或者说，Spring 本身就是管理 Bean 生命周期的框架，而 Dubbo 的职责不在于此？</p>
+<p>最少化概念模型，这个其实是一种优化。</p>
+<p>一致化数据模型：例如 URL 这种对象，就是一致化数据模型，拒绝使用 String 拼接，解析。</p>
+<hr>
+<h2 id="3-领域划分原则"><a href="#3-领域划分原则" class="headerlink" title="3 领域划分原则"></a>3 领域划分原则</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-f1c8ef84562c176c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>这是在框架设计中，是非常重要的。</p>
+<p>PPT 中已经说的非常清楚，我就不再说明。其中，Invocation 一定要轻量。否则，对 GC 来说，将是很大的压力（使用对象池？性能不好。）</p>
+<p>说说他的好处：</p>
+<ol>
+<li>结构清晰，这个不必讲吧。</li>
+<li>充血模型……这个怎么理解？</li>
+<li>可变和不可变状态分离，可变状态集中。通常实体域都是只读的，即不变状态。会话域都是可变状态。</li>
+<li>所有领域模型线程安全。无锁编程（lock-free 非常重要）。</li>
+</ol>
+<p>关于他们的线程安全性：</p>
+<ol>
+<li>服务域无状态，天生线程安全。</li>
+<li>实体域属性只读，线程安全。</li>
+<li>会话域工作在栈中，线程安全。</li>
+</ol>
+<p>所以，需要保证他们是这么设计的，才能实现无锁编程。</p>
+<hr>
+<h2 id="4-接口分离原则"><a href="#4-接口分离原则" class="headerlink" title="4 接口分离原则"></a>4 接口分离原则</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-85cf6df6bdac6163.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>关于接口分离，我认为是单一职责的一种实现。</p>
+<p>其中提到 API 和 SPI，API 面向用户，SPI 面向开发者。两者必须分离。</p>
+<p>声明式 API 和过程式 SPI ，没看懂，看懂的说一下。：）</p>
+<p>API 可配置，一定可编程，这个不用说吧。</p>
+<p>区分命令和查询，例如，不应该有 updateAndGet 这个方法（不包括原子类），应该分成 2  个方法，保证 get 方法幂等。</p>
+<p>对称性接口：很简单，有 get 方法，就应该有 set 方法，有 add 就由 remove，称之为对称性和完备性。这样用户能自行推导出接口。</p>
+<p>兼容性：如果接口加方法，应该是增加子接口的方式。其他的没看明白…….</p>
+<hr>
+<h2 id="5-组件协作原则"><a href="#5-组件协作原则" class="headerlink" title="5 组件协作原则"></a>5 组件协作原则</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-e38bd0a40b19206d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>这个就比较爽了，我们知道 Dubbo 是管道式设计。一个 Invoker 贯通整个流程，事实上，web 服务器都是这么设计的。例如 Tomcat ，Netty。</p>
+<p>关于派发，还记得 Spring 的 dispatchServlet 吗？</p>
+<p>关于状态的共享：</p>
+<ul>
+<li>分布是什么？即通过行为传递（适合交互性系统）。</li>
+<li>共享是什么？通过一个固定的点获取，称之为仓库（适合管理状态的系统）。</li>
+</ul>
+<p>主过程拦截，还记得 Mybatis 留给我们的插件吗？还记得 Spring 留给我们的拦截器吗？框架要在关键节点留出拦截点供用户扩展。</p>
+<p>事件派发：观察者模式，Reactor 模式，另外提到 Proactor 模式，查了一下，通常在 GNU 编程中，由 OS 支持。</p>
+<p>Dubbo 暴露、引用、调用事件，都预留了监听器。</p>
+<p>关键路径，即在管道使用职责连模式进行拦截，保证每个拦截器职责单一。</p>
+<p>非关键路径，需要有监听机制，不能影响主流程运行。</p>
+<p>关于协作防御，我理解为防御性编程。</p>
+<ol>
+<li>分离可靠操作和不可靠操作。不可靠操作尽量范围要小。</li>
+<li>状态分离，尽量无状态。状态要尽可能小。</li>
+<li>对状态要尽早验证，因为如果失败，通常无人回滚。前后断言验证状态正确性。</li>
+<li>异常防御，应该是预见性的异常，异常包含环境信息。</li>
+<li>降低修改成本，防止埋雷：不要根据异常类型做分支判断。保持 null 和 empty 一致。</li>
+</ol>
+<hr>
+<h2 id="6-功能演进原则"><a href="#6-功能演进原则" class="headerlink" title="6 功能演进原则"></a>6 功能演进原则</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-231023fac9a633b6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>第一就是开闭原则，微核心加插件机制能够支持。<br>软件质量的下降，来源于修改。</p>
+<p>加功能的姿势：应该是增量式，而不是扩充式，即不在原有基础上修改，而是新增加功能。</p>
+<p>关于高阶：顶层接口尽量抽象，且不能依赖底层实现。这样，当底层实现变化时，高层无需变化。</p>
+<p>例如 Dubbo 泛化，在顶层就足够抽象，底层实现方式不影响高层。</p>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-60328aeaccfc19cf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>以上是梁飞总结。</p>
+<p>今天说的框架设计和现在大部分人喜欢说的架构设计有所不同，现在似乎只需要再 processon 上放几个阿里云组件，再连几条线，就是架构设计了 ：）</p>
+<p>我个人认为，框架设计更能考验一个程序员对程序的抽象和管理能力（也许措辞不当？）</p>
+<p>然后，再说说我的总结：关于一个系统的设计，这里应该指的是框架的设计，首先要知道用户需求（废话）。根据需求抽象出模型，再变成代码，且是可扩展，可复用的代码。</p>
+<p>这里提到的 6 个原则，应该算是比较成熟的原则了。</p>
+<p>微核 + 插件，非常理想化，例如 SOFA，也有自己的扩展机制。</p>
+<p>关于领域模型设计，这 3 个模型的职责一定要划分清楚，同时实现无锁编程，这个对于系统的性能非常重要。</p>
+<p>关于组件协作，一个系统有多个组件，通常需要进行状态的共享，在 Dubbo 中，使用行为进行传递，也就是会话域。</p>
+<p>关于功能演进，请遵循开闭原则，但前提通常是有一个好的内核。</p>
+<p>关于接口分离和模块分包，通常在后期重构能够达到更好的效果？</p>
+<p>好了，洋洋洒洒说了不少，读者如有更好的见解，请与我分享，毕竟现在关注这块的人不多了。：）</p>
+<p>EOF</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/10/20/2018/2018-10-20-%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99%EF%BC%88%E6%A2%81%E9%A3%9E%EF%BC%89/" data-id="ckwes9af400fnkrs17hnnd0l7" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/10/26/2018/2018-10-26-Raft%20%E5%9F%BA%E7%A1%80/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          Raft 基础
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/10/20/2018/2018-10-20-%E6%B1%87%E6%80%BB%E6%A2%81%E9%A3%9E%E5%8D%9A%E5%AE%A2%E8%AE%BE%E8%AE%A1%E6%96%87%E7%AB%A0/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">汇总梁飞博客设计文章</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

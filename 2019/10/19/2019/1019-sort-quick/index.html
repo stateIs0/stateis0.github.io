@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>快速排序 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="快速排序">
+<meta property="og:url" content="http://thinkinjava.cn/2019/10/19/2019/1019-sort-quick/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-977bdc264c691e02.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-653feffa20d10ea7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-8b110bee422cb55f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-275c78e328732820.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-5ab7fa4df0d2e854.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-cef36062fa6bb1e4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-96861096b4fd95a9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-235a7d56ede3597a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-5d15706e3d8b5db8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-4bf28bf6dac6c133.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-af0d457b7f5a73bf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-9d8689014866e9aa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/18906978-f07661b4bf0c7df2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2019-10-18T18:01:02.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.337Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/18906978-977bdc264c691e02.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2019/1019-sort-quick" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/10/19/2019/1019-sort-quick/" class="article-date">
+  <time datetime="2019-10-18T18:01:02.000Z" itemprop="datePublished">2019-10-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      快速排序
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>    
+
+<h2 id="简述"><a href="#简述" class="headerlink" title="简述"></a>简述</h2><p>快排是排序算法中绕不开的关键一环，其中涉及到分治算法，二分查找等关键知识。</p>
+<p>本文内容：</p>
+<ol>
+<li>快排原理</li>
+<li>代码实现</li>
+<li>分区过程图示</li>
+<li>&lt;啊哈算法&gt; 中的另一种实现</li>
+<li>复杂度</li>
+<li>优化</li>
+</ol>
+<h2 id="快排原理"><a href="#快排原理" class="headerlink" title="快排原理"></a>快排原理</h2><p>快排也归并类似，也使用了分治的思想，即将原序列划分成 2 份，然后继续递归。但是他们的区别是：</p>
+<p>归并的划分是简单的通过找中位下标进行，他的公式是 $mid = \frac {(low + high)}2$<br>快排的划分，是通过一个参考值，将每个数据和参考值比较，然后将划分成 2 份，左边的比参考值小，右边的比参考值大。他的公式是 ：$mid = partitin(A, low, high)$ ，通过一个 partition 函数，找到一个 mid 值。</p>
+<p>在算法导论中，伪代码是这样的：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-977bdc264c691e02.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>代码中，先使用 partition 函数，获取 mid 值，然后，将 2 个序列继续进行递归调用。</p>
+<p>其中，partition 的关键函数如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-653feffa20d10ea7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>算法会设计两个指针 i 和 j，i 左边的数据表示已经排好序的元素，j 指针用来寻找比 参考值 x 小的 元素。如果 j 所在的元素比 x 小，就将 i 和 j 交换，并将 i 指针前进一步。最后，将 i 所在的元素和 x 进行互换，达到分区的目的。</p>
+<h2 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">quickSort</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> low, <span class="keyword">int</span> high)</span> </span>&#123;</span><br><span class="line">     <span class="keyword">if</span> (low &gt;= high) &#123;</span><br><span class="line">         <span class="keyword">return</span>;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">int</span> mid = partition(arr, low, high);</span><br><span class="line">     quickSort(arr, low, mid - <span class="number">1</span>);</span><br><span class="line">     quickSort(arr, mid + <span class="number">1</span>, high);</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">partition</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> low, <span class="keyword">int</span> high)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">     <span class="keyword">int</span> x = arr[high];</span><br><span class="line">     <span class="keyword">int</span> i = low;</span><br><span class="line">     <span class="keyword">int</span> j = low;</span><br><span class="line"></span><br><span class="line">     <span class="keyword">while</span> (j &lt; high) &#123;</span><br><span class="line">         <span class="keyword">if</span> (arr[j] &lt;= x) &#123;</span><br><span class="line">             swap(arr, i++, j);</span><br><span class="line">         &#125;</span><br><span class="line">         j++;</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">     swap(arr, i, high);</span><br><span class="line"></span><br><span class="line">     <span class="keyword">return</span> I;</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">swap</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> low, <span class="keyword">int</span> high)</span> </span>&#123;</span><br><span class="line">     <span class="keyword">int</span> tmp = arr[low];</span><br><span class="line">     arr[low] = arr[high];</span><br><span class="line">     arr[high] = tmp;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码中，关键就是 parttion 函数，我们使用了 i 和 j 两个指针，每次 j 都会自增，如果 j 比 x 小，那么，就将 j 和 i 交换，同时 i 自增。目的就是让 i 左边的序列是有序的，j 和 i 之间不会存在比 x 小的元素。j 的作用是寻找比 x 下的元素，直到 j == hight。</p>
+<h2 id="图示"><a href="#图示" class="headerlink" title="图示"></a>图示</h2><p>假设我们现在有一个序列：</p>
+<p>{2, 3, 1, 6, 9, 0 ,4, 8, 5}</p>
+<p>排序过程是怎么样的呢？</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-8b110bee422cb55f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>首先，参考值 x 是 5.</p>
+<p>我们从最左边开始，和 x 比较。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-275c78e328732820.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>左边的 2，3，1 元素，都比 5 小，直接跳过，i 和 j 指针同时进行。直到遇到 6 ，比 x 大，此时，i 停止，保证 i 左边的元素是有序的，j 继续寻找 比  x 小的元素。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-5ab7fa4df0d2e854.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>j 找到了 0 这个元素，比 x 小，此时 i 还在 6 这个位置，因此，我们可以将 i 和 j 进行交换，并将 i 前进一位，使 i 左边的序列继续有序。j 继续向前扫描。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-cef36062fa6bb1e4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>j 又找到了 4 个元素，比 x 小，算法重复上个步骤：将 i 和 j 交换，i 和 j 都前进一步。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-96861096b4fd95a9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>现在 j 走到了尽头，此时我们需要将参考值 x 和 i 进行交换，使 x 左边比 x 小，x 右边 比 x 大，并返回 x 所在的下标。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-235a7d56ede3597a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>此时，完成了一次分区。</p>
+<h2 id="lt-啊哈算法-gt-中的另一种实现"><a href="#lt-啊哈算法-gt-中的另一种实现" class="headerlink" title="&lt;啊哈算法&gt; 中的另一种实现"></a>&lt;啊哈算法&gt; 中的另一种实现</h2><p>在另一本算法普及书《啊哈算法》 中，也实现另一个快排，不过，和算法导论的有一点点区别，区别在于指针的开始阶段不同。</p>
+<p>算法导论的指针，i 和 j 是从同一个方向开始的。<br>啊哈算法中的指针，i 总左边开始，j 从右边开始，两个指针相遇，就停止循环。</p>
+<p>在我的电脑中进行测试，后者的性能，要比前者更好。</p>
+<p>我们看看后者的分区过程是怎么样的。</p>
+<p>现在我们有一个无序数组：</p>
+<p>{2, 3, 1,6, 9, 0,4,8,5}</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-5d15706e3d8b5db8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>首先，参考值是 5，i 从左边开始，j 从右边开始，<strong>i 用于寻找比 pivot 大的元素，j 用于寻找比 pivot 小的元素，然后将 i 和 j 进行交换</strong>。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-4bf28bf6dac6c133.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>上图中，i 为了找到 比 pivot 大的元素，走到了 6 的位置，j 为了找到比 pivot 小的元素，走到了 4 的位置，然后进行交换。然后，各自继续前进。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-af0d457b7f5a73bf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>重复上次的操作，进行交换，并前进一步。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-9d8689014866e9aa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>此时，i 和 j 相遇，停止循环，此时，需要将 pivot 和 i 进行交换，让 pivot 左边的比自身小，pivot 右边的，比自身大。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/18906978-f07661b4bf0c7df2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>此时，完成了一次分区。</p>
+<p>代码实现如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">qSort</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> head, <span class="keyword">int</span> tail)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (head &gt;= tail || arr == <span class="keyword">null</span> || arr.length &lt;= <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> i = head, j = tail, pivot = arr[tail - <span class="number">1</span>];</span><br><span class="line">    <span class="keyword">while</span> (i &lt;= j) &#123;</span><br><span class="line">        <span class="keyword">while</span> (arr[i] &lt; pivot) &#123;</span><br><span class="line">            ++i;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">while</span> (arr[j] &gt; pivot) &#123;</span><br><span class="line">            --j;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (i &lt; j) &#123;</span><br><span class="line">            <span class="keyword">int</span> t = arr[i];</span><br><span class="line">            arr[i] = arr[j];</span><br><span class="line">            arr[j] = t;</span><br><span class="line">            ++i;</span><br><span class="line">            --j;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (i == j) &#123;</span><br><span class="line">            ++i;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    qSort(arr, head, j);</span><br><span class="line">    qSort(arr, i, tail);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我在我的电脑上，使用如下数据进行测试：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> s = System.currentTimeMillis();</span><br><span class="line">    <span class="keyword">int</span>[] arr = <span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">10000000</span>];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000000</span>; i++) &#123;</span><br><span class="line">        arr[i] = ThreadLocalRandom.current().nextInt(<span class="number">90000</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    qSort(arr, <span class="number">0</span>, arr.length - <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">long</span> e = System.currentTimeMillis();</span><br><span class="line"></span><br><span class="line">    System.out.println(<span class="string">&quot;time : &quot;</span> + (e - s));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>1k 万的数据，使用首尾指针，时间是 800ms 左右，使用前后指针，时间是 1100ms 左右。（归并的排序时间是 1300ms）。</p>
+<p>个人认为，差距在于：前后指针，如果数据是的有序度是50%，那么 i 和 j 的指针会走 150% 次，而首尾指针则只会走100% 次。这个是常量级的时间损耗。</p>
+<h2 id="复杂度"><a href="#复杂度" class="headerlink" title="复杂度"></a>复杂度</h2><p>快排和归并一样，使用分治算法，但是他们时间复杂度并一样：<br>最好：$O(nlogn)$<br>最坏：$O(n^2)$<br>平均：$O(nlogn)$</p>
+<p>空间复杂度，注意，虽然快排是原地排序，但是由于使用递归，递归本身就是栈，因此，递归的深度就是他的空间复杂度，而递归的深度就是 $O(logn)$，因此，他的空间复杂就是 $O(logn)$，不是 $O(1)$.</p>
+<p>快排是稳定的排序算法吗？</p>
+<p>答案：不是。</p>
+<p>假设现在有一个序列：$6，8，7，6，3，5，9，4$</p>
+<p>我们以 4 作为 pivot ，在第一次分区，进行交换后，6 和 3 的位置进行交换，此时， 两个 6 的位置就变化了，因此，快排不是稳定的排序算法。</p>
+<h2 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h2><p>快排的优化，在于如何选取合适 的 pivot 。</p>
+<p>为什么这么说。</p>
+<p>如果快排的原始数据是接近有序的，那么，分区函数的性能将急剧下降，退化成 $O(n^2)$.</p>
+<p>为什么？试想，我们每次选取的 pivot 都是最后一位，分区函数如果想找到正确的分区点，需要交换整个序列。如果想递归完成所有分区操作，则需要 n 次，而不是 logn 次。</p>
+<p>而最好的状态就是，分区之后，两边的数据量是均等的。</p>
+<p>那么，如何取 pivot 就很重要了。</p>
+<p>通常有 2 种方式：</p>
+<ol>
+<li>随机数，从概率上来说，随机数，能够保证命中的概率是一致的。</li>
+<li>3 个数字取中法。我们从首、尾、中，三个地方取出数字，取其中间值当做 pivot。如果数量量比较大，就需要 5 数取中，10 数取中等方法。</li>
+</ol>
+<p>另外，由于快排是使用递归的，因此，如果递归栈过深，可能导致堆栈溢出，因此，如果堆栈很深，可以手动模拟堆栈实现。防止堆栈溢出。归并也是同样的道理。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>快排的思想很优秀，使用了分治思想，原地排序。</p>
+<p>但是他也有缺点。</p>
+<ol>
+<li>不是稳定的排序算法</li>
+<li>如果数据本身有序度很高，那么，算法性能将急剧退化，需要使用优化策略处理。</li>
+</ol>
+<p>关于优化，很多排序函数不会仅仅只用一种算法。</p>
+<p>例如：</p>
+<p>在数据量很小的时候，使用归并排序，因为算法稳定，$O（n）$的空间复杂度问题也不大。</p>
+<p>在数据量很大的时候，使用快排，取 pivot 时，进行优化，例如随机，3 数取中。</p>
+<p>在序列元素很少时，使用插入排序，例如当递归到只有 4 个元素时，快排算法需要 12 次，而插入排序最多只需要 16 次，如果序列的有序度不那么差，插入排序会比快排性能要好。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2019/10/19/2019/1019-sort-quick/" data-id="ckwes9abz0043krs129yh8z43" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/10/19/2019/1019-sort-bb/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          排序算法——冒泡排序
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/10/19/2019/1019-sort-summary-final/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">排序算法总结</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

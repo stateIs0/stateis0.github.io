@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>并发编程之——读锁源码分析(解释关于锁降级的争议) | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之——读锁源码分析(解释关于锁降级的争议)">
+<meta property="og:url" content="http://thinkinjava.cn/2018/04/18/2018/2018-04-18-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B%E2%80%94%E2%80%94%E8%AF%BB%E9%94%81%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90(%E8%A7%A3%E9%87%8A%E5%85%B3%E4%BA%8E%E9%94%81%E9%99%8D%E7%BA%A7%E7%9A%84%E4%BA%89%E8%AE%AE)/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-c747934c55844272.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-929c163b9a89093d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-f545a504abde8c2f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-04-17T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.315Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-c747934c55844272.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-04-18-并发编程之——读锁源码分析(解释关于锁降级的争议)" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/04/18/2018/2018-04-18-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B%E2%80%94%E2%80%94%E8%AF%BB%E9%94%81%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90(%E8%A7%A3%E9%87%8A%E5%85%B3%E4%BA%8E%E9%94%81%E9%99%8D%E7%BA%A7%E7%9A%84%E4%BA%89%E8%AE%AE)/" class="article-date">
+  <time datetime="2018-04-17T18:11:11.000Z" itemprop="datePublished">2018-04-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      并发编程之——读锁源码分析(解释关于锁降级的争议)
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 1. 前言
+
+<p>在前面的文章 <a href="http://thinkinjava.cn/article/106">并发编程之——写锁源码分析</a>中，我们分析了 1.8 JUC 中读写锁中的<strong>写锁的获取和释放过程</strong>，今天来分析一下读锁的获取和释放过程，读锁相比较写锁要稍微复杂一点，其中还有一点有争议的地方——锁降级。</p>
+<p>今天就来解开迷雾。</p>
+<h2 id="2-获取读锁-tryAcquireShared-方法"><a href="#2-获取读锁-tryAcquireShared-方法" class="headerlink" title="2. 获取读锁 tryAcquireShared 方法"></a>2. 获取读锁 tryAcquireShared 方法</h2><p>首先说明，获取读锁的过程是获取共享锁的过程。</p>
+<p>代码加注释如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">final</span> int11 <span class="title">tryAcquireShared</span><span class="params">(<span class="keyword">int</span> unused)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    Thread current = Thread.currentThread();</span><br><span class="line">    <span class="keyword">int</span> c = getState();</span><br><span class="line">    <span class="comment">// exclusiveCount(c) != 0 ---》 用 state &amp; 65535 得到低 16 位的值。如果不是0，说明写锁别持有了。</span></span><br><span class="line">    <span class="comment">// getExclusiveOwnerThread() != current----&gt; 不是当前线程</span></span><br><span class="line">    <span class="comment">// 如果写锁被霸占了，且持有线程不是当前线程，返回 false，加入队列。获取写锁失败。</span></span><br><span class="line">    <span class="comment">// 反之，如果持有写锁的是当前线程，就可以继续获取读锁了。</span></span><br><span class="line">    <span class="keyword">if</span> (exclusiveCount(c) != <span class="number">0</span> &amp;&amp; getExclusiveOwnerThread() != current)</span><br><span class="line">        <span class="comment">// 获取锁失败</span></span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    <span class="comment">// 如果写锁没有被霸占，则将高16位移到低16位。</span></span><br><span class="line">    <span class="keyword">int</span> r = sharedCount(c);<span class="comment">// c &gt;&gt;&gt; 16</span></span><br><span class="line">    <span class="comment">// !readerShouldBlock() 和写锁的逻辑一样（根据公平与否策略和队列是否含有等待节点）</span></span><br><span class="line">    <span class="comment">// 不能大于 65535，且 CAS 修改成功</span></span><br><span class="line">    <span class="keyword">if</span> (!readerShouldBlock() &amp;&amp; r &lt; <span class="number">65535</span> &amp;&amp; compareAndSetState(c, c + <span class="number">65536</span>)) &#123;</span><br><span class="line">        <span class="comment">// 如果读锁是空闲的， 获取锁成功。</span></span><br><span class="line">        <span class="keyword">if</span> (r == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 将当前线程设置为第一个读锁线程</span></span><br><span class="line">            firstReader = current;</span><br><span class="line">            <span class="comment">// 计数器为1</span></span><br><span class="line">            firstReaderHoldCount = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">        &#125;<span class="comment">// 如果读锁不是空闲的，且第一个读线程是当前线程。获取锁成功。</span></span><br><span class="line">         <span class="keyword">else</span> <span class="keyword">if</span> (firstReader == current) &#123;<span class="comment">// </span></span><br><span class="line">            <span class="comment">// 将计数器加一</span></span><br><span class="line">            firstReaderHoldCount++;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;<span class="comment">// 如果不是第一个线程，获取锁成功。</span></span><br><span class="line">            <span class="comment">// cachedHoldCounter 代表的是最后一个获取读锁的线程的计数器。</span></span><br><span class="line">            HoldCounter rh = cachedHoldCounter;</span><br><span class="line">            <span class="comment">// 如果最后一个线程计数器是 null 或者不是当前线程，那么就新建一个 HoldCounter 对象</span></span><br><span class="line">            <span class="keyword">if</span> (rh == <span class="keyword">null</span> || rh.tid != getThreadId(current))</span><br><span class="line">                <span class="comment">// 给当前线程新建一个 HoldCounter</span></span><br><span class="line">                cachedHoldCounter = rh = readHolds.get();</span><br><span class="line">            <span class="comment">// 如果不是 null，且 count 是 0，就将上个线程的 HoldCounter 覆盖本地的。</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (rh.count == <span class="number">0</span>)</span><br><span class="line">                readHolds.set(rh);</span><br><span class="line">            <span class="comment">// 对 count 加一</span></span><br><span class="line">            rh.count++;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 死循环获取读锁。包含锁降级策略。</span></span><br><span class="line">    <span class="keyword">return</span> fullTryAcquireShared(current);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>总结一下上面代码的逻辑吧！</p>
+<ol>
+<li>判断写锁是否空闲。</li>
+<li>如果不是空闲，且当前线程不是持有写锁的线程，则返回 -1 ，表示抢锁失败。如果是空闲的，进入第三步。如果是当前线程，进入第三步。</li>
+<li>判断持有读锁的数量是否超过 65535，然后使用 CAS 设置 int 高 16 位的值，也就是加一。</li>
+<li>如果设置成功，且是第一次获取读锁，就设置 firstReader 相关的属性（为了性能提升）。</li>
+<li>如果不是第一次，当当前线程就是第一次获取读锁的线程，对 “第一次获取读锁线程计数器” 加 1.</li>
+<li>如果都不是，则获取最后一个读锁的线程计数器，判断这个计数器是不是当前线程的。如果是，加一，如果不是，自己创建一个新计数器，并更新 “最后读取的线程计数器”（也是为了性能考虑）。最后加一。返回成功。</li>
+<li>如果上面的判断失败了（CAS 设置失败，或者队列有等待的线程（公平情况下））。就调用 fullTryAcquireShared 方法死循环执行上面的步骤。</li>
+</ol>
+<p>步骤还是有点多哈，画个图吧，更清晰一点。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-c747934c55844272.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>其实，上面的逻辑里，是有锁降级的逻辑在里面的。但我们等会放在后面说。</p>
+<p>先看看 <code>fullTryAcquireShared</code> 方法，其实这个方法和 <code>tryAcquireShared</code> 高度类似。代码加注释如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">int</span> <span class="title">fullTryAcquireShared</span><span class="params">(Thread current)</span> </span>&#123;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * 这段代码与tryAcquireShared中的代码有部分重复，但整体更简单。</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    HoldCounter rh = <span class="keyword">null</span>;</span><br><span class="line">    <span class="comment">// 死循环</span></span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="keyword">int</span> c = getState();</span><br><span class="line">        <span class="comment">// 如果存在写锁</span></span><br><span class="line">        <span class="keyword">if</span> (exclusiveCount(c) != <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 并且不是当前线程，获取锁失败，反之，如果持有写锁的是当前线程，那么就会进入下面的逻辑。</span></span><br><span class="line">            <span class="comment">// 反之，如果存在写锁，但持有写锁的是当前线程。那么就继续尝试获取读锁。</span></span><br><span class="line">            <span class="keyword">if</span> (getExclusiveOwnerThread() != current)</span><br><span class="line">                <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">        <span class="comment">// 如果写锁空闲，且可以获取读锁。</span></span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (readerShouldBlock()) &#123;</span><br><span class="line">            <span class="comment">// 第一个读线程是当前线程</span></span><br><span class="line">            <span class="keyword">if</span> (firstReader == current) &#123;</span><br><span class="line">            <span class="comment">// 如果不是当前线程</span></span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (rh == <span class="keyword">null</span>) &#123;</span><br><span class="line">                    rh = cachedHoldCounter;</span><br><span class="line">                    <span class="keyword">if</span> (rh == <span class="keyword">null</span> || rh.tid != getThreadId(current)) &#123;</span><br><span class="line">                        <span class="comment">// 从 ThreadLocal 中取出计数器</span></span><br><span class="line">                        rh = readHolds.get();</span><br><span class="line">                        <span class="keyword">if</span> (rh.count == <span class="number">0</span>)</span><br><span class="line">                            readHolds.remove();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (rh.count == <span class="number">0</span>)</span><br><span class="line">                    <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果读锁次数达到 65535 ，抛出异常</span></span><br><span class="line">        <span class="keyword">if</span> (sharedCount(c) == MAX_COUNT)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> Error(<span class="string">&quot;Maximum lock count exceeded&quot;</span>);</span><br><span class="line">        <span class="comment">// 尝试对 state 加 65536, 也就是设置读锁，实际就是对高16位加一。</span></span><br><span class="line">        <span class="keyword">if</span> (compareAndSetState(c, c + SHARED_UNIT)) &#123;</span><br><span class="line">            <span class="comment">// 如果读锁是空闲的</span></span><br><span class="line">            <span class="keyword">if</span> (sharedCount(c) == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// 设置第一个读锁</span></span><br><span class="line">                firstReader = current;</span><br><span class="line">                <span class="comment">// 计数器为 1</span></span><br><span class="line">                firstReaderHoldCount = <span class="number">1</span>;</span><br><span class="line">            <span class="comment">// 如果不是空闲的，查看第一个线程是否是当前线程。</span></span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (firstReader == current) &#123;</span><br><span class="line">                firstReaderHoldCount++;<span class="comment">// 更新计数器</span></span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;<span class="comment">// 如果不是当前线程</span></span><br><span class="line">                <span class="keyword">if</span> (rh == <span class="keyword">null</span>)</span><br><span class="line">                    rh = cachedHoldCounter;</span><br><span class="line">                <span class="keyword">if</span> (rh == <span class="keyword">null</span> || rh.tid != getThreadId(current))<span class="comment">// 如果最后一个读计数器所属线程不是当前线程。</span></span><br><span class="line">                    <span class="comment">// 自己创建一个。</span></span><br><span class="line">                    rh = readHolds.get();</span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (rh.count == <span class="number">0</span>)</span><br><span class="line">                    readHolds.set(rh);</span><br><span class="line">                <span class="comment">// 对计数器 ++</span></span><br><span class="line">                rh.count++;</span><br><span class="line">                <span class="comment">// 更新缓存计数器。</span></span><br><span class="line">                cachedHoldCounter = rh; <span class="comment">// cache for release</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这两个方法其实高度相似的。就不再解释了。</p>
+<p>到这里，其实留下了几个问题：一个是 <code>firstReader </code>和 <code>firstReaderHoldCount</code> 的作用，还有就是 <code>cachedHoldCounter</code> 的作用。最后是锁降级。</p>
+<p>解释一下：</p>
+<ul>
+<li><code>firstReader</code> 是获取读锁的第一个线程。如果只有一个线程获取读锁，很明显，使用这样一个变量速度更快。<br> * <code>firstReaderHoldCount </code>是 <code>firstReader</code>的计数器。同上。</li>
+<li><code>cachedHoldCounter</code>是最后一个获取到读锁的线程计数器，每当有新的线程获取到读锁，这个变量都会更新。这个变量的目的是：当最后一个获取读锁的线程重复获取读锁，或者释放读锁，就会直接使用这个变量，速度更快，相当于缓存。</li>
+</ul>
+<p>关于锁降级，重点解释一下，毕竟是我们的标题。</p>
+<h2 id="3-锁降级的争议"><a href="#3-锁降级的争议" class="headerlink" title="3. 锁降级的争议"></a>3. 锁降级的争议</h2><p>首先，什么是锁降级？在读锁的哪个地方体现？</p>
+<p>回答第一个问题，引自 JDK 的解释：</p>
+<blockquote>
+<p>锁降级:<br>重入还允许从写入锁降级为读取锁，其实现方式是：先获取写入锁，然后获取读取锁，最后释放写入锁。但是，从读取锁升级到写入锁是不可能的。</p>
+</blockquote>
+<p>体现在读锁哪里？</p>
+<p>在 tryAcquireShared 方法和 fullTryAcquireShared 中都有体现，例如下面的判断：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (exclusiveCount(c) != <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (getExclusiveOwnerThread() != current)</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码的意思是：当写锁被持有时，如果持有该锁的线程不是当前线程，就返回 “获取锁失败”，反之就会继续获取读锁。称之为锁降级。</p>
+<p>在很多书和文章中，对锁降级都会有类似下面的解释：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-929c163b9a89093d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>上面提到，锁降级中，读锁的获取的目的是 “为了保证数据的可见性”。而得到这个结论的依据是 “如果当前线程不获取读锁而是直接释放写锁，假设此刻另一个线程（记作线程 T）获取了写锁并修改了数据，那么当前线程无法感知线程 T 的数据更新”。</p>
+<p>这里貌似有个漏洞：如果另一个线程获取了写锁（并修改了数据），那么这个锁就被独占了，没有任何其他线程可以读到数据，更不用谈 “感知数据更新”。</p>
+<p>楼主认为，锁降级说白了就是写锁的一种特殊重入机制。通过这种重入，可以减少一步流程——释放写锁后 再次 获取读锁。</p>
+<p>使用了锁降级，就可以减去<strong>释放写锁</strong>的步骤。直接获取读锁。效率更高。而且没有线程争用。和 “可见性” 并没有关系。</p>
+<p>用一幅图来展示锁降级：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-f545a504abde8c2f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>总的来说，锁降级就是一种特殊的锁重入机制，JDK 使用 <code>先获取写入锁，然后获取读取锁，最后释放写入锁</code> 这个步骤，是为了提高获取锁的效率，而不是所谓的可见性。</p>
+<p>最后再总结一下获取锁的逻辑，首先判断写锁释放被持有了，如果被持有了，且是当前线程，使用锁降级，如果没有，读锁正常获取。</p>
+<p>获取过程中，会使用 firstReader 和 cachedHoldCounter 提高性能。</p>
+<h2 id="4-读锁的释放-tryReleaseShared-方法"><a href="#4-读锁的释放-tryReleaseShared-方法" class="headerlink" title="4. 读锁的释放 tryReleaseShared 方法"></a>4. 读锁的释放 tryReleaseShared 方法</h2><p>代码加注释如下：</p>
+<pre><code class="java">
+protected final boolean tryReleaseShared(int unused) &#123;
+    Thread current = Thread.currentThread();
+    // 如果是第一个线程
+    if (firstReader == current) &#123;
+        // 如果是 1，将第一个线程设置成 null。结束。
+        if (firstReaderHoldCount == 1)
+            firstReader = null;
+        // 如果不是 1，减一操作
+        else
+            firstReaderHoldCount--;
+    &#125; else &#123;//如果不是当前线程
+        HoldCounter rh = cachedHoldCounter;
+        // 如果缓存是 null 或者缓存所属线程不是当前线程，则当前线程不是最后一个读锁。
+        if (rh == null || rh.tid != getThreadId(current))
+            // 获取当前线程的计数器
+            rh = readHolds.get();
+        int count = rh.count;
+        // 如果计数器小于等于一，就直接删除计数器
+        if (count &lt;= 1) &#123;
+            readHolds.remove();
+            // 如果计数器的值小于等于0，说明有问题了，抛出异常
+            if (count &lt;= 0)
+                throw unmatchedUnlockException();
+        &#125;
+        // 对计数器减一
+        --rh.count;
+    &#125;
+    for (;;) &#123;// 死循环使用 CAS 修改状态
+        int c = getState();
+        // c - 65536, 其实就是减去一个读锁。对高16位减一。
+        int nextc = c - SHARED_UNIT;
+        // 修改 state 状态。
+        if (compareAndSetState(c, nextc))
+            // 修改成功后，如果是 0，表示读锁和写锁都空闲，则可以唤醒后面的等待线程
+            return nextc == 0;
+    &#125;
+&#125;
+</code></pre>
+<p>释放还是很简单的，步骤如下：</p>
+<ol>
+<li>如果当前线程是第一个持有读锁的线程，则只需要操作 firstReaderHoldCount 减一。如果不是，进入第二步。</li>
+<li>获取到缓存计数器（最后一个线程的计数器），如果匹配到当前线程，就减一。如果不匹配，进入第三步。</li>
+<li>获取当前线程自己的计数器（由于每个线程都会多次获取到锁，所以，每个线程必须保存自己的计数器。）。</li>
+<li>做减一操作。</li>
+<li>死循环修改 state 变量。</li>
+</ol>
+<h2 id="5-总结"><a href="#5-总结" class="headerlink" title="5. 总结"></a>5. 总结</h2><p>“读写锁没有想象中简单” 是此次阅读源码的最大感慨。事实上，花的最多时间是锁降级，因为对这块的不理解，参照了一些书籍和博客，但还是云里雾里，我也不敢确定我说的就是全对的，但我敢说，我写的是经过我思考的。</p>
+<p>总结下读锁的获取逻辑。</p>
+<p>读锁本质上是个共享锁。</p>
+<p>但读锁对锁的获取做了很多优化，比如使用  firstReader  和 cachedHoldCounter 最第一个读锁线程和最后一个读锁线程做优化，优化点主要在释放的时候对计数器的获取。</p>
+<p>同时，如果在获取读锁的过程中写锁被持有了，JUC 并没有让所有线程痴痴的等待，而是判断入如果获取读锁的线程是正巧是持有写锁的线程，那么当前线程就可以降级获取写锁，否则就会死锁了（<strong>为什么死锁，当持有写锁的线程想获取读锁，但却无法降级，进入了等待队列，肯定会死锁</strong>）。</p>
+<p>还有一点就是性能上的优化，如果先释放写锁，再获取读锁，势必引起锁的争抢和线程上下文切换，影响性能。</p>
+<p>还有一个就是，读书的时候，要有怀疑精神，一定要思考，而不是顺着他的思路去看书，诚然，书中大部分时候都是正确的，但我们贪婪的希望，那错误的一小部分尽量不要影响到我们。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/04/18/2018/2018-04-18-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B%E2%80%94%E2%80%94%E8%AF%BB%E9%94%81%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90(%E8%A7%A3%E9%87%8A%E5%85%B3%E4%BA%8E%E9%94%81%E9%99%8D%E7%BA%A7%E7%9A%84%E4%BA%89%E8%AE%AE)/" data-id="ckwes9adp00agkrs1ebxkci1g" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/04/18/2018/2018-04-18-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B%E2%80%94%E2%80%94%E5%86%99%E9%94%81%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          并发编程之——写锁源码分析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/04/17/2018/2018-04-17-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B-%E2%80%94%E2%80%94-%E8%87%AA%E5%B7%B1%E5%86%99%E4%B8%80%E4%B8%AA%E5%BC%82%E6%AD%A5%E5%9B%9E%E8%B0%83-API/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">并发编程-——-自己写一个异步回调-API</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

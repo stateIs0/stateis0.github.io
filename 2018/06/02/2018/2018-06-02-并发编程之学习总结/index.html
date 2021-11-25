@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>并发编程之学习总结 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之学习总结">
+<meta property="og:url" content="http://thinkinjava.cn/2018/06/02/2018/2018-06-02-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-f214182b528d54d3.jpg">
+<meta property="article:published_time" content="2018-06-01T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.323Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-f214182b528d54d3.jpg">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-06-02-并发编程之学习总结" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/06/02/2018/2018-06-02-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" class="article-date">
+  <time datetime="2018-06-01T18:11:11.000Z" itemprop="datePublished">2018-06-02</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      并发编程之学习总结
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       # 前言
+
+<p>楼主自1月14号就停更了，这段时间一直在看JVM，因此没有更新任何文章，但楼主觉得有必要总结一下之前学习并发的过程，因为这一次的总结其实就是下一次的开始。主要时总结一下并发的学习路线，因为在楼主的工作环境中，并不是每天都在编写高并发的程序。然而，即使是这样，我们也要知道并发的每个知识点，这样才算一个合格的Java 程序员。那么如何系统的学习并发呢？学习路线是怎么样的呢？</p>
+<h2 id="1-学会开始就成功了一半"><a href="#1-学会开始就成功了一半" class="headerlink" title="1. 学会开始就成功了一半"></a>1. 学会开始就成功了一半</h2><p>首先要确定的思想是：并发编程很复杂，不是看一两篇博客就搞定的。楼主学习学习并发主要看了4本书：</p>
+<ol>
+<li>《并发编程实战》</li>
+<li>《并发编程的艺术》</li>
+<li>《Java 高并发程序设计》</li>
+<li>《深入理解 Java 虚拟机》第五部分：高效并发</li>
+</ol>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-f214182b528d54d3.jpg"></p>
+<p>也就是上面的几本书。还有一个建议就是，看书最好是看实体的，有什么好处呢？好处就是，当你脑子里有一个疑惑的时候，你能够立马翻书去验证你的想法。而不是打开电子书，慢慢找。不过也有很多人喜欢电子书，毕竟地铁上看书不方便。具体买什么书可以根据自己的情况来。没有最好的，只有最合适的。还有一个问题，就是，看书不一定是从头到尾一字不漏的看，这和死读书差不多。楼主的读书经验是：先快速的将全书过一遍，大概会花一天时间，再找到自己感兴趣的点慢慢看，慢慢配合代码验证。这样效率会高一点。而且理解的会更加深刻。这也算一个学习的方法吧。</p>
+<p>那么这四本书先看哪一个呢？楼主是先看的《Java 高并发程序设计》，国人写的。相比较于其余的3本，通俗易懂。注意，看这本书的时候，一定要配合着书敲代码。否则都是白瞎。</p>
+<h2 id="2-逐渐深入"><a href="#2-逐渐深入" class="headerlink" title="2. 逐渐深入"></a>2. 逐渐深入</h2><p>在看完了 《Java 高并发程序设计》 后和写了一些 demo 后，我们应该会基本的并发编程了，知道如何使用 JDK 中的 API，也知道了一些基本的 Java 内存模型，一些关键字的理论。这个时候，我们仅仅是 How 的阶段，也就是使用的阶段。如果你是一个有追求的程序员，你肯定想深入了解并发中哪些奇怪的约定，奇怪的事情到底是如何发生的，那么，就需要继续读书，写代码。</p>
+<p>这个时候，就需要看看《并发编程的艺术》和《深入理解 Java 虚拟机》第五部分：高效并发，这两本书，重点深入原理，配合 JVM 源码和 汇编深入解释并发的原理。读起来酣畅淋漓。将之前的哪些困惑一扫而空。至于为什么看两本，因为每本书都不是完美的，那些写书的作者的观点也会不同，因此，我们需要知道的更多，并对比他们的看法，才能更加深入的形成自己的思维模型。不能只跟着一本书走。</p>
+<p>这两本书主要是理论，但请注意，其中的理论我们可以用代码来验证，才能更深刻的加深印象。</p>
+<h2 id="3-深入源码"><a href="#3-深入源码" class="headerlink" title="3. 深入源码"></a>3. 深入源码</h2><p>在了解了原理之后，我们只是得到了理论知识，但很虚无，如果你是个好奇猫，那么你肯定想知道这些设计是如何实现的。幸运的是，从 Java 源码中，我们就能知道百分之90 了(剩下的在 HotSpot 源码中)。这个时候我们做什么呢？</p>
+<p>硬肛！！！翻起我们之前写的那些 demo，比如 new Thread()，new ConcurrentHashMap（）,这些我们之前练习的 demo，配合我们的开发工具（强烈推荐 IDEA）,鼠标左键 + ctrl，进入源码查看如何实现。源码重点在 java.util.concurrent 包下。这些都是并发大师 Doug Lea 的杰作。值得反复品味。当然，看源码的时候，也可以顺带结合源码看看之前的书。加深印象。</p>
+<p>只有看懂了源码，你才能说，你真正知道了原理。</p>
+<p>在看源码的过程中，有痛苦，有快乐，起码楼主是这样的。痛苦的是：很多奇怪的地方看不懂。快乐的是：那些奇怪的地方终于搞懂了。这就是编程的乐趣吧。像一个侦探，慢慢的解开所有的疑惑，最后找到真相。</p>
+<p>为什么说硬肛呢？从短期来说，看源码处理满足好奇心，并不能给你带来什么好处。如果看源码不能给你带来快乐，那么，很快，你就会坚持不下去，但是，请注意：这是你进阶高级 Java 程序员的一个标志。</p>
+<p>当然，不是所有的源码都是要看的。这时候就体现出 demo  的重要性了，如果你之前没有 demo，那么你将无从下手。但是，如果你听了楼主的：边看书的同时也写了demo，那么这个时候，你就可以顺着demo看源码了，有什么好处呢？好处就是：你从源码层面了解了你使用的api的具体实现。从这个意义上说：你已经学会并发编程了。</p>
+<p>也许，经过一到两个月的阅读源码的过程，你对 JUC （java.util.concurrent）包下的 API 已经了如执掌，恭喜你，你终于学会了并发编程。不读源码，不足以谈并发。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过上面的3个步骤，基本就能搞定 Java 并发编程，看这篇文章的你，可以算一下时间，楼主估算了一下，如果你是在职的，那么你需要在工作之余完成这件事情，大概需要2个多月，当然这也要看你的 Java 基础好不好了，这和平时的积累有很多关系。如果你是个天才，当楼主没说。但大部分人都是凡人，都是靠着坚持和努力才能达到自己的目标。所以，请努力吧！</p>
+<p>最后，当你看完了 JUC 的源码，感觉还不过瘾，HotSpot 的源码等着你，够你喝好久。因为楼主正在喝 HotSpot 的源码。哈哈哈哈。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/06/02/2018/2018-06-02-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" data-id="ckwes9aeh00d2krs14h3lbeq2" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/06/14/2018/2018-06-14-Builder-%E5%BB%BA%E9%80%A0%E8%80%85%E6%A8%A1%E5%BC%8F/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          Builder-建造者模式
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/06/01/2018/2018-06-01-Java-%E5%A6%82%E4%BD%95%E4%B8%8D%E4%BD%BF%E7%94%A8-volatile-%E5%92%8C%E9%94%81%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E5%8F%98%E9%87%8F%E7%9A%84%E5%90%8C%E6%AD%A5%E6%93%8D%E4%BD%9C/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">Java-如何不使用-Volatile-和锁实现共享变量的同步操作</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>归并排序 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="归并排序">
+<meta property="og:url" content="http://thinkinjava.cn/2019/10/19/2019/1019-gb-sort/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ws1.sinaimg.cn/large/006tNc79ly1g5jaqcvd8jj30tk0nitou.jpg">
+<meta property="og:image" content="https://ws4.sinaimg.cn/large/006tNc79ly1g5jto0lecrj30ig0bfgm3.jpg">
+<meta property="og:image" content="https://ws2.sinaimg.cn/large/006tNc79ly1g5jult8acqj310e0b8aay.jpg">
+<meta property="og:image" content="https://ws3.sinaimg.cn/large/006tNc79ly1g5jv59lo2bj30go03kjrk.jpg">
+<meta property="article:published_time" content="2019-10-18T18:01:02.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.336Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ws1.sinaimg.cn/large/006tNc79ly1g5jaqcvd8jj30tk0nitou.jpg">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2019/1019-gb-sort" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/10/19/2019/1019-gb-sort/" class="article-date">
+  <time datetime="2019-10-18T18:01:02.000Z" itemprop="datePublished">2019-10-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      归并排序
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>    
+
+<h1 id="归并排序"><a href="#归并排序" class="headerlink" title="归并排序"></a>归并排序</h1><p><img src="https://ws1.sinaimg.cn/large/006tNc79ly1g5jaqcvd8jj30tk0nitou.jpg" alt="image-20190731203119006"></p>
+<p>分治是一种思路。</p>
+<p>递归是一种技巧。</p>
+<p>分治算法的思想：将原问题分解为几个规模较小但类似于原问题的子问题，递归的求解这些子问题，然后再合并这些子问题的解来建立原问题的解。</p>
+<p>分治模式在每层递归时都有  3 个步骤：</p>
+<ol>
+<li>分解，分解原问题为子问题。这些子问题是原问题的规模较小的实例。</li>
+<li>解决，递归的求解子问题。</li>
+<li>合并。合并子问题的解为原问题的解。</li>
+</ol>
+<h4 id="归并排序-1"><a href="#归并排序-1" class="headerlink" title="归并排序"></a>归并排序</h4><p>归并排序完全遵循分治思想。操作如下：</p>
+<ol>
+<li>分解：分解待排序的 n 个元素，序列成剧透 2/n 个元素的 2 个子序列。</li>
+<li>解决，使用归并排序，递归的排序 2 个子序列。</li>
+<li>合并，合并两个子序列以产生已排序的答案。</li>
+</ol>
+<p>当待排序的序列长度为 1 时，递归开始“回升”，在这种情况下，不要做任何工作，因为长度为 1 的序列已经排好序了。</p>
+<p>归并排序的关键 步骤，在于“合并”。</p>
+<p>通常这个合并函数，叫做 merge。他的职责就是将  2 个有序的序列，合并成一个有序的序列。</p>
+<p>如果是你，你怎么合并呢？</p>
+<p><strong>思路</strong>：假设，现在有  1 个数组，被分成了 2 个有序的序列。我们可以新申请一个临时数组，将数据从最小的下标开始，依次比较，谁小，谁就放入到 临时 数组中，然后下次，下标递增，继续比较。</p>
+<p>具体过程如下图：</p>
+<p><img src="https://ws4.sinaimg.cn/large/006tNc79ly1g5jto0lecrj30ig0bfgm3.jpg" alt="image-20190801072624608"></p>
+<p>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> 归并排序 </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span>[] arr = &#123;<span class="number">5</span>, <span class="number">1</span>, <span class="number">11</span>, <span class="number">2</span>, <span class="number">0</span>, <span class="number">6</span>, <span class="number">9</span>, <span class="number">4</span> &#125;;</span><br><span class="line">        sort(arr, <span class="number">0</span>, arr.length - <span class="number">1</span>);</span><br><span class="line">        System.out.println(Arrays.toString(arr));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span>[] sort(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> start, <span class="keyword">int</span> end) &#123;</span><br><span class="line">        <span class="keyword">if</span> (start &gt;= end) &#123;</span><br><span class="line">            <span class="keyword">return</span> arr;</span><br><span class="line">        &#125;</span><br><span class="line">				<span class="comment">// 防止溢出</span></span><br><span class="line">        <span class="keyword">int</span> mid = start + (end - start) / <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line">        sort(arr, start, mid);</span><br><span class="line">        sort(arr, mid + <span class="number">1</span>, end);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> merge(arr, start, mid, end);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span>[] merge(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> p, <span class="keyword">int</span> q, <span class="keyword">int</span> r) &#123;</span><br><span class="line">        <span class="keyword">int</span> i = p;</span><br><span class="line">        <span class="comment">// 这里必须 + 1, 以 q 作为分割点.</span></span><br><span class="line">        <span class="keyword">int</span> j = q + <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> tmpIndex = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span>[] tmp = <span class="keyword">new</span> <span class="keyword">int</span>[r - i + <span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> (i &lt;= q &amp;&amp; j &lt;= r) &#123;</span><br><span class="line">          	<span class="comment">// 保证排序算法稳定性</span></span><br><span class="line">            <span class="keyword">if</span> (arr[i] &lt;= arr[j]) &#123;</span><br><span class="line">                tmp[tmpIndex++] = arr[i++];</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                tmp[tmpIndex++] = arr[j++];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> start = i;</span><br><span class="line">        <span class="keyword">int</span> end = q;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (j &lt; r) &#123;</span><br><span class="line">            start = j;</span><br><span class="line">            end = r;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> k = start; k &lt;= end; k++) &#123;</span><br><span class="line">            tmp[tmpIndex++] = arr[k];</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; tmpIndex; k++) &#123;</span><br><span class="line">            arr[p++] = tmp[k];</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> arr;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<p>代码中，有 2 个函数：</p>
+<p>$sort(int [] arr, int start, int end)$</p>
+<p>$merge(int [] arr, int p, int q, int r)$</p>
+<p>sort 函数用来分割数组，终止条件为，直到分割成只有一个元素（只有一个元素的序列，是不用排序的）。</p>
+<p>merge 函数用来合并数组，例如，在递归树的最下层，一定是从 【0， 1】开始合并的，merge 函数会合并这两个下标的元素，变成有序的序列。</p>
+<p>merge 函数的流程：</p>
+<ol>
+<li>创建 i j 下标 和 tmp 数组。</li>
+<li>循环原数组，将 i 和 j 递增进行比较，并进行比较，然后把较小的值，依次放入到 tmp 数组中。</li>
+<li>如果 i 或者 j 比较结束，就需要将未比较结束的，copy 到 tmp 数组中。</li>
+<li>最后，将 tmp 数组的数据，copy 到原数组中。</li>
+</ol>
+<p>这样就完成了 归并排序 中，最为关键的合并。</p>
+<p>从上面的代码中，也可以看到，最为核心的代码，就是 merge 函数。</p>
+<h3 id="排序算法-三-问"><a href="#排序算法-三-问" class="headerlink" title="排序算法 三 问"></a>排序算法 三 问</h3><h4 id="1-是原地排序吗"><a href="#1-是原地排序吗" class="headerlink" title="1 是原地排序吗"></a>1 是原地排序吗</h4><p>答案，不是原地排序的。</p>
+<p>在 <code>merge</code> 函数中，我们需要申请一个临时数组，将两个区间的元素逐个 copy 进临时数组中，这就不是原地的了。而 归并排序的空间复杂度，也因此比“原地排序” 的算法，要高。</p>
+<p>多高呢？由于归并排序使用递归计算，每次只有一个函数在执行，同一时刻，只会申请一个临时数组，因此，如果申请的 大小 为 n 的数组，那么他的空间复杂度就是 $O(n)$.</p>
+<h4 id="2-是稳定的吗"><a href="#2-是稳定的吗" class="headerlink" title="2 是稳定的吗"></a>2 是稳定的吗</h4><p>答案是稳定的（只要你实现的正确）。</p>
+<p>假设两个数组中，有相同的两个元素，例如：</p>
+<p><img src="https://ws2.sinaimg.cn/large/006tNc79ly1g5jult8acqj310e0b8aay.jpg" alt="image-20190801075855224"></p>
+<p>上图中， i 和 j 的位置，元素都是5， 遇到这种情况，在算法中，我们可以先将左边的那个 5 拷贝到 tmp 数组中，然后再下次比较时，再将 右边的那个 5 ，拷贝到 tmp 数组中。</p>
+<p>代码怎么写呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> （arr[i] &lt;= arr[j]）&#123;</span><br><span class="line">		tmp[index++] = arr[i++];</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span>(arr[j] &lt; arr[i])&#123;</span><br><span class="line">    tmp[index++] = arr[j++];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>可以看到，在 i 和 j 元素的比较中，$=$ 等于号，必不可少。如果没有等于号，那么，他将不是稳定的。 </p>
+<h4 id="3-三种时间复杂度是多少"><a href="#3-三种时间复杂度是多少" class="headerlink" title="3 三种时间复杂度是多少"></a>3 三种时间复杂度是多少</h4><p>实质上，对归并排序的时间复杂度分析，就是对“分治算法’’ 的时间复杂度分析。</p>
+<p>在《算法导论》 2.3.2 中，作者 告诉我们如何分析分治算法。</p>
+<blockquote>
+<p>当一个算法包含对其自身的递归调用时，我们往往可以用<strong>递归方程</strong>或<strong>递归式</strong>来描述其 运行时间。</p>
+</blockquote>
+<p>递归方程 或 递归式。</p>
+<p>递归式：</p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNc79ly1g5jv59lo2bj30go03kjrk.jpg" alt="image-20190801081737393"></p>
+<p>分治算法运行时间的递归式，来自其基本模式的三个步骤。</p>
+<p>通过推演，我们可以知道，归并算法的时间复杂度 $O(nlogn)$ ，具体推演参见《递归时间复杂度 递归树 推演计算》。</p>
+<p>另外，归并排序的时间复杂度，和原始数组是否有序没有关系，算法的最好，最坏，平均，时间复杂度都是  $O(nlogn)$ 。是一个非常稳定的排序算法。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>归并排序，</p>
+<p>分治算法。</p>
+<p>非原地排序，空间复杂度 $O(n)$。</p>
+<p>稳定性好。</p>
+<p>所有情况下复杂度都为  $O(nlogn)$ ，</p>
+<p>merge 函数为核心逻辑，临时数组 i j 拷贝。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2019/10/19/2019/1019-gb-sort/" data-id="ckwes9abw003qkrs1el1s1gjo" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/10/19/2019/1019-fuzadujisuan/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          递归时间复杂度 递归树 推演计算
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/10/19/2019/1019-insert-sort/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">插入排序</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

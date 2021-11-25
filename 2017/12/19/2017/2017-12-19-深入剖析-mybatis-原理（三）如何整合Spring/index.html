@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>深入剖析-Mybatis-原理（三）如何整合Spring | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="深入剖析-Mybatis-原理（三）如何整合Spring">
+<meta property="og:url" content="http://thinkinjava.cn/2017/12/19/2017/2017-12-19-%E6%B7%B1%E5%85%A5%E5%89%96%E6%9E%90-mybatis-%E5%8E%9F%E7%90%86%EF%BC%88%E4%B8%89%EF%BC%89%E5%A6%82%E4%BD%95%E6%95%B4%E5%90%88Spring/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-8ef197331427f4bb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-189dcc7e65ebcb58.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-5b49a2cd5ba050a9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-266769f50a60dc38.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-29cfcab75dea8044.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-b785c62042085836.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-1934c0be8a377391.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-9b46ee65ed130760.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-ab757793254124a0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-63cfa51d5d72762b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-cd9b64661c0e4eea.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-135be8a988cc6fd5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-f43157a0324c4609.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-b74d051db6c160d7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2017-12-18T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.300Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-8ef197331427f4bb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2017/2017-12-19-深入剖析-mybatis-原理（三）如何整合Spring" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/12/19/2017/2017-12-19-%E6%B7%B1%E5%85%A5%E5%89%96%E6%9E%90-mybatis-%E5%8E%9F%E7%90%86%EF%BC%88%E4%B8%89%EF%BC%89%E5%A6%82%E4%BD%95%E6%95%B4%E5%90%88Spring/" class="article-date">
+  <time datetime="2017-12-18T18:11:11.000Z" itemprop="datePublished">2017-12-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Mybatis/">Mybatis</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      深入剖析-Mybatis-原理（三）如何整合Spring
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       在前两篇文章我们在 mybatis 源码中探究了他的运行原理，但在实际使用中，我们需要将其和Spring整合使用，特别是当下流行的SpringBoot，那么，myBatis 在 SpringBoot 中是如何运行的呢？
+
+<p>我们需要带着问题去研究，这样才能印象更深刻，以下是楼主的问题，不知道各位有没有自己的问题，如果有，也可以和楼主一起探讨，或者自己查看源码。</p>
+<ol>
+<li>SqlSessionFactory，SqlSession 如何生成?</li>
+<li>Mapper 代理如何生成？如何运行？</li>
+</ol>
+<h2 id="1-SqlSessionFactory，SqlSession-如何生成"><a href="#1-SqlSessionFactory，SqlSession-如何生成" class="headerlink" title="1. SqlSessionFactory，SqlSession 如何生成?"></a>1. SqlSessionFactory，SqlSession 如何生成?</h2><p>由于楼主的项目是SpringBoot ，因此基本没有配置文件，只有一个简单的配置，这也是Spring团队一直追求的目标：无配置。但由于我们的团队开始使用SpringCloud ，于是配置又多了起来，看来，配置文件始终是消灭不掉的。那么，废话了这么多，楼主的关于Mybatis的配置由以下几个部分组成：</p>
+<ol>
+<li>jar 包 maven导入artifactId 为 mybatis-spring 的jar包，该jar包是整合Spring和mybatis的粘合剂。</li>
+<li>使用硬编码的方式配置bean。比如SqlSessionFactory，SqlSessionTemplate, PlatformTransactionManager.</li>
+<li>扫描接口包。</li>
+</ol>
+<p><strong>配置 SqlSessionFactory</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Bean(name = &quot;sqlSessionFactory&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> SqlSessionFactory <span class="title">sqlSessionFactoryBean</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  SqlSessionFactoryBean bean = <span class="keyword">new</span> SqlSessionFactoryBean();</span><br><span class="line">  bean.setDataSource(dataSource());</span><br><span class="line"></span><br><span class="line">  bean.setTypeAliasesPackage(TYPE_ALIASES_PACKAGE);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 添加插件</span></span><br><span class="line">  bean.setPlugins(MybatisUtil.getInterceptor());</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 添加XML目录</span></span><br><span class="line">  ResourcePatternResolver resolver = <span class="keyword">new</span> PathMatchingResourcePatternResolver();</span><br><span class="line"></span><br><span class="line">  bean.setMapperLocations(resolver.getResources(<span class="string">&quot;classpath:mapper/*.xml&quot;</span>));</span><br><span class="line">  <span class="keyword">return</span> bean.getObject();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意：dataSource 方法会返回一个楼主自己配置的多数据源。但这不是我们今天的重点。</p>
+<p><strong>SqlSessionTemplate 配置</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> SqlSessionTemplate <span class="title">sqlSessionTemplate</span><span class="params">(SqlSessionFactory sqlSessionFactory)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> SqlSessionTemplate(sqlSessionFactory);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过刚刚的 sqlSessionFactory 创建一个 SqlSessionTemplate  ，该类非常重要，是Spring 和 Mybatis 整合的核心。稍后会详细介绍。</p>
+<p><strong>PlatformTransactionManager 事务管理配置</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> PlatformTransactionManager <span class="title">annotationDrivenTransactionManager</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> DataSourceTransactionManager(dataSource());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意：为什么这里会有一个重写注解，因为楼主这个类实现了 TransactionManagementConfigurer 接口，该接口是Spring的事务基础结构中的核心接口。应用程序可以直接使用它，但他并不作为主要API，通常，应用程序可以使用 TransactionTemplate 或通过AOP进行声明式事务划分。</p>
+<p>可以看到，楼主在这三个方法上面都加入了@Bean 注解，表示这个方法会返回一个Bean。</p>
+<p>还有就是如何扫描包 <code>@MapperScan(basePackages = &quot;cn.think.in.java.mapper&quot;)</code>，通过这个注解扫描需要生成代理的包名。</p>
+<p>好了，我们开始一个个分析，首先看 SqlSessionFactory 如何生成，我们先看看我们写的代码，首先创建了一个 SqlSessionFactoryBean， 然后设置该Bean的数据源，再然后设置别名，再设置插件，再设置资源URL，最后调用getObject 方法返回一个SqlSessionFactory。我们看到了 getObject 方法，如果看过我们 Spring 源码解析系列文章，就知道，这式 Spring 扩展接口 FactoryBean 中一个非常重要的方法，其中有一种类型的AOP就是通过该接口实现的。我就不讲这个接口的原理了。那么，这个 SqlSessionFactoryBean 肯定实现了该接口，我们看看源码：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-8ef197331427f4bb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>可以看到该类实现类 Spring 中几个重要的接口，比如 FactoryBean ，InitializingBean 接口。这对该类的拓展起到了非常大的作用。我们再看看该类有哪些属性：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-189dcc7e65ebcb58.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>可以看到该类俨然一个SqlSession，该有的属性都有了，资源，配置，数据源，事务工厂，SqlSessionFactoryBuilder， SqlSessionFactory，类型处理器， 别名，缓存，对象工厂，环境。。。。等等等，一应俱全。注意：该类在 org.mybatis.spring 包下，也就是说，该类就是Spring和Mybatis 的整合包，粘合剂。</p>
+<p>我们重点看看该类的 getObject 方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-5b49a2cd5ba050a9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>逻辑很简单，如果 sqlSessionFactory 为null，则调用 afterPropertiesSet 方法，该方法核心是调用了自身的 buildSqlSessionFactory 方法，我们看看该方法实现。该方法代码很多，楼主就不贴出来了，主要逻辑就是创建 Configuration 对象，然后设置 Configuration 的各种参数，比如插件，别名， 然后创建一个 SpringManagedTransactionFactory 事务工厂赋值给默认属性。再给 configuration 对象设置环境属性，参数是 事务工厂，数据源， 默认环境 “SqlSessionFactoryBean”，然后开始解析设置的 mapperLocations 到 configuration 对象中， 最后调用 sqlSessionFactoryBuilder.build(configuration) 返回一个 SqlSessionFactory，和我们之前创建 SqlSessionFactory 基本相同。返回的也是默认的 DefaultSqlSessionFactory。</p>
+<p>那么有了 SqlSessionFactory ，就可以创建 SqlSession 了， 如何创建呢？ 还记得我们配置的 SqlSessionTemplate 吗，该类就是 MyBatis 将 Spring 和 MyBatis 框架粘合的类，我们看看该类的继承关联体系图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-266769f50a60dc38.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>可以看到该类实现了 SqlSession 接口，同时也依赖个 SqlSession 的代理. 那么我们再看看该类的属性方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-29cfcab75dea8044.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="属性图"></p>
+<p>该类含有一个 SqlSessionFactory 工厂类，一个执行器类型（SqlSession 底层使用的 ExecutorType 类型），一个 SqlSessionProxy JDK 生成的代理对象，  还有一个异常转换器。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-b785c62042085836.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="方法图"></p>
+<p>我们看到该类有实现了 SqlSession 的所有方法，但内部全部委托了JDK 代理的 SqlSessionProxy 来实现。 我们还注意到，有一个拦截器内部类，该类就是创建 JDK 动态代理时的那个拦截类， 我们看看该类的 invoke 方法实现：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-1934c0be8a377391.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="SqlSessionInterceptor 实现"></p>
+<p>我们看看方法，首先调用 SqlSessionUtils 的静态方法 getSqlSession 获取 SqlSession 对象， 然后调用 SqlSession 的响应方法， 检测事务是否由 Spring 管理，并根据此结果决定是否提交事务。 最后，返回结果，并在 finally 块中清除 Session（将 Connection 赋值为 null）。</p>
+<p>也就是说，在执行 SqlSession 的 SelectOne 之类的方法的时候，都会经过该类。每条 SQL 的事务也都是在这里进行处理（如果 Spring 没有管理的话）。</p>
+<h2 id="2-Mapper-代理如何生成？如何运行？"><a href="#2-Mapper-代理如何生成？如何运行？" class="headerlink" title="2.  Mapper 代理如何生成？如何运行？"></a>2.  Mapper 代理如何生成？如何运行？</h2><p>好了，我们有了 DefaultSqlSessionFactory，那么什么适合创建 SqlSessionTemplate 呢，答案是再创建 Mapper 代理的时候，当Spring 对Controller 的bean进行依赖注入的以后，会循环寻找引用，找到Service层，接着找到 Service 层的Mapper，那么，Mapper 代理怎么来的呢？</p>
+<p>还记得我们写过一个注解：<code>@MapperScan(basePackages = &quot;cn.think.in.java.mapper&quot;)</code>，这个注解在 IOC 初始化的时候会起到作用。</p>
+<p>虽然我们只使用了该注解的一个字段，但我们仔细看看该注解还有没有其他功能:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="meta">@Target(ElementType.TYPE)</span></span><br><span class="line"><span class="meta">@Documented</span></span><br><span class="line"><span class="meta">@Import(MapperScannerRegistrar.class)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> MapperScan &#123;</span><br><span class="line"></span><br><span class="line">  String[] value() <span class="keyword">default</span> &#123;&#125;;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 包名， 这些指定的包都会被扫描</span></span><br><span class="line">  String[] basePackages() <span class="keyword">default</span> &#123;&#125;;</span><br><span class="line">  <span class="comment">// basePackages 的替代方法，扫描指定的类</span></span><br><span class="line">  Class&lt;?&gt;[] basePackageClasses() <span class="keyword">default</span> &#123;&#125;;</span><br><span class="line">  <span class="comment">// 名称生成器</span></span><br><span class="line">  Class&lt;? extends BeanNameGenerator&gt; nameGenerator() <span class="keyword">default</span> BeanNameGenerator.class;</span><br><span class="line">  <span class="comment">// annotationClass 注解标记的接口</span></span><br><span class="line">  Class&lt;? extends Annotation&gt; annotationClass() <span class="keyword">default</span> Annotation.class;</span><br><span class="line">  <span class="comment">// 此属性指定扫描程序将要搜索的父项。</span></span><br><span class="line">  <span class="comment">// 扫描器将注册基本包中的所有接口</span></span><br><span class="line">  <span class="comment">// 指定的接口类作为父类。</span></span><br><span class="line">  <span class="comment">// 注意这可以和annotationClass结合使用。</span></span><br><span class="line">  Class&lt;?&gt; markerInterface() <span class="keyword">default</span> Class.class;</span><br><span class="line">  <span class="comment">// sqlSessionTemplate 的引用</span></span><br><span class="line">  <span class="function">String <span class="title">sqlSessionTemplateRef</span><span class="params">()</span> <span class="keyword">default</span> &quot;&quot;</span>;</span><br><span class="line">  <span class="comment">// sqlSessionFactory 的引用</span></span><br><span class="line">  <span class="function">String <span class="title">sqlSessionFactoryRef</span><span class="params">()</span> <span class="keyword">default</span> &quot;&quot;</span>;</span><br><span class="line">  <span class="comment">// 指定一个自定义的MapperFactoryBean来作为spring bean返回一个mybatis代理。</span></span><br><span class="line">  Class&lt;? extends MapperFactoryBean&gt; factoryBean() <span class="keyword">default</span> MapperFactoryBean.class;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>可以看到该注解功能繁多，那么该注解作用是什么呢？使用这个注解来注册MyBatis映射器接口。也就是说，我们在启动类上加入了 @ MapperScan 注解，而该注解同时又含有 @Import 注解，在 IOC 启动的时候，会加载该注解标识的类，也就是 MapperScannerRegistrar.class，该类是什么样子的呢？以下是该类继承图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-9b46ee65ed130760.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>Spring IOC 在启动的时候会调用该类的 registerBeanDefinitions 方法，该方法很长，我们还是看看该方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">registerBeanDefinitions</span><span class="params">(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    AnnotationAttributes annoAttrs = AnnotationAttributes.fromMap(importingClassMetadata.getAnnotationAttributes(MapperScan.class.getName()));</span><br><span class="line">    ClassPathMapperScanner scanner = <span class="keyword">new</span> ClassPathMapperScanner(registry);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// this check is needed in Spring 3.1</span></span><br><span class="line">    <span class="keyword">if</span> (resourceLoader != <span class="keyword">null</span>) &#123;</span><br><span class="line">      scanner.setResourceLoader(resourceLoader);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Class&lt;? extends Annotation&gt; annotationClass = annoAttrs.getClass(<span class="string">&quot;annotationClass&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (!Annotation.class.equals(annotationClass)) &#123;</span><br><span class="line">      scanner.setAnnotationClass(annotationClass);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Class&lt;?&gt; markerInterface = annoAttrs.getClass(<span class="string">&quot;markerInterface&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (!Class.class.equals(markerInterface)) &#123;</span><br><span class="line">      scanner.setMarkerInterface(markerInterface);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Class&lt;? extends BeanNameGenerator&gt; generatorClass = annoAttrs.getClass(<span class="string">&quot;nameGenerator&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (!BeanNameGenerator.class.equals(generatorClass)) &#123;</span><br><span class="line">      scanner.setBeanNameGenerator(BeanUtils.instantiateClass(generatorClass));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Class&lt;? extends MapperFactoryBean&gt; mapperFactoryBeanClass = annoAttrs.getClass(<span class="string">&quot;factoryBean&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (!MapperFactoryBean.class.equals(mapperFactoryBeanClass)) &#123;</span><br><span class="line">      scanner.setMapperFactoryBean(BeanUtils.instantiateClass(mapperFactoryBeanClass));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    scanner.setSqlSessionTemplateBeanName(annoAttrs.getString(<span class="string">&quot;sqlSessionTemplateRef&quot;</span>));</span><br><span class="line">    scanner.setSqlSessionFactoryBeanName(annoAttrs.getString(<span class="string">&quot;sqlSessionFactoryRef&quot;</span>));</span><br><span class="line"></span><br><span class="line">    List&lt;String&gt; basePackages = <span class="keyword">new</span> ArrayList&lt;String&gt;();</span><br><span class="line">    <span class="keyword">for</span> (String pkg : annoAttrs.getStringArray(<span class="string">&quot;value&quot;</span>)) &#123;</span><br><span class="line">      <span class="keyword">if</span> (StringUtils.hasText(pkg)) &#123;</span><br><span class="line">        basePackages.add(pkg);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (String pkg : annoAttrs.getStringArray(<span class="string">&quot;basePackages&quot;</span>)) &#123;</span><br><span class="line">      <span class="keyword">if</span> (StringUtils.hasText(pkg)) &#123;</span><br><span class="line">        basePackages.add(pkg);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (Class&lt;?&gt; clazz : annoAttrs.getClassArray(<span class="string">&quot;basePackageClasses&quot;</span>)) &#123;</span><br><span class="line">      basePackages.add(ClassUtils.getPackageName(clazz));</span><br><span class="line">    &#125;</span><br><span class="line">    scanner.registerFilters();</span><br><span class="line">    scanner.doScan(StringUtils.toStringArray(basePackages));</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>首先找到 @MapperScan 注解， 然后一个一个的处理注解中的属性。最后关键的一点执行 ClassPathMapperScanner 的 doscan 方法，参数是包名数组。我们看看该方法实现：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-ab757793254124a0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>首先调用父类的 doScan 方法，返回了一个 BeanDefinitionHolder 的 Set 集合，然后判断是否为空，不为空则执行 processBeanDefinitions 方法，该方法可谓非常的重要，该方法会将制定包下的 Mapper 接口改成 mapperFactoryBean 的类型，也就是说，Spring getBean 返回的就是 mapperFactoryBean 类型，我们还是看看该方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">processBeanDefinitions</span><span class="params">(Set&lt;BeanDefinitionHolder&gt; beanDefinitions)</span> </span>&#123;</span><br><span class="line">  GenericBeanDefinition definition;</span><br><span class="line">  <span class="keyword">for</span> (BeanDefinitionHolder holder : beanDefinitions) &#123;</span><br><span class="line">    definition = (GenericBeanDefinition) holder.getBeanDefinition();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">      logger.debug(<span class="string">&quot;Creating MapperFactoryBean with name &#x27;&quot;</span> + holder.getBeanName() </span><br><span class="line">        + <span class="string">&quot;&#x27; and &#x27;&quot;</span> + definition.getBeanClassName() + <span class="string">&quot;&#x27; mapperInterface&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// the mapper interface is the original class of the bean</span></span><br><span class="line">    <span class="comment">// but, the actual class of the bean is MapperFactoryBean</span></span><br><span class="line">    definition.getConstructorArgumentValues().addGenericArgumentValue(definition.getBeanClassName()); <span class="comment">// issue #59</span></span><br><span class="line">    definition.setBeanClass(<span class="keyword">this</span>.mapperFactoryBean.getClass());</span><br><span class="line"></span><br><span class="line">    definition.getPropertyValues().add(<span class="string">&quot;addToConfig&quot;</span>, <span class="keyword">this</span>.addToConfig);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">boolean</span> explicitFactoryUsed = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">if</span> (StringUtils.hasText(<span class="keyword">this</span>.sqlSessionFactoryBeanName)) &#123;</span><br><span class="line">      definition.getPropertyValues().add(<span class="string">&quot;sqlSessionFactory&quot;</span>, <span class="keyword">new</span> RuntimeBeanReference(<span class="keyword">this</span>.sqlSessionFactoryBeanName));</span><br><span class="line">      explicitFactoryUsed = <span class="keyword">true</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">this</span>.sqlSessionFactory != <span class="keyword">null</span>) &#123;</span><br><span class="line">      definition.getPropertyValues().add(<span class="string">&quot;sqlSessionFactory&quot;</span>, <span class="keyword">this</span>.sqlSessionFactory);</span><br><span class="line">      explicitFactoryUsed = <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (StringUtils.hasText(<span class="keyword">this</span>.sqlSessionTemplateBeanName)) &#123;</span><br><span class="line">      <span class="keyword">if</span> (explicitFactoryUsed) &#123;</span><br><span class="line">        logger.warn(<span class="string">&quot;Cannot use both: sqlSessionTemplate and sqlSessionFactory together. sqlSessionFactory is ignored.&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      definition.getPropertyValues().add(<span class="string">&quot;sqlSessionTemplate&quot;</span>, <span class="keyword">new</span> RuntimeBeanReference(<span class="keyword">this</span>.sqlSessionTemplateBeanName));</span><br><span class="line">      explicitFactoryUsed = <span class="keyword">true</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">this</span>.sqlSessionTemplate != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> (explicitFactoryUsed) &#123;</span><br><span class="line">        logger.warn(<span class="string">&quot;Cannot use both: sqlSessionTemplate and sqlSessionFactory together. sqlSessionFactory is ignored.&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      definition.getPropertyValues().add(<span class="string">&quot;sqlSessionTemplate&quot;</span>, <span class="keyword">this</span>.sqlSessionTemplate);</span><br><span class="line">      explicitFactoryUsed = <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!explicitFactoryUsed) &#123;</span><br><span class="line">      <span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">        logger.debug(<span class="string">&quot;Enabling autowire by type for MapperFactoryBean with name &#x27;&quot;</span> + holder.getBeanName() + <span class="string">&quot;&#x27;.&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      definition.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_TYPE);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>该方法循环处理所包下所有的 Bean 定义对象，首先修改 Bean 的 Class 为mapperFactoryBean ，然后增加了很多属性，比如addToConfig， sqlSessionFactory，sqlSessionTemplate，并且将该 Bean 的注入类型设置为按照类型注入。 最后在 doScan 方法中返回了这些修改过的 Bean 定义。</p>
+<p>我们有头绪了，捋一捋，首先，我们在启动类上写入了注解，标注哪些类或者哪些包需要扫描，并且该注解包含一个 @Import 注解，Spring 会将该注解标识的类 MapperScannerRegistrar 加入到 IOC 的启动过程，然后执行该类的 registerBeanDefinitions 注册 Bean 定义方法， 在该方法中，会将制定包或接口全部修改，加入一些和 SqlSession 相关的属性，并将该接口的 Bean 的类型改为 mapperFactoryBean 类型。 那么 mapperFactoryBean 是什么呢？</p>
+<p>我们看看 MapperFactoryBean 的继承图谱：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-63cfa51d5d72762b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="MapperFactoryBean"></p>
+<p>可以看到，该类实现了 Spring 常用的扩展接口 FactoryBean，也等于拥有了 getObject 方法，我们说，可以在该方法中动一些手脚。继承了 SqlSessionDaoSupport， 该类中有几个方法我们能够看到，就是设置 SqlSessionFactory 和 SqlSessionTemplate，getSession 等方法。该类可以说是开发者们在 Dao 层支持类，如果可以，完全可以继承该类，获取 SqlSession 直接操作数据库。但是这样就太复杂了。当然还有，MapperFactorybean 还间接实现了 InitializingBean 接口，也就是 Spring 留给我们的扩展接口。 需要重写 afterPropertiesSet 方法。我们还是看看该类吧。</p>
+<p>该类既然是个 FactoryBean ,那么我们第一个看的就是他的 getObject 方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-cd9b64661c0e4eea.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>是不是很熟悉，该方法就是获取 SqlSession 然后调用 SqlSession 的 getMapper 方法，参数是 mapperInterface 接口（该参数在构造器中传入）。也就是说，Spring 根据 Bean 定义对象，找到该方法，再在 getObject 方法中构造代理对象。我们终于知道了为什么在 ClassPathMapperScanner 的 doScan 方法中要将接口的 Bean 定义的改成 MapperFactorybean  ，原来最终的目的就是调用 getObject 方法，然后调用 getMapper 方法。并且设置的那些属性就是在对 MapperFactoryBean 的父类 SqlSessionDaoSupport 的属性进行赋值。</p>
+<p> getMapper 方法我想应该不用解释了吧，在我们关于Mybatis 的第二篇文章中已经知道所有逻辑了。</p>
+<p>还记得 MapperFactoryBean 实现的 InitializingBean 接口，该接口定义的方法是在属性设置完毕后执行，那么该方法是如何执行的呢？</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-135be8a988cc6fd5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>首先执行了 checkDaoConfig 方法，该方法是个抽象方法， 然后调用了 initDao 方法，该方法是个空方法。那么 checkDaoConfig 的具体实现是什么呢？</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-f43157a0324c4609.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>该方法会校验接口是否存在，然后调用 configuration 的 addMapper 方法，该方法底层调用了 MapperRegistry 的 addMapper 方法，将 namespace 属性和 配置文件关联。这之前我们已经分析过了。</p>
+<p>我们开始说，创建 SqlSessionTemplate，是在 IOC 初始化 Mapper 的时候创建的。什么时候呢？ 就是在 ClassPathMapperScanner 的 processBeanDefinitions 方法中，设置了 sqlSessionTemplate 属性，最终会触发 SqlSessionDaoSupport 的 setSqlSessionTemplate 方法，该方法从容器中获取 SqlSessionTemplate 实例，从而触发我们编写的 new SqlSessionTemplate 方法，如果不写也没事，setSqlSessionFactory 会默认创建一个。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-b74d051db6c160d7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>好了，我们可以总结一下 Mapper 的创建过程：</p>
+<ol>
+<li><p>IOC 通过注解扫描指定包名，在初始化的时候调用@MapperScan 注解中指定的类最终执行 doScan 方法，将所有的 Mapper 接口的 Bean 定义都改成 FactoryBean 的子类 MapperFactoryBean，并将该 SqlSessionFactory 和 SqlSessionTemplate 添加到该类中。</p>
+</li>
+<li><p>Spring IOC 在实例化该 Bean 的时候，需要传入接口类型，并将 SqlSessionFactory 和 SqlSessionTemplate 注入到该 Bean 中。并调用 configuration 的 addMapper 方法，解析配置文件。</p>
+</li>
+<li><p>当调用 MapperFactoryBean 的 getObject 方法的时候，事实上是调用 SqSession 的 getMapper 方法，而这个方法会返回一个动态代理对象。所有对这个对象的方法调用都是底层的 SqlSession 的方法。</p>
+</li>
+</ol>
+<p>而 Spring 和 MyBatis 的整合也和 AOP 相似，都是通过 Spring 留下的扩展接口 FactoryBean 来实现的。在 FactoryBean 中包装了 SqlSession ，而 SqlSession 则会返回代理。</p>
+<h2 id="3-总结"><a href="#3-总结" class="headerlink" title="3. 总结"></a>3. 总结</h2><p>这是我们剖析mybatis 的第三篇文章了，我们分析了Mybatis 是如何整合Spring的，通过mybatis 提供的 mybatis-spring 的jar包，粘合了Spring和mybaits， mybatis 和 AOP 一样，都是通过扩展 Spring 提供的各种接口来完成扩展功能，比如 Factory，在SqSessionTemplate 中，底层还是调用 Mybatis 自己的SqlSession 创建动态代理来实现的。可谓万变不离其宗。同时，我们也学习到了Java世界两大框架的优秀，比如灵活扩展。非侵入式，特别式Spring，设计的可谓趋于完美。作为程序员，我们更要向这些优秀的源码学习。加油！！！</p>
+<p>good luck！！！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2017/12/19/2017/2017-12-19-%E6%B7%B1%E5%85%A5%E5%89%96%E6%9E%90-mybatis-%E5%8E%9F%E7%90%86%EF%BC%88%E4%B8%89%EF%BC%89%E5%A6%82%E4%BD%95%E6%95%B4%E5%90%88Spring/" data-id="ckwes9abo0034krs1c37tbmyk" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/12/22/2017/2017-12-22-%E6%B7%B1%E5%85%A5%E5%89%96%E6%9E%90-mybatis-%E5%8E%9F%E7%90%86%EF%BC%88%E5%9B%9B%EF%BC%89%E6%8F%92%E4%BB%B6%E7%9A%84%E5%8E%9F%E7%90%86%E5%92%8C%E5%BA%94%E7%94%A8/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          深入剖析-Mybatis-原理（四）插件的原理和应用
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/12/17/2017/2017-12-17-%E6%B7%B1%E5%85%A5%E5%89%96%E6%9E%90-mybatis-%E5%8E%9F%E7%90%86%EF%BC%88%E4%BA%8C%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">深入剖析-Mybatis-原理（二）</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>深入理解-Tomcat（三）Tomcat-底层实现原理 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="深入理解-Tomcat（三）Tomcat-底层实现原理">
+<meta property="og:url" content="http://thinkinjava.cn/2017/11/19/2017/2017-11-19-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat%EF%BC%88%E4%B8%89%EF%BC%89Tomcat-%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-eb2b886a4c98ce94.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-ad482afb9756566e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-1690572b88d907ef.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-6a391bc0c6581bb0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-f5da79e8a3018c13.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-0d74bdf2b346030d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-282d24fa71c9d9e5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2017-11-18T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.294Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-eb2b886a4c98ce94.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2017/2017-11-19-深入理解-Tomcat（三）Tomcat-底层实现原理" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/11/19/2017/2017-11-19-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat%EF%BC%88%E4%B8%89%EF%BC%89Tomcat-%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/" class="article-date">
+  <time datetime="2017-11-18T18:11:11.000Z" itemprop="datePublished">2017-11-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Tomcat/">Tomcat</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      深入理解-Tomcat（三）Tomcat-底层实现原理
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       又是一个周末，这篇文章将从一个简单的例子来理解tomcat的底层设计;
+
+
+<p><strong>本文将介绍 Java Web 服务器是如何运行的, Web 服务器也称为超文本传输协议( HyperText Transfer Protocol, HTTP)服务器, 因为它使用 Http 与其客户端(通常是 Web 浏览器)进行通信, 基于 Java 的 Web 服务器会使用两个重要的类: java.net.Socket 类和 java.net.ServerSocket 类, 并通过发送 Http 消息进行通信. 我们先花一些篇幅介绍 Http 协议（如果同学们熟悉HTTP协议可直接跳过）和这两个类, 然后写一个简单的 Web 服务器.</strong></p>
+<h4 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a>HTTP</h4><p>Http : Http 允许 Web 服务器和浏览器通过 Internet 发送并接受数据, 是一种基于”请求—响应”的协议, 客户端请求一个文件, 服务器端对该请求进行响应. Http 使用可靠的 tcp 连接, tcp 协议默认使用 tcp 80端口, http协议的第一个版本是 http/0.9, 后来被 http/1.0取代, 随后 http/1.0又被http/1.1取代, http/1.1 定义域 RFC(Request for Comment, 请求注解)2616中. </p>
+<p>如果各位对 Http1.1 有更多兴趣, 请阅读 RFC 2616.</p>
+<p>在 Http 中, 总是由客户端通过建立连接并发送 http 请求来初始化一个事务的. Web 服务器端并不负责联系客户端或建立一个到客户端的回调连接.客户端或服务器端可提前关闭连接, 例如, 当使用 Web 浏览器浏览网页时, 可以单击浏览器上的 stop 按钮来停止下载文件, 这样就有效的关闭了一个 Web 服务器的 http 连接.</p>
+<h4 id="HTTP-请求"><a href="#HTTP-请求" class="headerlink" title="HTTP 请求"></a>HTTP 请求</h4><p>一个 HTTP 请求包含以下三部分:</p>
+<ul>
+<li>请求方法—-统一资源标识符(Uniform Resource Identifier, URI)——协议/版本</li>
+<li>请求头</li>
+<li>实体</li>
+</ul>
+<p>下面是一个 HTTP 请求的例子： </p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">POST</span> /examples/default.jsp HTTP/<span class="number">1</span>.<span class="number">1</span> </span><br><span class="line"><span class="attribute">Accept</span>: text/plain; text/html </span><br><span class="line"><span class="attribute">Accept</span>-Language: en-gb </span><br><span class="line"><span class="attribute">Connection</span>: Keep-Alive </span><br><span class="line"><span class="attribute">Host</span>: localhost </span><br><span class="line"><span class="attribute">User</span>-Agent: Mozilla/<span class="number">4</span>.<span class="number">0</span> (compatible; MSIE <span class="number">4</span>.<span class="number">01</span>; Windows <span class="number">98</span>)</span><br><span class="line"><span class="attribute">Content</span>-Length: <span class="number">33</span> Content-Type: application/x-www-form-urlencoded Accept-Encoding: gzip, deflate </span><br><span class="line"></span><br><span class="line"><span class="attribute">lastName</span>=Franks&amp;firstName=Michael  </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>  方法—统一资源标识符(URI)—协议/版本出现在请求的第一行。<br>  <code>POST /examples/default.jsp HTTP/1.1    </code>  </p>
+<p>  这里 POST 是请求方法，<code>/examples/default.jsp</code> 是 URI，而 HTTP/1.1 是协议/版本部分。     每个 HTTP 请求可以使用 HTTP 标准里边提到的多种方法之一。HTTP 1.1 支持 7 种类型的请 求：GET, POST, HEAD, OPTIONS, PUT, DELETE 和 TRACE。GET 和 POST 在互联网应用里边最普遍使用的。     </p>
+<p>  URI 完全指明了一个互联网资源。URI 通常是相对服务器的根目录解释的。因此，始终一斜 线/开头。统一资源定位器(URL)其实是一种 URI(查看 <a target="_blank" rel="noopener" href="http://www.ietf.org/rfc/rfc2396.txt">http://www.ietf.org/rfc/rfc2396.txt</a>)<br>来的。该协议版本代表了正在使用的 HTTP 协议的版本。 </p>
+<p> 请求的头部包含了关于客户端环境和请求的主体内容的有用信息。例如它可能包括浏览器设 置的语言，主体内容的长度等等。每个头部通过一个回车换行符(CRLF)来分隔的。     </p>
+<p> 对于 HTTP 请求格式来说，头部和主体内容之间有一个回车换行符(CRLF)是相当重要的。CRLF 告诉HTTP服务器主体内容是在什么地方开始的。在一些互联网编程书籍中，CRLF还被认为是HTTP 请求的第四部分。     </p>
+<p> 在前面一个 HTTP 请求中，主体内容只不过是下面一行： </p>
+<p><code>lastName=Franks&amp;firstName=Michael    </code></p>
+<p>实体内容在一个典型的 HTTP 请求中可以很容易的变得更长。 </p>
+<h3 id="HTTP-响应"><a href="#HTTP-响应" class="headerlink" title="HTTP 响应"></a>HTTP 响应</h3><p>类似于 HTTP 请求，一个 HTTP 响应也包括三个组成部分：  </p>
+<ul>
+<li>方法—统一资源标识符(URI)—协议/版本 </li>
+<li>响应的头部  </li>
+<li>主体内容      </li>
+</ul>
+<p> 下面是一个 HTTP 响应的例子：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK </span><br><span class="line">Server: Microsoft-IIS/4.0 </span><br><span class="line">Date: Mon, 5 Jan 2004 13:13:33 GMT </span><br><span class="line">Content-Type: text/html </span><br><span class="line">Last-Modified: Mon, 5 Jan 2004 13:13:12 GMT </span><br><span class="line">Content-Length: 112 </span><br><span class="line"> </span><br><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span> </span><br><span class="line">    <span class="tag">&lt;<span class="name">head</span>&gt;</span> </span><br><span class="line">        <span class="tag">&lt;<span class="name">title</span>&gt;</span>HTTP Response Example<span class="tag">&lt;/<span class="name">title</span>&gt;</span> </span><br><span class="line">    <span class="tag">&lt;/<span class="name">head</span>&gt;</span> </span><br><span class="line">    <span class="tag">&lt;<span class="name">body</span>&gt;</span> </span><br><span class="line">        Welcome to Brainy Software </span><br><span class="line">    <span class="tag">&lt;/<span class="name">body</span>&gt;</span> </span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span> </span><br></pre></td></tr></table></figure>
+
+<p>响应头部的第一行类似于请求头部的第一行。第一行告诉你该协议使用 HTTP 1.1，请求成 功(200=成功)，表示一切都运行良好。 </p>
+<p>响应头部和请求头部类似，也包括很多有用的信息。响应的主体内容是响应本身的 HTML 内 容。头部和主体内容通过 CRLF 分隔开来。 </p>
+<h3 id="Socket-类"><a href="#Socket-类" class="headerlink" title="Socket 类"></a>Socket 类</h3><p> 套接字是网络连接的一个端点。套接字使得一个应用可以从网络中读取和写入数据。放在两 个不同计算机上的两个应用可以通过连接发送和接受字节流。为了从你的应用发送一条信息到另 一个应用，你需要知道另一个应用的 IP 地址和套接字端口。在 Java 里边，套接字指的是<code>java.net.Socket</code>类。 </p>
+<p>要创建一个套接字，你可以使用 Socket 类众多构造方法中的一个。其中一个接收主机名称 和端口号:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">Socket</span> <span class="params">(java.lang.String host, <span class="keyword">int</span> port)</span></span></span><br></pre></td></tr></table></figure>
+
+<p>在这里主机是指远程机器名称或者 IP 地址，端口是指远程应用的端口号。例如，要连接 yahoo.com 的 80 端口，你需要构造以下的 Socket 对象:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">new</span> Socket (<span class="string">&quot;yahoo.com&quot;</span>, <span class="number">80</span>);</span><br></pre></td></tr></table></figure>
+
+<p>一旦你成功创建了一个 Socket 类的实例，你可以使用它来发送和接受字节流。要发送字节 流，你首先必须调用Socket类的getOutputStream方法来获取一个java.io.OutputStream对象。 要 发 送 文 本 到 一 个 远 程 应 用 ， 你 经 常 要 从 返 回 的 OutputStream 对 象 中 构 造 一 个 java.io.PrintWriter 对象。要从连接的另一端接受字节流，你可以调用 Socket 类的 getInputStream 方法用来返回一个 java.io.InputStream 对象。 </p>
+<h3 id="ServerSocket-类"><a href="#ServerSocket-类" class="headerlink" title="ServerSocket 类"></a>ServerSocket 类</h3><p> Socket 类代表一个客户端套接字，即任何时候你想连接到一个远程服务器应用的时候你构 造的套接字，现在，假如你想实施一个服务器应用，例如一个 HTTP 服务器或者 FTP 服务器，你 需要一种不同的做法。这是因为你的服务器必须随时待命，因为它不知道一个客户端应用什么时 候会尝试去连接它。为了让你的应用能随时待命，你需要使用 java.net.ServerSocket 类。这是 服务器套接字的实现。</p>
+<p>  ServerSocket 和 Socket 不同，服务器套接字的角色是等待来自客户端的连接请求。一旦服 务器套接字获得一个连接请求，它创建一个 Socket 实例来与客户端进行通信。 </p>
+<p>   要创建一个服务器套接字，你需要使用 ServerSocket 类提供的四个构造方法中的一个。你 需要指定 IP 地址和服务器套接字将要进行监听的端口号。通常，IP 地址将会是 127.0.0.1，也 就是说，服务器套接字将会监听本地机器。服务器套接字正在监听的 IP 地址被称为是绑定地址。 服务器套接字的另一个重要的属性是 backlog，这是服务器套接字开始拒绝传入的请求之前，传 入的连接请求的最大队列长度。 </p>
+<p> 其中一个 ServerSocket 类的构造方法如下所示: </p>
+ <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">ServerSocket</span><span class="params">(<span class="keyword">int</span> port, <span class="keyword">int</span> backLog, InetAddress bindingAddress)</span></span>; </span><br></pre></td></tr></table></figure>
+
+
+<h3 id="应用程序"><a href="#应用程序" class="headerlink" title="应用程序"></a>应用程序</h3><p>如果同学们下载过我们在第一篇文章提供的源码（How Tomcat Works）的话， 我们可以看一看我们的目录：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-eb2b886a4c98ce94.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p> 我们的 web 服务器应用程序放在 cxs01.pyrmont(编译的时候因为错误改名字了，也就懒得改回来了) 包里边，由三个类组成： </p>
+<ul>
+<li>HttpServer  </li>
+<li>Request  </li>
+<li>Response</li>
+</ul>
+<p> 这个应用程序的入口点(静态 main 方法)可以在 HttpServer 类里边找到。main 方法创建了 一个 HttpServer 的实例并调用了它的 await 方法。await 方法，顾名思义就是在一个指定的端 口上等待 HTTP 请求,处理它们并发送响应返回客户端。它一直等待直至接收到 shutdown 命令。<br><img src="http://upload-images.jianshu.io/upload_images/4236553-ad482afb9756566e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p> 应用程序不能做什么，除了发送静态资源，例如放在一个特定目录的 HTML 文件和图像文件。 它也在控制台上显示传入的 HTTP 请求的字节流。不过，它不给浏览器发送任何的头部例如日期 或者 cookies。 </p>
+<h5 id="下面我们来看看我们今天的重点，这三个类，也就是tomcat的雏形代码"><a href="#下面我们来看看我们今天的重点，这三个类，也就是tomcat的雏形代码" class="headerlink" title="下面我们来看看我们今天的重点，这三个类，也就是tomcat的雏形代码"></a>下面我们来看看我们今天的重点，这三个类，也就是tomcat的雏形代码</h5><h6 id="HttpServer-类"><a href="#HttpServer-类" class="headerlink" title="HttpServer 类"></a>HttpServer 类</h6><p>  HttpServer 类代表一个 web 服务器，也就是程序的入口，看代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HttpServer</span> </span>&#123;</span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String WEB_ROOT =</span><br><span class="line">    System.getProperty(<span class="string">&quot;user.dir&quot;</span>) + File.separator  + <span class="string">&quot;webroot&quot;</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 关闭命令</span></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String SHUTDOWN_COMMAND = <span class="string">&quot;/SHUTDOWN&quot;</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 是否关闭</span></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">boolean</span> shutdown = <span class="keyword">false</span>;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    HttpServer server = <span class="keyword">new</span> HttpServer();</span><br><span class="line">    server.await();</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>main 方法中创建了一个HttpServer对象，并调用了该对象的await方法。看名字，该方法应该是等待http请求之类的东东。我们来看看方法内部：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">await</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    ServerSocket serverSocket = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">int</span> port = <span class="number">8080</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="comment">// 创建一个socket服务器</span></span><br><span class="line">      serverSocket =  <span class="keyword">new</span> ServerSocket(port, <span class="number">1</span>, InetAddress.getByName(<span class="string">&quot;127.0.0.1&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">      e.printStackTrace();</span><br><span class="line">      System.exit(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 循环等待http请求</span></span><br><span class="line">    <span class="keyword">while</span> (!shutdown) &#123;</span><br><span class="line">      Socket socket = <span class="keyword">null</span>;</span><br><span class="line">      InputStream input = <span class="keyword">null</span>;</span><br><span class="line">      OutputStream output = <span class="keyword">null</span>;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 阻塞等待http请求</span></span><br><span class="line">        socket = serverSocket.accept();</span><br><span class="line">        input = socket.getInputStream();</span><br><span class="line">        output = socket.getOutputStream();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 创建一个Request对象用于解析http请求内容</span></span><br><span class="line">        Request request = <span class="keyword">new</span> Request(input);</span><br><span class="line">        request.parse();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 创建一个Response 对象，用于发送静态文本</span></span><br><span class="line">        Response response = <span class="keyword">new</span> Response(output);</span><br><span class="line">        response.setRequest(request);</span><br><span class="line">        response.sendStaticResource();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 关闭流</span></span><br><span class="line">        socket.close();</span><br><span class="line"></span><br><span class="line">        <span class="comment">//检查URI中是否有关闭命令</span></span><br><span class="line">        shutdown = request.getUri().equals(SHUTDOWN_COMMAND);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">        <span class="keyword">continue</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们看到，该方法创建了一个Socket服务器，并循环阻塞监听http请求，当有http请求到来时， 该方法便创建一个Request对象，构造参数是socket获取的输入流对象， 用于读取客户端请求的数据并解析。 然后再创建一个Response对象，构造参数是socket的输出流对象， 并含有一个Request对象的成员变量。Response对象用于将静态页面发送给浏览器或者是其他的客户端。最后， 该方法校验请求中是否含有关闭命令的字符串，如果有，就停止服务器的运行。</p>
+<p>这就是一个简单的服务器， 当我第一次看到的时候，心想： 真TMD简单啊。原来没那么复杂嘛。我想同学们心里想的跟我也一样吧。so， 不论多么庞大的代码，底层原理都是很简单的，只要我们学好了基础，学习起来就会轻松很多。</p>
+<p>废话不多说，我们继续看看Request 是如何解析Http请求的吧。</p>
+<h5 id="Request-类"><a href="#Request-类" class="headerlink" title="Request 类"></a>Request 类</h5><p>类结构图如下：<br><img src="http://upload-images.jianshu.io/upload_images/4236553-1690572b88d907ef.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image"></p>
+<p> Request 类代表一个 HTTP 请求。从负责与客户端通信的 Socket 中传递过来 InputStream 对象来构造这个类的一个实例。你调用 InputStream 对象其中一个 read 方法来获 取 HTTP 请求的原始数据。其中最主要的方法就是parse 和 parseUri ，他们用于逐个解析每个从客户端传递过来的字节，我们先看parse方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">parse</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// Read a set of characters from the socket</span></span><br><span class="line">  StringBuffer request = <span class="keyword">new</span> StringBuffer(<span class="number">2048</span>);</span><br><span class="line">  <span class="keyword">int</span> i;</span><br><span class="line">  <span class="keyword">byte</span>[] buffer = <span class="keyword">new</span> <span class="keyword">byte</span>[<span class="number">2048</span>];</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// 读取流中内容</span></span><br><span class="line">    i = input.read(buffer);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">    i = -<span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> j=<span class="number">0</span>; j&lt;i; j++) &#123;</span><br><span class="line">   <span class="comment">// 将每个字节转换为字符</span></span><br><span class="line">    request.append((<span class="keyword">char</span>) buffer[j]);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 打印字符串</span></span><br><span class="line">  System.out.print(request.toString());</span><br><span class="line">  <span class="comment">// 根据转换出来的字符解析URI</span></span><br><span class="line">  uri = parseUri(request.toString());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们也看到该方法是十分的简单， 创建一个StringBuffer 对象，然后从流中读取字节，然后循环将字节转成字符写入到Stringbuffer对象中。最后传入到parseUri方法中进行解析。 </p>
+<p>我们再看看parseUri方法， 这个方法中，我们前面学习的关于HTTP的知识会起作用：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> String <span class="title">parseUri</span><span class="params">(String requestString)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> index1, index2;</span><br><span class="line">  <span class="comment">// 找到第一个空格</span></span><br><span class="line">  index1 = requestString.indexOf(<span class="string">&#x27; &#x27;</span>);</span><br><span class="line">  <span class="keyword">if</span> (index1 != -<span class="number">1</span>) &#123;</span><br><span class="line">    <span class="comment">// 找到第二个空格</span></span><br><span class="line">    index2 = requestString.indexOf(<span class="string">&#x27; &#x27;</span>, index1 + <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">if</span> (index2 &gt; index1)</span><br><span class="line">      <span class="comment">// 截取第一个空格到第二个空格之间的内容</span></span><br><span class="line">      <span class="keyword">return</span> requestString.substring(index1 + <span class="number">1</span>, index2);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>该方法从请求行里边获得 URI。parseUri 方法搜索请求里边的第一个和第二个空格并从中获取 URI。<br>为什么是第一个空格和第二个空格之间的内容呢？我们看看前面的Http请求的例子：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">POST /examples/default.jsp HTTP/1.1 </span><br><span class="line">Accept: text/plain; text/html </span><br><span class="line">Accept-Language: en-gb </span><br><span class="line">Connection: Keep-Alive </span><br><span class="line">Host: localhost </span><br><span class="line">User-Agent: Mozilla/4.0 (compatible; MSIE 4.01; Windows 98)</span><br><span class="line">Content-Length: 33 Content-Type: application/x-www-form-urlencoded Accept-Encoding: gzip, deflate </span><br><span class="line"></span><br><span class="line">lastName=Franks&amp;firstName=Michael  </span><br></pre></td></tr></table></figure>
+
+<p>我们看第一行：<br><img src="http://upload-images.jianshu.io/upload_images/4236553-6a391bc0c6581bb0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>POST 和 HTTP/1.1之间的就是我们需要的URI。so， 我们只需要将中间那段字符串截取就OK了。</p>
+<p>我们总结一下Request类，这个类其实就是解析HTTP 消息头内容的，先将流中数据转成字节，然后将转成字符，最后将字符解析，得到自己感兴趣的内容。奏是这么简单。好了，我们再看看Response类。看看他是怎么实现的。</p>
+<h4 id="Response类"><a href="#Response类" class="headerlink" title="Response类"></a>Response类</h4><p>我们先看看这个类的结构图：<br><img src="http://upload-images.jianshu.io/upload_images/4236553-f5da79e8a3018c13.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>Response 代表了Http请求中的一个响应。我们关注其中的 sendStaticResource 方法，看名字，该方法应该是发送静态资源给客户端。我们看看代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sendStaticResource</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">byte</span>[] bytes = <span class="keyword">new</span> <span class="keyword">byte</span>[BUFFER_SIZE];</span><br><span class="line">  FileInputStream fis = <span class="keyword">null</span>;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    File file = <span class="keyword">new</span> File(HttpServer.WEB_ROOT, request.getUri());</span><br><span class="line">    <span class="keyword">if</span> (file.exists()) &#123;</span><br><span class="line">      <span class="comment">// 文件存在则从输出流中输出</span></span><br><span class="line">      fis = <span class="keyword">new</span> FileInputStream(file);</span><br><span class="line">      <span class="keyword">int</span> ch = fis.read(bytes, <span class="number">0</span>, BUFFER_SIZE);</span><br><span class="line">      <span class="keyword">while</span> (ch!=-<span class="number">1</span>) &#123;</span><br><span class="line">        output.write(bytes, <span class="number">0</span>, ch);</span><br><span class="line">        ch = fis.read(bytes, <span class="number">0</span>, BUFFER_SIZE);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 没有文件返回404</span></span><br><span class="line">      String errorMessage = <span class="string">&quot;HTTP/1.1 404 File Not Found\r\n&quot;</span> +</span><br><span class="line">        <span class="string">&quot;Content-Type: text/html\r\n&quot;</span> +</span><br><span class="line">        <span class="string">&quot;Content-Length: 23\r\n&quot;</span> +</span><br><span class="line">        <span class="string">&quot;\r\n&quot;</span> +</span><br><span class="line">        <span class="string">&quot;&lt;h1&gt;File Not Found&lt;/h1&gt;&quot;</span>;</span><br><span class="line">      output.write(errorMessage.getBytes());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    <span class="comment">// thrown if cannot instantiate a File object</span></span><br><span class="line">    System.out.println(e.toString() );</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (fis!=<span class="keyword">null</span>)</span><br><span class="line">      fis.close();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，该方法也非常的简单， sendStaticResource 方法是用来发送一个静态资源，例如一个 HTML 文件。它首先通过传递 上一级目录的路径和子路径给 File 累的构造方法来实例化 java.io.File 类。</p>
+<p>然后它检查该文件是否存在。假如存在的话，通过传递 File 对象让 sendStaticResource 构造一个 java.io.FileInputStream 对象。然后，它调用 FileInputStream 的 read 方法并把字 节数组写入 OutputStream 对象。请注意，这种情况下，静态资源是作为原始数据发送给浏览器 的。</p>
+<p>假如文件并不存在，sendStaticResource 方法发送一个错误信息到浏览器</p>
+<p>运行程序，启动HttpServer mian方法，使用Edge浏览器在地址栏敲入：<a target="_blank" rel="noopener" href="http://localhost:8080/index.html">http://localhost:8080/index.html</a><br>返回：<br><img src="http://upload-images.jianshu.io/upload_images/4236553-0d74bdf2b346030d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>表示文件存在， 再看看我们的后台控制台：<br><img src="http://upload-images.jianshu.io/upload_images/4236553-282d24fa71c9d9e5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>如期打印了http请求头中的内容。并且下面还请求了一张图片。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>至此，我们已经知道了一个简单的Web服务器是如何工作的。破除了我们之前的疑惑，实际上tomcat底层就是这么实现的，可能关于阻塞IO和非阻塞NIO会有区别，但总体上还是这个思路，然后其余的组件都是针对优化性能，提高扩展性来设计新的架构。所以，我们明白了底层设计，再去学习他的设计，就不会那么迷茫。从而感到泄气。毕竟每个夜晚，我们孤独的学习，不想徒劳无功。</p>
+<p>好了，本文结束！！！ good luck ！！！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2017/11/19/2017/2017-11-19-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat%EF%BC%88%E4%B8%89%EF%BC%89Tomcat-%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/" data-id="ckwes9abe0020krs130p4bhls" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/11/20/2017/2017-11-20-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat%EF%BC%88%E5%9B%9B%EF%BC%89Tomcat-%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E4%B9%8B%E4%B8%BA%E4%BD%95%E8%BF%9D%E8%83%8C%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          深入理解-Tomcat（四）Tomcat-类加载器之为何违背双亲委派模型
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/11/18/2017/2017-11-18-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat-(%E4%BA%8C)-%E4%BB%8E%E5%AE%8F%E8%A7%82%E4%B8%8A%E7%90%86%E8%A7%A3-Tomcat-%E7%BB%84%E4%BB%B6%E5%8F%8A%E6%9E%B6%E6%9E%84/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">深入理解-Tomcat-(二)-从宏观上理解-Tomcat-组件及架构</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

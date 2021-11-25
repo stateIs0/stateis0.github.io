@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>软件架构视图介绍 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="软件架构视图介绍">
+<meta property="og:url" content="http://thinkinjava.cn/2019/04/13/2019/2019-04-13-architecture2/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-0f5c13f1bdbeafc2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-f0345619635eae07.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-83bd9d72542eb456.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-bdc992a557e2fefc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-6e9f6c151bf81332.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-54fe023f7230725a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-996543cc9dd4370e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2019-04-13T04:02:02.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.343Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-0f5c13f1bdbeafc2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2019/2019-04-13-architecture2" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/04/13/2019/2019-04-13-architecture2/" class="article-date">
+  <time datetime="2019-04-13T04:02:02.000Z" itemprop="datePublished">2019-04-13</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      软件架构视图介绍
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       > 有角度就有空间。多视图方法背后的核心思想有些类似：从不同角度，规划“分割”与“交互”。
+
+<h2 id="1-软件架构为谁设计？"><a href="#1-软件架构为谁设计？" class="headerlink" title="1 软件架构为谁设计？"></a>1 软件架构为谁设计？</h2><p>什么是软件架构？不同的角色有不同的看法。</p>
+<p>程序员：软件架构就是决定编写哪些类，使用哪些库和框架。<br>程序经理：软件架构就是模块的划分和接口的定义。<br>系统分析员：软件架构就是业务领域对象的关系建模。<br>配置管理员：软件架构就是开发出来的以及编译过后的软件到底是个啥结构。<br>DBA：软件架构规定了持久化数据库的结构，其他一切只不过是对数据的操作而已。<br>运维：软件架构规定了软件部署到硬件的策略。<br>用户：软件架构应该是将系统划分为一个个功能子系统。</p>
+<p>以上，就是从不同的视角得到的不同的软件架构视图。而架构师需要为不同社众的需求而设计。</p>
+<p>架构视图的本质是“分而治之”，能帮助架构师从不同角度设计，特别是面对复杂系统时，“分而治之”的设计是必须的。</p>
+<h2 id="2-如何设计？"><a href="#2-如何设计？" class="headerlink" title="2 如何设计？"></a>2 如何设计？</h2><p>1 为用户设计。<br>为什么开发一个软件？因为要给用户使用，或者辅助用户完成工作，或者为用户提供娱乐等等。</p>
+<p>用户要功能，也要质量，缺一不可。</p>
+<p>架构师必须牢记：为用户而设计。</p>
+<p>同时，诸如性能，易用性等软件质量属性，并不像“软件功能”那样直接帮助用户达到特定目标，但也非常重要。例如，如果你开发一个查询余额功能，查询一次需要一分钟，虽然能得到结果，但用户肯定无法接受。</p>
+<p>因此，架构师必须牢记：为用户设计的同时，不仅要满足用户要求的功能，也要达到用户期望的质量。</p>
+<p>2 为客户而设计</p>
+<p>很多时候，用户 不等于 客户。</p>
+<p>例如，开发一个商场收银系统，很明显，客户是商场老板，用户是商场收银员。</p>
+<p>架构师需要为客户而设计：充分考虑客户的业务目标、上线时间的需求，预算限制，以及集成需要等，还要特别关注客户所在领域的业务规则和业务限制。</p>
+<p>例如：如果客户是一家小型超市，那么就不应该使用那种需要昂贵的设备和搞性能中间件的架构方案。</p>
+<p>3 为开发者设计</p>
+<p>开发流程中，一般先研究需求，再设计架构，然后交给开发人员编程……作为架构，不仅要为“上游”的需求而设计，还要为“下游” 的开发人员而设计。</p>
+<p>例如，性能是软件运行期间的重要属性，也是重要的的质量属性，最关心性能的人其实是客户；</p>
+<p>程序员最关心什么？可扩展性。可扩展性也是软件开发期间的重要质量属性。</p>
+<p>不只是可扩展性，还有可重用性，可移植性，易理解性，易测试性等，都是开发人员关心的。</p>
+<p>架构师必须牢记：为了使开发流程更顺畅，必须为开发者设计。</p>
+<p>4 为管理人员设计</p>
+<p>软件越来越复杂，单兵作战已经很少了，取而代之的是团队开发，而团队开发反过来又导致软件开发更加复杂，因此，现在不仅仅是软件复杂的问题，还有管理复杂的问题。</p>
+<p>开发人员之间的依赖，源自他们负责的程序之间的依赖，要理清并管理好协作，就应该搞清楚系统一级“模块 + 交互”的设计，搞清楚架构。可见，架构是开发管理的核心基础。</p>
+<p>就软件项目管理而言，软件架构应当起到应有的作用：<strong>为项目经理指定项目计划、管理项目分工和考核进度等提供依据。</strong></p>
+<p>一方面：软件架构应该从大局着手，就技术方面的重大问题作出决策，构造一个由粗粒度模块组成的解决方案，从而把不同模块分配给不同的小组分别开发。<br>另一方面：软件架构应当规定各个模块如何交互的机制和接口，在开发小组之间，起到“沟通桥梁”和“合作契约” 的作用。</p>
+<p>5 小结</p>
+<p>架构师在设计架构时，应该要考虑到不同的角色，使<code>架构</code>满足<code>包含了关于如何构建软件的一些最重要的设计决策</code>的定义。</p>
+<p>如下图：<br><img src="https://upload-images.jianshu.io/upload_images/4236553-0f5c13f1bdbeafc2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<h2 id="3-什么是架构视图"><a href="#3-什么是架构视图" class="headerlink" title="3 什么是架构视图"></a>3 什么是架构视图</h2><p>为什么提供多个架构视图？</p>
+<ul>
+<li>架构要涵盖的内容和决策太多了，超过了人脑“一撮而就” 的能力范围，因此采用“ 分而治之” 的办法从不同视角分别设计。</li>
+<li>同时，也为了软件架构的理解，交流和归档提供了方便。</li>
+</ul>
+<p>在多种架构视图中，最常用的是逻辑架构视图和物理架构视图。</p>
+<p>1 什么是逻辑架构视图？</p>
+<p>软件的逻辑架构视图，规定了软件系统由哪些逻辑元素组成，以及这些逻辑元素之间关系。</p>
+<p>软件逻辑架构的核心任务，是比较全面的识别模块，规划接口，并基于此进一步明确模块之间的使用关系和使用机制。通常，一个软件的 UML 类图，就是他的逻辑架构。</p>
+<p>2 什么是物理架构视图？</p>
+<p>说白了，就是由哪些物理元素组成，以及这些物理元素是如何交互的。</p>
+<p>物理架构可以反映出软件系统动态运行时的组织情况，通常物理元素就是进程、线程、类的实例对象等，而进程之间的调度，线程同步，进程/线程通信等，则进一步反映出物理架构的动态行为。</p>
+<p>3 如何设计一个 逻辑视图 + 物理视图 的软件架构？</p>
+<p>架构设计，将会指导后续的详细设计和编程，而详细设计和编程，这会贯彻和利用这些设计：</p>
+<p>a 首先设计逻辑架构，体现为，层、功能子模块和模块等的划分决策，有了模块划分，比如产生协作，逻辑接口还要规定这些模块之间如何进行交互，因此还要设计交互接口。</p>
+<p>b 所谓交互，指不同模块之间的沟通和通信，一般有几种方式：方法调用、RPC 远程调用，消息机制。</p>
+<p>c 物理架构，关注软件在运行时期的情况，物理架构规定了软件系统如何利用进程和线程完成期望的并发处理，进程线程这些主动单元会调用哪些被动单元，消息直接的交互如何处理等等。这些设计，将会为后续编程实现提供基础。</p>
+<p>具体过程如下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-f0345619635eae07.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<h2 id="4-架构设计流程实战"><a href="#4-架构设计流程实战" class="headerlink" title="4 架构设计流程实战"></a>4 架构设计流程实战</h2><p>设计技巧：<br>先有需求，再有用例，通过分而治之和迭代式设计，设计第一版本的逻辑视图，有了逻辑视图，再设计第一版本的物理视图，再根据第一版本的物理视图设计 第二版本的逻辑视图</p>
+<p>1 用例设计（需求设计）<br>2 逻辑架构设计版本 1<br>3 物理架构设计版本 1<br>4 逻辑结构设计版本 2<br>5 物理架构设计版本 2<br>6 逻辑架构设计版本 n…..<br>7 逻辑架构设计版本 n…..</p>
+<p>假设我们现在有个需求：设计一个邮件代理服务器，并且提供后台管理功能。</p>
+<p>根据上面的流程, 先来个用例图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-83bd9d72542eb456.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>逻辑视图 版本 1</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-bdc992a557e2fefc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>物理视图 版本 1</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-6e9f6c151bf81332.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>逻辑视图 版本 2</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-54fe023f7230725a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>物理视图 版本 2 </p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-996543cc9dd4370e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>到这里，我们就基本完成了一个 逻辑视图 + 物理视图的 架构设计。</p>
+<p>我们通过分而治之，迭代式设计的方式，让逻辑架构设计和物理架构设计交替进行，不断验证，促进设计优化，从而完成架构设计。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>软件架构设计——温昱</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2019/04/13/2019/2019-04-13-architecture2/" data-id="ckwes9acc005akrs14cc09a9b" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/05/08/2019/2019-05-09-rmq-sendmsg/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          RocketMQ 发送消息（一条消息从发送到存储的过程）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/04/13/2019/2019-04-13-architecture/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">软件架构概念</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

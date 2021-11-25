@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>并发编程之-锁的优化有哪些 | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之-锁的优化有哪些">
+<meta property="og:url" content="http://thinkinjava.cn/2018/01/07/2018/2018-01-07-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-%E9%94%81%E7%9A%84%E4%BC%98%E5%8C%96%E6%9C%89%E5%93%AA%E4%BA%9B/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-01-06T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.304Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-01-07-并发编程之-锁的优化有哪些" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/01/07/2018/2018-01-07-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-%E9%94%81%E7%9A%84%E4%BC%98%E5%8C%96%E6%9C%89%E5%93%AA%E4%BA%9B/" class="article-date">
+  <time datetime="2018-01-06T18:11:11.000Z" itemprop="datePublished">2018-01-07</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      并发编程之-锁的优化有哪些
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       在 JDK 1.6 之前，synchronized 性能令人担忧，但是 1.6 之后，JVM 团队针对 synchronized 做了很多的优化，让 synchroized 在性能层面相比较 ReentrantLock 不相上下。那么，JVM 团队做了哪些优化呢？
+
+
+<p>首先说，怎么才能优化？我们知道，“锁” 其实是互斥同步的具体实现，而互斥同步对性能最大的影响是阻塞的实现，挂起线程和恢复线程的操作都需要用户态转到内核态来完成。这些操作给系统的并发性能带来了很大的压力。</p>
+<p>所以，优化的方向就是减少线程的阻塞，因为挂起线程和恢复线程需要切换到操作系统的内核状态。</p>
+<p>Java 1.6 为了减少获得锁和释放锁带来的性能损耗，引入了 “偏向锁“ 和 ”轻量级锁“ ，在 Java SE 1.6 中，锁一共有4个状态，从低到高依次是：无锁状态，偏向锁状态，轻量级锁状态，重量级锁状态。这几个状态会随着竞争情况逐渐升级（即膨胀）。注意：锁升级之后不能降级（具体原因后面讲）。</p>
+<ol>
+<li>偏向锁</li>
+<li>轻量级锁</li>
+<li>重量级锁</li>
+<li>锁消除</li>
+<li>锁粗化</li>
+<li>除了虚拟机，程序员自己如何优化锁</li>
+</ol>
+<h2 id="1-偏向锁"><a href="#1-偏向锁" class="headerlink" title="1. 偏向锁"></a><strong>1. 偏向锁</strong></h2><p>虚拟机的团队根据经验发现，大多数情况下，锁不仅不存在多线程竞争，而且总是有同一线程多次获得，为了让线程获得锁的代价更低而引入了偏向锁。</p>
+<p>当一个线程访问同步块并获取锁时，会在对象头和栈帧中的锁记录里存储锁偏向的线程ID，以后该线程在进入和退出同步块时不需要进行CAS操作来加锁和解锁，只需简单的测试一下对象头的 “Mark Word” 里是否存储着指向当前线程的偏向锁。</p>
+<p>如果测试成功，表示线程已经获得了锁。如果测试失败，则需要再测试一下 Mark Word 中偏向锁的标识是否设置了1（表示当前还是偏向锁）：如果没有设置，则使用CAS 竞争锁；如果设置了，则尝试使用CAS 将对象头的偏向锁指向当前线程。</p>
+<p>可以说，偏向锁的 “偏”，就是偏心的 “偏”，他的意思就是这个锁会偏向于第一个获得他的线程，如果在接下来的执行过程中，该锁没有被其他的线程获取，则持有偏向锁的线程将<strong>永远不需要同步</strong>。</p>
+<p>当有另外要给线程去尝试获取这个锁时，偏向模式宣告结束，后续的操作将升级为轻量级锁。</p>
+<p>注意：偏向锁可以提高有同步但无竞争的程序性能，他同样有缺陷：如果程序中大多数的锁总是被多个不同的线程访问，那偏向模式就是多余的。1.6之后的虚拟机默认启用偏向锁，可以使用JVM参数来关闭：-XX：-UseBiasedLocking=false；程序将默认进入轻量级锁状态。</p>
+<p>可以看到，Mark Word 是实现偏向锁的关键。而后面的轻量级锁也是通过这个实现的。</p>
+<h2 id="2-轻量级锁"><a href="#2-轻量级锁" class="headerlink" title="2. 轻量级锁"></a><strong>2. 轻量级锁</strong></h2><p>什么是轻量级锁呢？ “轻量级” 是相对于使用操作系统互斥量来实现的传统锁而言的，因此传统的锁机制称为 “重量级” 锁。 首先需要强调一点，轻量级锁并不是用来代替重量级锁的，他的本意是在没有多线程竞争的前提下，减少传统的重量级锁使用操作系统互斥量产生的性能损耗。</p>
+<p>线程在执行同步块之前，JVM 会先在当前线程的栈帧中创建用于存储锁记录的空间，并将对象头的 Mark Word 复制到锁记录中，官方称为 Displaced Mark Word. 然后线程尝试使用CAS 将对象头中的 Mark Word 替换为指向锁记录的指针。</p>
+<p>如果成功，当前线程获得锁，如果失败，表示其他线程竞争锁，当前线程便会尝试使用自旋来获取锁，注意：这里线程并没有挂起自己，而是通过一定次数的自旋（默认10次，可以使用 -XX：PreBlockSpin 修改），防止切换到内核态导致的开销。</p>
+<p>如果有2个以上的线程争用同一把锁，那么轻量级锁将会失效，升级到重量级锁。</p>
+<p>那么为什么升级到重量级锁之后不能降级呢？假设一下：如果锁升级到重量级之后，拿到锁的某个线程被阻塞了，等待了很久，那么轻量级线程将会一直自旋等待，消耗CPU性能。所以，在升级到重量级锁后，就不能降级了，防止轻量级锁自旋消耗CPU。</p>
+<p>可以看到偏向锁和轻量级锁的差别，偏向锁在第一个线程拿到锁之后，将把线程ID 存储在对象头中，后面的所有操作都不是同步的，相当于无锁。而轻量级锁，每次获取锁的时候还是需要使用CAS来修改对象头的记录，在没有线程竞争的情况下，这个操作是很轻量的，不需要使用操作系统的互斥机制。</p>
+<h2 id="3-重量级锁"><a href="#3-重量级锁" class="headerlink" title="3. 重量级锁"></a><strong>3. 重量级锁</strong></h2><p>相比较轻量级锁是通过自旋来获取锁的，重量级锁则是通过操作系统将线程切换到内核态并阻塞来实现的。代价十分高昂。</p>
+<p>下面看看各个锁的优缺点对比：</p>
+<table>
+<thead>
+<tr>
+<th>锁</th>
+<th>优点</th>
+<th>缺点</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>偏向锁</td>
+<td>加锁和解锁不需要额外的消耗，和执行非同步方法相比仅存在纳秒级的差距</td>
+<td>如果线程间存在锁竞争，会带来额外的锁撤销的消耗</td>
+<td>适用于只有一个线程访问同步块场景</td>
+</tr>
+<tr>
+<td>轻量级锁</td>
+<td>竞争的线程不会阻塞，提高了程序的响应速度</td>
+<td>如果始终得不到锁竞争的线程，使用自旋会消耗CPU</td>
+<td>追求响应时间，同步块执行速度非常快</td>
+</tr>
+<tr>
+<td>重量级锁</td>
+<td>线程竞争不使用自旋，不会消耗CPU</td>
+<td>线程阻塞，响应时间缓慢</td>
+<td>追求吞吐量，同步块执行时间较长</td>
+</tr>
+</tbody></table>
+<p>什么时候使用什么锁，大家可以看看。</p>
+<h2 id="4-锁消除"><a href="#4-锁消除" class="headerlink" title="4. 锁消除"></a><strong>4. 锁消除</strong></h2><p>什么是锁消除呢？指的是 JIT 编译器在运行时，对一些没有必要同步的代码却同步了的锁进行消除。可以说时一种彻底的锁优化。通过锁消除，可以节省毫无意义的请求锁时间。</p>
+<p>那么你们一定会问，谁会这么傻，不需要同步还去同步啊？</p>
+<p>请看下面的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> String[] createStrings(String[] args) &#123;</span><br><span class="line">  Vector&lt;String&gt; v = <span class="keyword">new</span> Vector&lt;&gt;();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) &#123;</span><br><span class="line">    v.add(Integer.toString(i));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> v.toArray(<span class="keyword">new</span> String[]&#123;&#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>注意：v 变量只在这一个方法中使用，只是一个单纯的局部变量，分配在栈中，也就没有线程安全的说法，任何同步都是没有必要的，而Vector 的add 操作都是同步的。所以虚拟机检测到这个情况，会将锁去除。</p>
+<p>锁消除涉及一个技术：逃逸分析。所谓逃逸分析就是观察某一个变量十分会逃出某一个作用域。在本例中，变量v没有逃出函数外，如果函数返回的不是 string 数组，而是 v 本身，那么就任务 v 逃逸出了当前函数。也就是说 v 可能被其他线程访问。如果是这样，虚拟机就不能消除 v 的锁操作。</p>
+<h2 id="5-锁粗化"><a href="#5-锁粗化" class="headerlink" title="5. 锁粗化"></a><strong>5. 锁粗化</strong></h2><p>原则上，我们在编写代码的时候，总是推荐将同步块尽可能的小。这样是为了使得需要同步的操作数量小，如果存在锁竞争，那等待锁的线程也能尽快拿到锁。</p>
+<p>大部分情况下，这个原则是正确的。如果如果一系列连续操作都对同一个对象反复加锁和解锁，甚至加锁操作是出现在循环体中的，那即使没有线程竞争，频繁的同步操作也会导致不必要的性能损耗。</p>
+<p>如果虚拟机探测到很多零碎的操作都对同一个对象加锁，将会把加锁同步的范围扩展（粗化）到整个操作序列的外部。即加大了同步块。</p>
+<h2 id="6-除了虚拟机，程序员自己如何优化锁"><a href="#6-除了虚拟机，程序员自己如何优化锁" class="headerlink" title="6. 除了虚拟机，程序员自己如何优化锁"></a><strong>6. 除了虚拟机，程序员自己如何优化锁</strong></h2><ol>
+<li>减小锁的持有时间。</li>
+<li>减小锁的粒度。</li>
+<li>使用读写锁替换独占锁</li>
+<li>锁分离</li>
+</ol>
+<ol>
+<li>减小锁的持有时间。</li>
+</ol>
+<p>其实这个很简单，你的锁持有的时间长，后面的线程等待的时间就长，一个线程等待1秒，10000个线程就多等待了10000秒，因此，只在必要时进行同步，这样就能明显减少线程持有锁的时间。提高系统的吞吐量。</p>
+<ol start="2">
+<li>减小锁的粒度。</li>
+</ol>
+<p>这个和我们上面说的虚拟机帮助我们粗化时反的。但是，我们说，大部分情况下，减小锁的粒度也削弱多线程竞争的有效手段，比如 ConcurrentHashMap，他只锁住了 Hash 桶中的某一个桶，不像HashTable 一样锁住整个对象。</p>
+<ol start="3">
+<li>使用读写锁替换独占锁</li>
+</ol>
+<p>我们之前在说 Java 世界的三把锁的时候说哪三把锁，内置锁，重入锁，读写锁，就是我们现在说的读写锁 ReadWriteLock，使用读写锁来替代独占锁是减小锁粒度的一种特殊情况，在读多写少的场合，读写锁对系统性能是有好处的。可以有效提高系统的并发能力。因为读操作不会影响数据的完整性和一致性，就像 ConcurrentHashMap 的 get 方法一样，根本不需要加锁，这个时候又要说说 HashTable ，该容器连 get 方法都加锁。你可以想象一下。</p>
+<ol start="4">
+<li>锁分离</li>
+</ol>
+<p>如果将读写锁进一步延伸，就是锁分离，读写锁根据读写操作功能的不同，进行了有效的分离。而 JDK 的 LinkedBlockingQueue 则是锁分离的最佳实践。在进行 take 操作和 put 操作使用了两把不同的锁。因为他们之间根本没有竞争关系，或者说，使用队列的数据结构，将原本耦合的业务分离了。</p>
+<h2 id="7-总结"><a href="#7-总结" class="headerlink" title="7. 总结"></a><strong>7. 总结</strong></h2><p>今天我们总结了一些锁的优化，有虚拟机的优化，比如偏向锁，轻量级锁，自旋锁，锁粗化，锁消除， 也有我们自己的优化策略，需要平时写代码的时候注意，比如减少锁的持有时间，减小锁的粒度，在读多写少的场合使用读写锁，尽量通过合理的设计分离锁。</p>
+<p>总之，并发是门艺术。如何提高并发的性能是每个高级程序员的追求。</p>
+<p>good luck ！！！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/01/07/2018/2018-01-07-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-%E9%94%81%E7%9A%84%E4%BC%98%E5%8C%96%E6%9C%89%E5%93%AA%E4%BA%9B/" data-id="ckwes9aco006fkrs174wp59yg" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/01/07/2018/2018-01-07-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-ConcurrentHashMap%EF%BC%88JDK-1-8%EF%BC%89-putVal-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          并发编程之-ConcurrentHashMap（JDK-1-8）-putVal-源码分析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/01/05/2018/2018-01-05-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-%E7%BA%BF%E7%A8%8B%E6%B1%A0-%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">并发编程之-源码剖析-线程池-实现原理</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

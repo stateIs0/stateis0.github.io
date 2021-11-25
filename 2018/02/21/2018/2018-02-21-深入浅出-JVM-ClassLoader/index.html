@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>深入浅出-JVM-ClassLoader | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="深入浅出-JVM-ClassLoader">
+<meta property="og:url" content="http://thinkinjava.cn/2018/02/21/2018/2018-02-21-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-ClassLoader/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-0462adabdf0aac40.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-b58c0180435f2e21.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-eba420d0b83f65a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-dbe5357dffc7d83b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-02-20T18:11:11.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.307Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-0462adabdf0aac40.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-02-21-深入浅出-JVM-ClassLoader" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/02/21/2018/2018-02-21-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-ClassLoader/" class="article-date">
+  <time datetime="2018-02-20T18:11:11.000Z" itemprop="datePublished">2018-02-21</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/JVM/">JVM</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      深入浅出-JVM-ClassLoader
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       ## # 前言
+
+<p>在 JVM 综述里面，我们说，JVM 做了三件事情，Java 程序的内存管理，<br>Java Class 二进制字节流的加载（ClassLoader），Java 程序的执行（执行引擎）。我们也说，我们大部分情况下只关注前2个。在前面的文章中，我们已经分析了内存关系相关的，包括运行时数据区，GC 相关。今天我们要讲的就是类加载器。</p>
+<p>在 <a target="_blank" rel="noopener" href="https://www.jianshu.com/p/70154dc5a9ff">JVM 综述</a> 里，我们已经大致分析了一些概念。而今天的文章将详细的阐述类加载器。</p>
+<p>首先，我们要了解类加载器，当然，了解的目的是为了更好的开发，通过对类加载器的解读，看看我们能不能做些什么，比如修改类加载器的加载逻辑，比如加入自定义的类加载器等等功能。</p>
+<p>让我们开始吧！</p>
+<h2 id="1-类加载器介绍"><a href="#1-类加载器介绍" class="headerlink" title="# 1.  类加载器介绍"></a># 1.  类加载器介绍</h2><p>对于 Java 虚拟机来说，Class 文件是一个重要的接口，无论使用何种语言进行软件开发，只要能将源文件编译为正确的 Class 文件，那么这种语言就可以在 Java 虚拟机上运行。可以说，Class 文件就是虚拟机的基石。</p>
+<p>如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-0462adabdf0aac40.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="各种语言都可以在 JVM 上运行"></p>
+<p>从上图可以看出，虚拟机不拘泥于 Java 语言，任何一个源文件只要能编译成 Class 文件的格式，就可以在JVM 上运行！Class 文件格式就像是一个接口，只要遵守这个接口，就能够在 JVM 上运行。</p>
+<h2 id="2-类加载器的工作流程"><a href="#2-类加载器的工作流程" class="headerlink" title="# 2. 类加载器的工作流程"></a># 2. 类加载器的工作流程</h2><p>Class 文件通常是以文件的方式存在（任何二进制流都可以是 Class 类型），但只有能被 JVM 加载后才能被使用，才能运行编译后的代码。系统装在 Class 类型可以分为加载，链接和初始化三个步骤。其中，链接也可分为验证，准备和解析3步骤。如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-b58c0180435f2e21.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Class 文件转载过程"></p>
+<p>其中，只有加载过程是程序员能够控制的，后面的几个步骤都是有虚拟机自动运行的。因此，我们的关注点主要放在加载阶段。</p>
+<h2 id="3-类加载流程中的-“加载”"><a href="#3-类加载流程中的-“加载”" class="headerlink" title="# 3.  类加载流程中的 “加载”"></a># 3.  类加载流程中的 “加载”</h2><p>上面说了，类加载器3个流程中，唯一能让程序员 “做手脚” 的就是加载过程，上面是加载过程呢？其主要作用就是从系统外部获得 Class 二进制数据流。</p>
+<p>JVM 不会无故装载 Class 文件，只有在必要的时候才装载，哪几个时候呢？</p>
+<ol>
+<li>当创建一个类的实例是，比如使用 new 关键字，或者通过反射，克隆，反序列化。</li>
+<li>当调用类的静态方法时，即当使用字节码 invokstatic 指令。</li>
+<li>当使用类或接口的静态字段时（final 常量除外），比如，使用 getstatic 或者 pustatic 指令。</li>
+<li>当时用 Java.lang.reflect 包中的方法反射类的方法时。</li>
+<li>当初始化子类，要求先初始化父类。</li>
+<li>作为启动虚拟机，含有 main（）方法的那个类。</li>
+</ol>
+<p>以上6种情况属于主动调用，主动调用会触发初始化，还有一种情况是被动调用，则不会引起初始化。</p>
+<h4 id="3-1-ClassLoader-抽象类介绍"><a href="#3-1-ClassLoader-抽象类介绍" class="headerlink" title="# 3.1 ClassLoader 抽象类介绍"></a># 3.1 ClassLoader 抽象类介绍</h4><p>Java 类加载器的具体实现就在 java.lang.ClassLoader，该类是一个抽象类，并且提供了一些重要的接口，用于自定义Class 的加载流程和加载方式。主要方法如下：</p>
+<ol>
+<li><p>public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException<br>给定一个类名，加载一个雷，返回代表这个类的 Class 实例，如果找不到类，则返回异常。</p>
+</li>
+<li><p>protected final Class&lt;?&gt; defineClass(String name, byte[] b, int off, int len) throws ClassFormatError<br>根据给定的字节码流 b 定义一个类，off 表示位置，len 表示长度。该方法只有子类可以使用。</p>
+</li>
+<li><p>protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException<br>查找一个类，也是只能子类使用，这是重载 ClassLoader 时，最重要的系统扩展点。这个方法会被 loadClass 调用，用于自定义查找类的逻辑，如果不需要修改类加载默认机制，只是想改变类加载的形式，就可以重载该方法。</p>
+</li>
+<li><p>protected final Class&lt;?&gt; findLoadedClass(String name)<br>同样的，这个方法也只有子类能够使用，他会去寻找已经加载的类，这个方法是 final 方法，无法被修改。</p>
+</li>
+</ol>
+<p>同时，在该类中，还有一个字段非常重要：parent，他也是一个 ClassLoader 的实例，这个字段所表示的 ClassLoader 也称为这个 ClassLoader 的双亲，在类加载的过程中，ClassLoader 可能会将某些请求交给自己的双亲处理。</p>
+<h4 id="3-2-类加载器的双亲委派模型"><a href="#3-2-类加载器的双亲委派模型" class="headerlink" title="# 3.2 类加载器的双亲委派模型"></a># 3.2 类加载器的双亲委派模型</h4><p>在标准的 Java 程序中，从虚拟机的角度讲，只有2种类加载器：</p>
+<ol>
+<li>启动类加载器（BootStrap ClassLoader），C++ 语言实现，虚拟机自身的一部分</li>
+<li>另一种就是所有其他的类加载器，由 Java 语言实现，独立于虚拟机外部，并且全部继承自抽身类 java.lang.ClassLoader。</li>
+</ol>
+<p>从程序员的角度讲，虚拟机会创建 3 中类加载器，分别是：Bootstrap ClassLoader(启动类加载器），Extension ClassLoader（扩展类加载器）和 APPClassLoader（应用类加载器，也称为系统类加载器）。此外，每一个应用程序还可以拥有自定义的 ClassLoader，扩展 Java 虚拟机获取 Class 数据的能力。</p>
+<p>而这 3 个类加载器有着层次关系。</p>
+<p>先来看一个著名的图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-eba420d0b83f65a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="类加载器双亲委派模型"></p>
+<p>如图所示：从 ClassLoader 的层次自顶向下为启动类加载器，扩展类加载器，应用类加载器和自定义类加载器，当系统需要适用一个类时，在判断类是否已经被加载时，会先从当前底层类加载器进行判断，但系统需要加载一个类时，会从顶层类开始加载，依次向下尝试，直到成功。</p>
+<p>注意，我们无法访问启动类加载器，当试图获取启动类加载器的时候，返回 null，因此，如果返回的是 null，并不意味没有类加载器为它服务，而是指哪个类为启动类加载器。</p>
+<p>那么这些类加载路径是哪些呢？</p>
+<ol>
+<li><p>BootStrap 类加载器负责加载 <JAVA_HOME>/lib 目录中的，或者别-Xbootclasspath 参数指定的路径。并且是被虚拟机识别的，如 rt.jar，名字不符合的类库即使放在 lib 目录中也不会加载。</p>
+</li>
+<li><p>扩展类加载器有 sun.misc.Launcher$ExtClassLoader 实现，负责加载 <JAVA_HOME>/lib/ext 目录中的。或者被 java.ext.dirs 系统变量所指定的路径中的所有类库。</p>
+</li>
+<li><p>应用类加载器由 sun.misc.Launcher$AppClassLoader 实现，由于这个类是 ClassLoader 中的 getSystemClassLoader 方法的返回值，也称为系统类加载器，负载加载用户类路径（ClassPath）上所指定的类库，开发者可以直接使用这个类加载器。一般情况下，这个就是程序中默认的类加载器。</p>
+</li>
+<li><p>自定义类加载器用于加载一些特殊途径的类，一般也是用户程序类。</p>
+</li>
+</ol>
+<p>系统中的 ClassLoader 在协同工作时，默认会使用双亲委托模式，即在类加载的时候，系统会判断当前类是否已经被加载，如果已经加载，则直接返回，否则就尝试加载，在尝试加载时，会先请求双亲处理，如果双亲查找事变，则自己加载。代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> Class&lt;?&gt; loadClass(String name, <span class="keyword">boolean</span> resolve)</span><br><span class="line">       <span class="keyword">throws</span> ClassNotFoundException</span><br><span class="line">   &#123;</span><br><span class="line">       <span class="keyword">synchronized</span> (getClassLoadingLock(name)) &#123;</span><br><span class="line">           <span class="comment">// First, check if the class has already been loaded</span></span><br><span class="line">           Class&lt;?&gt; c = findLoadedClass(name);</span><br><span class="line">           <span class="keyword">if</span> (c == <span class="keyword">null</span>) &#123;</span><br><span class="line">               <span class="keyword">long</span> t0 = System.nanoTime();</span><br><span class="line">               <span class="keyword">try</span> &#123;</span><br><span class="line">                   <span class="keyword">if</span> (parent != <span class="keyword">null</span>) &#123;</span><br><span class="line">                       c = parent.loadClass(name, <span class="keyword">false</span>);</span><br><span class="line">                   &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                       c = findBootstrapClassOrNull(name);</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">                   <span class="comment">// ClassNotFoundException thrown if class not found</span></span><br><span class="line">                   <span class="comment">// from the non-null parent class loader</span></span><br><span class="line">               &#125;</span><br><span class="line"></span><br><span class="line">               <span class="keyword">if</span> (c == <span class="keyword">null</span>) &#123;</span><br><span class="line">                   <span class="comment">// If still not found, then invoke findClass in order</span></span><br><span class="line">                   <span class="comment">// to find the class.</span></span><br><span class="line">                   <span class="keyword">long</span> t1 = System.nanoTime();</span><br><span class="line">                   c = findClass(name);</span><br><span class="line"></span><br><span class="line">                   <span class="comment">// this is the defining class loader; record the stats</span></span><br><span class="line">                   sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);</span><br><span class="line">                   sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);</span><br><span class="line">                   sun.misc.PerfCounter.getFindClasses().increment();</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="keyword">if</span> (resolve) &#123;</span><br><span class="line">               resolveClass(c);</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="keyword">return</span> c;</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>代码中，如果双亲是 null，则使用启动类加载器加载，如果事变，则使用当前类加载器加载。</p>
+<p>双亲为 null 一般有2种情况，1. 双亲是启动类加载器。2. 自己就是启动类加载器。</p>
+<p>其中加载类的逻辑有2个注意的地方。</p>
+<ol>
+<li><p>判断是否已经加载？当判断类是否需要加载时，是从底层开始判断，如果底层已经加载了，则不再请求双亲。</p>
+</li>
+<li><p>当系统准备加载一个类时。会先从双亲加载，也就是最顶层的启动类加载器，逐层向下，直到找到该类。和上面的是相反的。</p>
+</li>
+</ol>
+<h4 id="3-3-类加载器的双亲委派模型缺陷和补充"><a href="#3-3-类加载器的双亲委派模型缺陷和补充" class="headerlink" title="# 3.3 类加载器的双亲委派模型缺陷和补充"></a># 3.3 类加载器的双亲委派模型缺陷和补充</h4><p>双亲模型固然有着优点，能够让整个系统保持了类的唯一性。但在有些场合，却不适合，也就是说，顶层的启动类加载器的代码无法访问到底层的类加载器。如 rt.jar 无法中代码无法访问到应用类加载器。</p>
+<p>你肯定要问，为什么需要访问呢？</p>
+<p>在 Java 平台中，把核心类（rt.jar)中提供外部服务，可由应用层自行实现的接口，通常可以称为 Service Provider Interface，即 SPI。</p>
+<p>在 rt.jar 中的抽象类需要加载继承他们的在应用层的子类实现，但是以目前的双亲机制是无法实现的。</p>
+<p>因此 JDK 引用了一个不太优雅的设计，上下文类加载器。也就是讲类加载放在线程上下文变量中。通过     Thread.getContextClassLoader()，    Thread.setContextClassLoader(ClassLoader) 这两个方法获取和设置 ClassLoader，这样，rt.jar 中的代码就可以获取到底层的类加载了。</p>
+<h4 id="3-4-突破双亲模式"><a href="#3-4-突破双亲模式" class="headerlink" title="# 3.4 突破双亲模式"></a># 3.4 突破双亲模式</h4><p>双亲模式是虚拟机的默认行为，但并非必须这么做，通过重载 ClassLoader 可以修改该行为。事实上，很多框架和软件都修改了，比如 Tomcat，OSGI。具体实现则是通过重写 loadClass 方法，改变类的加载次序。比如先使用自定义类加载器加载，如果加载不到，则交给双亲加载。</p>
+<h2 id="4-类加载的扩展—热替换"><a href="#4-类加载的扩展—热替换" class="headerlink" title="# 4. 类加载的扩展—热替换"></a># 4. 类加载的扩展—热替换</h2><p>我们知道：由不同的 ClassLoader 加载的同名类属于不同的类型，不能相互转化和兼容。</p>
+<p>而这个特性就是我们实现热替换的关键。过程如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-dbe5357dffc7d83b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="热替换基本思路"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="# 总结"></a># 总结</h2><p>好了，到这里，基本的类加载器就介绍结束了。我们总结了类加载的工作流程，包括加载，连接，初始化。然后我们重点介绍了加载，因为加载阶段是我们程序员唯一有所作为的地方。然后介绍了加载阶段的一些细节，比如双亲委派，然后说了双亲委派的缺点和补充，然后探讨了如何修改默认的类加载方式，最后通过类加载的特性实现了热替换。当然也看了核心类 ClassLoader 的源码。不过，这肯定不是类加载器的全部。我们将在后面的文章中将类加载的其他特性一一解开。</p>
+<p>good luck！！！！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/02/21/2018/2018-02-21-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-ClassLoader/" data-id="ckwes9acy007ekrs1e3zpbahg" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/02/24/2018/2018-02-24-JVM-%E7%BA%BF%E4%B8%8A%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          JVM-线上故障排查基本操作
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/02/20/2018/2018-02-20-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%884%EF%BC%89%E5%B8%B8%E7%94%A8-GC-%E5%8F%82%E6%95%B0%E4%BB%8B%E7%BB%8D/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">深入浅出-JVM-GC（4）常用-GC-参数介绍</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

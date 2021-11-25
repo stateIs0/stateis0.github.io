@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Jedis 如何支持 Cluster | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="Jedis 如何支持 Cluster">
+<meta property="og:url" content="http://thinkinjava.cn/2018/08/06/2018/2018-08-07-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Cluster/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-feb1829cb50d26aa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-6fba8444f50ae04a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-08-06T07:01:01.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.327Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-feb1829cb50d26aa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-08-07-Jedis 如何支持 Cluster" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/08/06/2018/2018-08-07-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Cluster/" class="article-date">
+  <time datetime="2018-08-06T07:01:01.000Z" itemprop="datePublished">2018-08-06</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Redis/">Redis</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Jedis 如何支持 Cluster
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       目录：
+1. 初始化
+2. 发送命令和重试机制
+3. 总结
+
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前面说了 Jedis（2.9.0） 如何支持 Redis  Sentinel 的，今天看看 Jedis 是如何支持 Redis Cluster 的。</p>
+<h2 id="1-初始化"><a href="#1-初始化" class="headerlink" title="1 初始化"></a>1 初始化</h2><p>Jedis Cluster 构造方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">JedisCluster</span><span class="params">(Set&lt;HostAndPort&gt; jedisClusterNode, <span class="keyword">int</span> connectionTimeout, <span class="keyword">int</span> soTimeout,</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="keyword">int</span> maxAttempts, <span class="keyword">final</span> GenericObjectPoolConfig poolConfig)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">super</span>(jedisClusterNode, connectionTimeout, soTimeout, maxAttempts, poolConfig);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意： <code>Set&lt;HostAndPort&gt; jedisClusterNode</code> 中包含所有主从节点。</p>
+<p>通过层层跟踪，我们来到了 initializeSlotsCache 方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">initializeSlotsCache</span><span class="params">(Set&lt;HostAndPort&gt; startNodes, GenericObjectPoolConfig poolConfig, String password)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (HostAndPort hostAndPort : startNodes) &#123;</span><br><span class="line">    Jedis jedis = <span class="keyword">new</span> Jedis(hostAndPort.getHost(), hostAndPort.getPort());</span><br><span class="line">    <span class="keyword">if</span> (password != <span class="keyword">null</span>) &#123;</span><br><span class="line">      jedis.auth(password);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// </span></span><br><span class="line">      cache.discoverClusterNodesAndSlots(jedis);</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (JedisConnectionException e) &#123;</span><br><span class="line">      <span class="comment">// try next nodes</span></span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (jedis != <span class="keyword">null</span>) &#123;</span><br><span class="line">        jedis.close();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个 cache 设计上就是 Redis Cluster slot 的缓存，每个 slot 都指向一个连接池。看看这个 cache 的内部结构：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">JedisClusterInfoCache</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, JedisPool&gt; nodes = <span class="keyword">new</span> HashMap&lt;String, JedisPool&gt;();<span class="comment">// ip：port 对应的连接池</span></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> Map&lt;Integer, JedisPool&gt; slots = <span class="keyword">new</span> HashMap&lt;Integer, JedisPool&gt;();<span class="comment">// slot 对应的连接池</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> ReentrantReadWriteLock rwl = <span class="keyword">new</span> ReentrantReadWriteLock();</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> Lock r = rwl.readLock();</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> Lock w = rwl.writeLock();</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> rediscovering;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> GenericObjectPoolConfig poolConfig;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">int</span> connectionTimeout;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">int</span> soTimeout;</span><br><span class="line">  <span class="keyword">private</span> String password;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> MASTER_NODE_INDEX = <span class="number">2</span>;<span class="comment">// 主节点下标</span></span><br></pre></td></tr></table></figure>
+
+<p>其中，在 <code>initializeSlotsCache </code>方法中，会遍历所有的节点信息，但是，只会执行一次 <code>cache.discoverClusterNodesAndSlots(jedis)</code>，如果失败了，就继续执行这个方法。为什么只需要执行一次呢？</p>
+<p>来看看 <code>cache.discoverClusterNodesAndSlots</code> 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">discoverClusterNodesAndSlots</span><span class="params">(Jedis jedis)</span> </span>&#123;</span><br><span class="line">  w.lock();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    reset();</span><br><span class="line">    List&lt;Object&gt; slots = jedis.clusterSlots();<span class="comment">// 节点的槽位集合:[[10924, 16383, [[B@4ae82894, 6386], [[B@543788f3, 6387]], [5462, 10923, [[B@6d3af739, 6384], [[B@1da51a35, 6385]], [0, 5461, [[B@16022d9d, 6382], [[B@7e9a5fbe, 6383]]]</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (Object slotInfoObj : slots) &#123;<span class="comment">// 遍历集合</span></span><br><span class="line">      List&lt;Object&gt; slotInfo = (List&lt;Object&gt;) slotInfoObj;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (slotInfo.size() &lt;= MASTER_NODE_INDEX) &#123;<span class="comment">// 如果此节点信息少于3 个,跳过此次循环,一般是: slotIndex, slotIndex,&#123;ip byte[], port&#125;,&#123;ip byte[], port&#125;</span></span><br><span class="line">        <span class="keyword">continue</span>;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      List&lt;Integer&gt; slotNums = getAssignedSlotArray(slotInfo);<span class="comment">// 得到所有的 slot 数字</span></span><br><span class="line"></span><br><span class="line">      <span class="comment">// hostInfos</span></span><br><span class="line">      <span class="keyword">int</span> size = slotInfo.size();</span><br><span class="line">      <span class="comment">// 从第三位开始循环,是主节点信息</span></span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> i = MASTER_NODE_INDEX; i &lt; size; i++) &#123;</span><br><span class="line">        List&lt;Object&gt; hostInfos = (List&lt;Object&gt;) slotInfo.get(i);<span class="comment">// 得到主节点信息</span></span><br><span class="line">        <span class="keyword">if</span> (hostInfos.size() &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">          <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        HostAndPort targetNode = generateHostAndPort(hostInfos); <span class="comment">// 解析出 ip + port</span></span><br><span class="line">        setupNodeIfNotExist(targetNode);<span class="comment">// 创建连接池,并放入缓存</span></span><br><span class="line">        <span class="keyword">if</span> (i == MASTER_NODE_INDEX) &#123;<span class="comment">// 如果是主节点,就将该所有槽位指向同一个连接池</span></span><br><span class="line">          assignSlotsToNode(slotNums, targetNode);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    w.unlock();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该方法作用如下：通过任意一个节点，得到所有主节点的信息。数据格式为：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-feb1829cb50d26aa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>得到这些信息后，根据 ip  + port 创建连接池，并缓存所有的连接池，key 为 “ip：port”，value 则是对应的连接池，如果是主节点，则更进一步，将 solt 和连接池也全部缓存，便于查询。</p>
+<p>该方法涉及的几个方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> List&lt;Integer&gt; <span class="title">getAssignedSlotArray</span><span class="params">(List&lt;Object&gt; slotInfo)</span> </span>&#123;</span><br><span class="line">  List&lt;Integer&gt; slotNums = <span class="keyword">new</span> ArrayList&lt;Integer&gt;();</span><br><span class="line">  <span class="comment">// 0位是起始 slot, 1 位是截止 slot, 这里是得到所有的 slot</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> slot = ((Long) slotInfo.get(<span class="number">0</span>)).intValue(); slot &lt;= ((Long) slotInfo.get(<span class="number">1</span>)).intValue(); slot++) &#123;<span class="comment">// 初始是第一个, slot 不能大于第二个 slot</span></span><br><span class="line">    slotNums.add(slot);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> slotNums;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> JedisPool <span class="title">setupNodeIfNotExist</span><span class="params">(HostAndPort node)</span> </span>&#123;</span><br><span class="line">    w.lock();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      String nodeKey = getNodeKey(node); <span class="comment">// ip:port</span></span><br><span class="line">      JedisPool existingPool = nodes.get(nodeKey);<span class="comment">// 从 map 里获取缓存</span></span><br><span class="line">      <span class="keyword">if</span> (existingPool != <span class="keyword">null</span>) <span class="keyword">return</span> existingPool;<span class="comment">// 如果有,就不再初始化</span></span><br><span class="line">      <span class="comment">// 创建连接池</span></span><br><span class="line">      JedisPool nodePool = <span class="keyword">new</span> JedisPool(poolConfig, node.getHost(), node.getPort(),</span><br><span class="line">          connectionTimeout, soTimeout, password, <span class="number">0</span>, <span class="keyword">null</span>, <span class="keyword">false</span>, <span class="keyword">null</span>, <span class="keyword">null</span>, <span class="keyword">null</span>);</span><br><span class="line">      nodes.put(nodeKey, nodePool);<span class="comment">// 缓存</span></span><br><span class="line">      <span class="keyword">return</span> nodePool;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">      w.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">assignSlotsToNode</span><span class="params">(List&lt;Integer&gt; targetSlots, HostAndPort targetNode)</span> </span>&#123;</span><br><span class="line">   w.lock();</span><br><span class="line">   <span class="keyword">try</span> &#123;</span><br><span class="line">     JedisPool targetPool = setupNodeIfNotExist(targetNode);<span class="comment">// 获取该节点的连接池</span></span><br><span class="line">     <span class="keyword">for</span> (Integer slot : targetSlots) &#123;<span class="comment">// 将所有槽位指向该连接池</span></span><br><span class="line">       slots.put(slot, targetPool);</span><br><span class="line">     &#125;</span><br><span class="line">   &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">     w.unlock();</span><br><span class="line">   &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>所以，当这个步骤成功以后，所有的 slot 和对应的连接池都初始化好了，后面就直接 break  了。如果途中失败了，则继续尝试。</p>
+<h2 id="2-发送命令和重试机制"><a href="#2-发送命令和重试机制" class="headerlink" title="2 发送命令和重试机制"></a>2 发送命令和重试机制</h2><p>好了，我们已经知道，slot 和连接池是保存在 JedisClusterInfoCache 类中的，那么，我们使用 API 的时候又是怎么操作的呢？</p>
+<p>以 set 方法为例：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">set</span><span class="params">(<span class="keyword">final</span> String key, <span class="keyword">final</span> String value)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> JedisClusterCommand&lt;String&gt;(connectionHandler, maxAttempts) &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">execute</span><span class="params">(Jedis connection)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> connection.set(key, value);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;.run(key);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里会创建一个 Redis 命令对象，然后执行 run 方法，run 方法里会回调命令对象的 execute 方法。run 方法内部调用的是 runWithRetries  方法，看名字，这是一个带有重试机制的方法. 该方法有个参数就是 int attempts，用户自己设置的重试次数。</p>
+<p>看看 runWithRetries 方法实现(因为包含了失败重试逻辑，所以很长)：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">  <span class="function"><span class="keyword">private</span> T <span class="title">runWithRetries</span><span class="params">(<span class="keyword">byte</span>[] key, <span class="keyword">int</span> attempts, <span class="keyword">boolean</span> tryRandomNode, <span class="keyword">boolean</span> asking)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (attempts &lt;= <span class="number">0</span>) &#123;<span class="comment">// 重试次数</span></span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> JedisClusterMaxRedirectionsException(<span class="string">&quot;Too many Cluster redirections?&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  Jedis connection = <span class="keyword">null</span>;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (asking) &#123;<span class="comment">// 第一次 false，如果节点 A 正在迁移槽 i 至节点 B ， 那么当节点 A 没能在自己的数据库中找到命令指定的数据库键时， 节点 A 会向客户端返回一个 ASK 错误， 指引客户端到节点 B 继续查找指定的数据库键</span></span><br><span class="line">      connection = askConnection.get();</span><br><span class="line">      connection.asking();<span class="comment">// 到目标节点打开客户端连接标识</span></span><br><span class="line"></span><br><span class="line">      <span class="comment">// if asking success, reset asking flag</span></span><br><span class="line">      asking = <span class="keyword">false</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (tryRandomNode) &#123;<span class="comment">// 如果是随机的</span></span><br><span class="line">        connection = connectionHandler.getConnection();</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;<span class="comment">// 默认不是随机的，通过 CRC16 算法获取 slot 对应的节点的连接池中的连接</span></span><br><span class="line">        connection = connectionHandler.getConnectionFromSlot(JedisClusterCRC16.getSlot(key));</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 执行</span></span><br><span class="line">    <span class="keyword">return</span> execute(connection);</span><br><span class="line"></span><br><span class="line">  &#125; <span class="keyword">catch</span> (JedisNoReachableClusterNodeException jnrcne) &#123;<span class="comment">// 集群不存在</span></span><br><span class="line">    <span class="keyword">throw</span> jnrcne;</span><br><span class="line">  &#125; <span class="keyword">catch</span> (JedisConnectionException jce) &#123;<span class="comment">// 连接异常</span></span><br><span class="line">    <span class="comment">// release current connection before recursion</span></span><br><span class="line">    releaseConnection(connection);<span class="comment">//归还连接</span></span><br><span class="line">    connection = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (attempts &lt;= <span class="number">1</span>) &#123;<span class="comment">// 如果重试次数只有一次，那就更新连接池，并抛出异常</span></span><br><span class="line">      <span class="keyword">this</span>.connectionHandler.renewSlotCache();</span><br><span class="line">      <span class="keyword">throw</span> jce;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> runWithRetries(key, attempts - <span class="number">1</span>, tryRandomNode, asking);<span class="comment">// 否则递归重试，重试次数减一</span></span><br><span class="line">  &#125; <span class="keyword">catch</span> (JedisRedirectionException jre) &#123;<span class="comment">// 如果是重定向异常，例如 moved ，ASK</span></span><br><span class="line">    <span class="comment">// if MOVED redirection occurred,</span></span><br><span class="line">    <span class="keyword">if</span> (jre <span class="keyword">instanceof</span> JedisMovedDataException) &#123;<span class="comment">// 节点在接到一个命令请求时， 会先检查这个命令请求要处理的键所在的槽是否由自己负责， 如果不是的话， 节点将向客户端返回一个 MOVED 错误， MOVED 错误携带的信息可以指引客户端转向至正在负责相关槽的节点</span></span><br><span class="line">      <span class="comment">// 如果是 moved 错误，就更新连接池， ASK 就不必更新缓存，只需要临时访问就行</span></span><br><span class="line">      <span class="keyword">this</span>.connectionHandler.renewSlotCache(connection);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 归还旧的连接</span></span><br><span class="line">    releaseConnection(connection);</span><br><span class="line">    connection = <span class="keyword">null</span>;</span><br><span class="line">    <span class="comment">// 如果是 ASK </span></span><br><span class="line">    <span class="keyword">if</span> (jre <span class="keyword">instanceof</span> JedisAskDataException) &#123;</span><br><span class="line">      asking = <span class="keyword">true</span>;</span><br><span class="line">      <span class="comment">// 设置 ThreadLocal，新的连接是 ASK 指定的节点</span></span><br><span class="line">      askConnection.set(<span class="keyword">this</span>.connectionHandler.getConnectionFromNode(jre.getTargetNode()));</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (jre <span class="keyword">instanceof</span> JedisMovedDataException) &#123;<span class="comment">// 如果是 moved 错误，不处理错误，重试。</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> JedisClusterException(jre);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 重试</span></span><br><span class="line">    <span class="keyword">return</span> runWithRetries(key, attempts - <span class="number">1</span>, <span class="keyword">false</span>, asking);</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    releaseConnection(connection);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该方法主要步骤如下：</p>
+<ol>
+<li> 默认是使用 CRC16 算法通过 key 得到 slot ，然后，根据 slot 得到 Jedis 连接，也就是从我们刚刚说的缓存里获取连接。</li>
+<li>得到连接后，回调命令对象的 execute 方法。</li>
+<li>如果发生了 JedisNoReachableClusterNodeException 异常，表明集群不存在，则直接抛出异常，结束方法。</li>
+<li>如果发生了 JedisConnectionException 连接异常，则进行递归重试，如果重试次数只剩一次，则刷新连接池缓存。</li>
+<li>如果发生了 JedisRedirectionException 重定向异常，如果返回的是 moved，则刷新连接池。如果是 ASK，则不刷新连接池，在下次递归中直接使用 ASK 返回的信息进行调用。下次递归时，先执行 asking 命令打开新的客户端连接，如果成功，则执行真正的命令。</li>
+<li>最终，归还连接。</li>
+</ol>
+<p>大致的流程图如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-6fba8444f50ae04a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>这里说一下 ASK 和 MOVED：</p>
+<p>ASK：如果节点 A 正在迁移槽 i 至节点 B ， 那么当节点 A 没能在自己的数据库中找到命令指定的数据库键时， 节点 A 会向客户端返回一个 ASK 错误， 指引客户端到节点 B 继续查找指定的数据库键。</p>
+<p>MOVED：节点在接到一个命令请求时， 会先检查这个命令请求要处理的键所在的槽是否由自己负责， 如果不是的话， 节点将向客户端返回一个 MOVED 错误， MOVED 错误携带的信息可以指引客户端转向至正在负责相关槽的节点。</p>
+<p>两者的共同点都是重定向，不同点是：ASK 是迁移过程中返回的，MOVED 是迁移结束后返回的。如返回 ASK ，那么就不必更新客户端缓存，因为客户端无法知道什么时候迁移完成，因此只能是临时性的重定向。但是 MOVED 重定向说明键对应的 slot 已经成功的转移到了新的节点，那么就可以换成这些连接。</p>
+<p>注意：当重试次数不够时，会抛出 <code>throw new JedisClusterMaxRedirectionsException(&quot;Too many Cluster redirections?&quot;)</code> 异常，原因是节点宕机或请求超时触发了重试，而重试次数耗尽就会触发这个异常。</p>
+<p>当 Cluster 进行故障发现到完成故障转移，需要一定的时间，节点宕机期间，所有指向这个节点的命令都会触发重试，当收到 moved 命令则会进行连接刷新 —— 也就是 renewSlotCache 方法。</p>
+<p>注意：更新连接池的过程是串行加锁的！！</p>
+<p>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">renewClusterSlots</span><span class="params">(Jedis jedis)</span> </span>&#123;</span><br><span class="line">  <span class="comment">//If rediscovering is already in process - no need to start one more same rediscovering, just return</span></span><br><span class="line">  <span class="keyword">if</span> (!rediscovering) &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      w.lock();</span><br><span class="line">      rediscovering = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (jedis != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          discoverClusterSlots(jedis);</span><br><span class="line">          <span class="keyword">return</span>;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (JedisException e) &#123;</span><br><span class="line">          <span class="comment">//try nodes from all pools</span></span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">for</span> (JedisPool jp : getShuffledNodesPool()) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          jedis = jp.getResource();</span><br><span class="line">          discoverClusterSlots(jedis);</span><br><span class="line">          <span class="keyword">return</span>;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (JedisConnectionException e) &#123;</span><br><span class="line">          <span class="comment">// try next nodes</span></span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">          <span class="keyword">if</span> (jedis != <span class="keyword">null</span>) &#123;</span><br><span class="line">            jedis.close();</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">      rediscovering = <span class="keyword">false</span>;</span><br><span class="line">      w.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>注意：代码中使用了写锁，而获取连接池时则使用了读锁，读写锁是互斥的，这时将导致所有访问集群的线程阻塞！！！</p>
+<p>当然，只有出现 MOVED 错误或者 JedisConnectionException 异常且无法继续重试时，才会进行刷新连接池操作。</p>
+<h2 id="3-总结"><a href="#3-总结" class="headerlink" title="3 总结"></a>3 总结</h2><p>本文旨在分析 Jedis 如何支持 Redis Cluster，因为 Redis Cluster 需要客户端来支持分片。Jedis 内部使用了一个 JedisClusterInfoCache 保存 slot 和 pool，ip:port 和 pool 的映射关系，ip:port 的缓存更多是服务于 ask 时寻找节点。</p>
+<p>在使用客户端是时候，Jedis 会有重试机制，用户可以设置重试次数，如果发生了 ask，客户端会自动根据返回值重定向，如果发生了 moved，则会刷新连接池中的 slot，因为集群发生了迁移。</p>
+<p>需要注意的是，当集群进行迁移的时候，如果有客户端访问迁移的节点，那么将会导致刷新连接池，而这个连接池是有锁，当刷新的时候，使用的是写锁，将导致所有的读都会阻塞，所以，迁移尽量在业务低谷进行。</p>
+<p>了解客户端的原理，有助于我们理解 Redis Cluster 的运行原理，也有助于我们平时编写代码，运维缓存，排查故障。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/08/06/2018/2018-08-07-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Cluster/" data-id="ckwes9aet00egkrs1haetglcm" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/08/07/2018/2018-08-08-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20%E9%9B%86%E7%BE%A4/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          Mac 搭建 Redis 集群
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/08/04/2018/2018-08-05-Redis%20%E5%A4%8D%E5%88%B6%E8%BF%90%E7%BB%B4%E5%8F%8A%E4%BC%98%E5%8C%96/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">Redis 复制运维及优化</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

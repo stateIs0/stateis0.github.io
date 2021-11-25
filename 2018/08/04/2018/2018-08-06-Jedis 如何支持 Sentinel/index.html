@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Jedis 如何支持 Sentinel | 莫那·鲁道的技术博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="article">
+<meta property="og:title" content="Jedis 如何支持 Sentinel">
+<meta property="og:url" content="http://thinkinjava.cn/2018/08/04/2018/2018-08-06-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Sentinel/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-08-04T07:01:01.000Z">
+<meta property="article:modified_time" content="2021-11-25T07:28:04.327Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.ico">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">莫那·鲁道的技术博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        
+          <a class="main-nav-link" href="/archives">文章归档</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/2018-08-06-Jedis 如何支持 Sentinel" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/08/04/2018/2018-08-06-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Sentinel/" class="article-date">
+  <time datetime="2018-08-04T07:01:01.000Z" itemprop="datePublished">2018-08-04</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Redis/">Redis</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Jedis 如何支持 Sentinel
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       ## 前言
+
+<p>Jedis 作为 Java 世界 Redis 的老牌客户端，很好的支持了 Sentinel，例如 Sentinel 的故障转移功能。</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>Jedis 提供了一个 Sentinel 构造方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">JedisSentinelPool</span><span class="params">(String masterName, Set&lt;String&gt; sentinels,</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="keyword">final</span> GenericObjectPoolConfig poolConfig, <span class="keyword">final</span> <span class="keyword">int</span> connectionTimeout, <span class="keyword">final</span> <span class="keyword">int</span> soTimeout,</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="keyword">final</span> String password, <span class="keyword">final</span> <span class="keyword">int</span> database, <span class="keyword">final</span> String clientName)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.poolConfig = poolConfig;</span><br><span class="line">  <span class="keyword">this</span>.connectionTimeout = connectionTimeout;</span><br><span class="line">  <span class="keyword">this</span>.soTimeout = soTimeout;</span><br><span class="line">  <span class="keyword">this</span>.password = password;</span><br><span class="line">  <span class="keyword">this</span>.database = database;</span><br><span class="line">  <span class="keyword">this</span>.clientName = clientName;</span><br><span class="line"></span><br><span class="line">  HostAndPort master = initSentinels(sentinels, masterName);</span><br><span class="line">  initPool(master);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该构造方法做了 2件事情，初始化 Sentinel 和 Pool。我们先看看 initSentinel。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> HostAndPort <span class="title">initSentinels</span><span class="params">(Set&lt;String&gt; sentinels, <span class="keyword">final</span> String masterName)</span> </span>&#123;</span><br><span class="line">   HostAndPort master = <span class="keyword">null</span>; </span><br><span class="line">   <span class="keyword">boolean</span> sentinelAvailable = <span class="keyword">false</span>;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">for</span> (String sentinel : sentinels) &#123;<span class="comment">// 遍历 Sentinel 节点</span></span><br><span class="line">     <span class="keyword">final</span> HostAndPort hap = HostAndPort.parseString(sentinel);<span class="comment">// 解析 String 为 ip port</span></span><br><span class="line"></span><br><span class="line">     Jedis jedis = <span class="keyword">null</span>;</span><br><span class="line">     <span class="keyword">try</span> &#123;</span><br><span class="line">       jedis = <span class="keyword">new</span> Jedis(hap.getHost(), hap.getPort());<span class="comment">// 创建 Jedis 对象 </span></span><br><span class="line">       <span class="comment">// 执行 get-master-addr-by-name masterName 获取主节点信息</span></span><br><span class="line">       List&lt;String&gt; masterAddr = jedis.sentinelGetMasterAddrByName(masterName);</span><br><span class="line">       <span class="comment">// 标识符：Sentinel 存在</span></span><br><span class="line">       sentinelAvailable = <span class="keyword">true</span>;</span><br><span class="line">       <span class="comment">// 如果主节点是空，或者返回长度不等于 2，跳过此 Sentinel</span></span><br><span class="line">       <span class="keyword">if</span> (masterAddr == <span class="keyword">null</span> || masterAddr.size() != <span class="number">2</span>) &#123;</span><br><span class="line">         <span class="keyword">continue</span>;</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="comment">// 如果成功获取主节点，解析字符串成 HostAndPort 对象</span></span><br><span class="line">       master = toHostAndPort(masterAddr);</span><br><span class="line">       <span class="keyword">break</span>;</span><br><span class="line">     &#125; <span class="keyword">catch</span> (JedisException e) &#123;</span><br><span class="line">     &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">       <span class="keyword">if</span> (jedis != <span class="keyword">null</span>) &#123;</span><br><span class="line">         jedis.close();<span class="comment">// 每次循环归还 Redis 连接</span></span><br><span class="line">       &#125;</span><br><span class="line">     &#125;</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="comment">// 如果 master 是 null，抛出异常</span></span><br><span class="line">   <span class="keyword">if</span> (master == <span class="keyword">null</span>) &#123;</span><br><span class="line">     <span class="keyword">if</span> (sentinelAvailable) &#123;<span class="comment">// 细化异常，这个是 Sentinel 有问题</span></span><br><span class="line">       <span class="keyword">throw</span> <span class="keyword">new</span> JedisException(<span class="string">&quot;Can connect to sentinel, but &quot;</span> + masterName</span><br><span class="line">           + <span class="string">&quot; seems to be not monitored...&quot;</span>);</span><br><span class="line">     &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">       <span class="keyword">throw</span> <span class="keyword">new</span> JedisConnectionException(<span class="string">&quot;All sentinels down, cannot determine where is &quot;</span></span><br><span class="line">           + masterName + <span class="string">&quot; master is running...&quot;</span>);</span><br><span class="line">     &#125;</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="comment">// 遍历 哨兵</span></span><br><span class="line">   <span class="keyword">for</span> (String sentinel : sentinels) &#123;</span><br><span class="line">     <span class="keyword">final</span> HostAndPort hap = HostAndPort.parseString(sentinel);</span><br><span class="line">     <span class="comment">// 创建 master 监听器线程</span></span><br><span class="line">     MasterListener masterListener = <span class="keyword">new</span> MasterListener(masterName, hap.getHost(), hap.getPort());</span><br><span class="line">     masterListener.setDaemon(<span class="keyword">true</span>);<span class="comment">// 后台线程</span></span><br><span class="line">     masterListeners.add(masterListener);<span class="comment">// 添加到监听集合，后期优雅关闭</span></span><br><span class="line">     masterListener.start();<span class="comment">// 启动线程</span></span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">return</span> master;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>方法很长，简单说说逻辑：</p>
+<ol>
+<li>遍历 Sentinel 字符串</li>
+<li>根据字符串生成 HostAndPort 对象，然后创建一个 Jedis 对象。</li>
+<li>使用 Jedis 对象发送 <code>get-master-addr-by-name masterName</code> 命令，得到 master 信息。</li>
+<li>得到 master 信息后，再次遍历哨兵集合，为每个哨兵创建一个线程，监听哨兵的发布订阅消息，消息主题是  <code>+switch-master</code>. 当主节点发生变化时，将通过 pub/sub 通知该线程，该线程将更新 Redis 连接池。</li>
+</ol>
+<p>看看这个线程的主要内容：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// flag</span></span><br><span class="line">  running.set(<span class="keyword">true</span>);</span><br><span class="line">  <span class="comment">// 死循环</span></span><br><span class="line">  <span class="keyword">while</span> (running.get()) &#123;</span><br><span class="line">    <span class="comment">//创建一个 Jedis对象</span></span><br><span class="line">    j = <span class="keyword">new</span> Jedis(host, port);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="comment">// 继续检查</span></span><br><span class="line">      <span class="keyword">if</span> (!running.get()) &#123;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// jedis 对象，通过 Redis pub/sub 订阅 switch-master 主题</span></span><br><span class="line">      j.subscribe(<span class="keyword">new</span> JedisPubSub() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onMessage</span><span class="params">(String channel, String message)</span> </span>&#123;</span><br><span class="line">          <span class="comment">// 分割字符串  </span></span><br><span class="line">          String[] switchMasterMsg = message.split(<span class="string">&quot; &quot;</span>);</span><br><span class="line">          <span class="comment">// 如果长度大于三</span></span><br><span class="line">          <span class="keyword">if</span> (switchMasterMsg.length &gt; <span class="number">3</span>) &#123;</span><br><span class="line">            <span class="comment">// 且 第一个 字符串的名称和当前 masterName 发生了 switch</span></span><br><span class="line">            <span class="keyword">if</span> (masterName.equals(switchMasterMsg[<span class="number">0</span>])) &#123;</span><br><span class="line">              <span class="comment">// 重新初始化连接池（第 4 个和 第 5 个）</span></span><br><span class="line">              initPool(toHostAndPort(Arrays.asList(switchMasterMsg[<span class="number">3</span>], switchMasterMsg[<span class="number">4</span>])));</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            &#125;</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;, <span class="string">&quot;+switch-master&quot;</span>);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">catch</span> (JedisConnectionException e) &#123;</span><br><span class="line">      <span class="comment">// 如果连接异常</span></span><br><span class="line">      <span class="keyword">if</span> (running.get()) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="comment">// 默认休息 5 秒</span></span><br><span class="line">          Thread.sleep(subscribeRetryWaitTimeMillis);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e1) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">      j.close();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该方法已经写了很多注释，稍微说下逻辑：根据哨兵的 host 和 port 创建一个 jedis 对象，然后，这个 jedis 对象订阅了 pub/sub 消息，，消息的主题是 “+switch-master” ，如果收到消息了，就执行 onMessage 方法，该方法会根据新的  master 信息重新初始化 Redis 连接池。</p>
+<p>那么如何初始化连接池的呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">initPool</span><span class="params">(HostAndPort master)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 比较 host  + port，如果不相等，就重新初始化</span></span><br><span class="line">  <span class="keyword">if</span> (!master.equals(currentHostMaster)) &#123;</span><br><span class="line">    <span class="comment">// 修改当前 master</span></span><br><span class="line">    currentHostMaster = master;</span><br><span class="line">    <span class="keyword">if</span> (factory == <span class="keyword">null</span>) &#123;</span><br><span class="line">      factory = <span class="keyword">new</span> JedisFactory(master.getHost(), master.getPort(), connectionTimeout,</span><br><span class="line">          soTimeout, password, database, clientName, <span class="keyword">false</span>, <span class="keyword">null</span>, <span class="keyword">null</span>, <span class="keyword">null</span>);</span><br><span class="line">      initPool(poolConfig, factory);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 修改连接参数, 下次获取连接的时候，就可以生成新的连接</span></span><br><span class="line">      factory.setHostAndPort(currentHostMaster);</span><br><span class="line">      <span class="comment">// 清空旧的连接池</span></span><br><span class="line">      internalPool.clear();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>事实上，在 Sentinel 构造器里面，也会调用这个方法，第一次调用的时候， factory 肯定是 null，第二次调用的时候，会设置 factory 的 hostAndPort 为新的 master 地址，然后清空原来的连接池。那么新的 getResource 方法就会从这个新的地址获取到新的连接了。</p>
+<p>具体关于 JedisSentinelPool 的  getResource 方法就不细说了，大家可以自己看看，还是很简单的，</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>可以看到 Sentinel 的通知客户端机制，是需要客户端进行配合的，客户端需要通过 Sentinel 的 pub/sub 机制订阅哨兵节点的 <code>+switch-master</code> 主题，当 master 改变的时候，会通过 pub 通知客户端，客户端此时就可以优雅的更新连接池。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2018/08/04/2018/2018-08-06-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Sentinel/" data-id="ckwes9aet00eekrs19g2ce4z2" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/08/04/2018/2018-08-05-Redis%20%E5%A4%8D%E5%88%B6%E8%BF%90%E7%BB%B4%E5%8F%8A%E4%BC%98%E5%8C%96/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">新</strong>
+      <div class="article-nav-title">
+        
+          Redis 复制运维及优化
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/08/03/2018/2018-08-04-Redis%20%E5%A4%8D%E5%88%B6%E5%8E%9F%E7%90%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">旧</strong>
+      <div class="article-nav-title">Redis 复制原理</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">文章归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 莫那·鲁道<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  
+    <a href="/archives" class="mobile-nav-link">文章归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
