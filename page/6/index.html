@@ -1,756 +1,1028 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
+
+
+<html lang="zh-CN">
   
 
-  
-  <title>莫那·鲁道的技术博客</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="莫那·鲁道的技术博客">
-<meta property="og:url" content="http://thinkinjava.cn/page/6/index.html">
-<meta property="og:site_name" content="莫那·鲁道的技术博客">
-<meta property="og:locale" content="zh_CN">
-<meta property="article:author" content="莫那·鲁道">
-<meta name="twitter:card" content="summary">
-  
-    <link rel="alternate" href="/atom.xml" title="莫那·鲁道的技术博客" type="application/atom+xml">
-  
-  
-    <link rel="icon" href="/img/favicon.ico">
-  
-  
-    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
-  
-  
-<link rel="stylesheet" href="/css/style.css">
+    <head>
+      <meta charset="utf-8" />
+        
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1"
+      />
+      <title> 莫那·鲁道的技术博客</title>
+  <meta name="generator" content="hexo-theme-ayer">
+      
+      <link rel="shortcut icon" href="/favicon.ico" />
+       
+<link rel="stylesheet" href="/dist/main.css">
 
-<meta name="generator" content="Hexo 5.4.0"></head>
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css"
+      />
+      
+<link rel="stylesheet" href="/css/custom.css">
+ 
+      <script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+       
+ 
+
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bulma@5.0.1/bulma.min.css"
+      />
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.js"></script>
+
+      <!-- mermaid -->
+      
+      <style>
+        .swal2-styled.swal2-confirm {
+          font-size: 1.6rem;
+        }
+      </style>
+    </head>
+  </html>
+</html>
+
 
 <body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="banner"></div>
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">莫那·鲁道的技术博客</a>
-      </h1>
+  <div id="app">
+    
       
+    <main class="content on">
+      
+<section class="cover">
+    
+      
+      <a class="forkMe" href="https://github.com/stateIs0"
+        target="_blank"><img width="149" height="149" src="/images/forkme.png"
+          class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1"></a>
+    
+  <div class="cover-frame">
+    <div class="bg-box">
+      <img src="/images/cover8.jpg" alt="image frame" />
     </div>
-    <div id="header-inner" class="inner">
-      <nav id="main-nav">
-        <a id="main-nav-toggle" class="nav-icon"></a>
+    <div class="cover-inner text-center text-white">
+      <h1><a href="/">莫那·鲁道的技术博客</a></h1>
+      <div id="subtitle-box">
         
-          <a class="main-nav-link" href="/">莫那·鲁道</a>
+        <span id="subtitle"></span>
         
-          <a class="main-nav-link" href="/archives">文章归档</a>
+      </div>
+      <div>
         
-      </nav>
-      <nav id="sub-nav">
+        <img
+          src="true"
+          class="cover-logo"
+          alt="莫那·鲁道的技术博客"
+        />
         
-          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
-        
-        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
-      </nav>
-      <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://thinkinjava.cn"></form>
       </div>
     </div>
   </div>
-</header>
-      <div class="outer">
-        <section id="main">
+  <div class="cover-learn-more">
+    <a href="javascript:void(0)" class="anchor"><i class="ri-arrow-down-line"></i></a>
+  </div>
+</section>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js"></script>
+
+
+<!-- Subtitle -->
+
+  <script>
+    try {
+      var typed = new Typed("#subtitle", {
+        strings: ['做个好人', '做个好程序员', '做个好父亲'],
+        startDelay: 0,
+        typeSpeed: 200,
+        loop: true,
+        backSpeed: 100,
+        showCursor: true
+      });
+    } catch (err) {
+      console.log(err)
+    }
+  </script>
   
-    <article id="post-2018/2018-10-01-简简单单写一个 Redis 客户端" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/10/01/2018/2018-10-01-%E7%AE%80%E7%AE%80%E5%8D%95%E5%8D%95%E5%86%99%E4%B8%80%E4%B8%AA%20Redis%20%E5%AE%A2%E6%88%B7%E7%AB%AF/" class="article-date">
-  <time datetime="2018-09-30T16:01:01.000Z" itemprop="datePublished">2018-10-01</time>
-</a>
+<div id="main">
+  <section class="outer">
+  
+  
+  
+
+<div class="notice" style="margin-top:50px">
+    <i class="ri-heart-fill"></i>
+    <div class="notice-content" id="broad"></div>
+</div>
+<script type="text/javascript">
+    fetch('https://v1.hitokoto.cn')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("broad").innerHTML = data.hitokoto;
+        })
+        .catch(console.error)
+</script>
+
+<style>
+    .notice {
+        padding: 20px;
+        border: 1px dashed #e6e6e6;
+        color: #969696;
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        background: #fbfbfb50;
+        border-radius: 10px;
+    }
+
+    .notice i {
+        float: left;
+        color: #999;
+        font-size: 16px;
+        padding-right: 10px;
+        vertical-align: middle;
+        margin-top: -2px;
+    }
+
+    .notice-content {
+        display: initial;
+        vertical-align: middle;
+    }
+</style>
+  
+  <article class="articles">
     
+    
+    
+    
+    <article
+  id="post-2018/2018-10-01-简简单单写一个 Redis 客户端"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/10/01/2018/2018-10-01-%E7%AE%80%E7%AE%80%E5%8D%95%E5%8D%95%E5%86%99%E4%B8%80%E4%B8%AA%20Redis%20%E5%AE%A2%E6%88%B7%E7%AB%AF/"
+    >简简单单写一个 Redis 客户端</a> 
+</h2>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/10/01/2018/2018-10-01-%E7%AE%80%E7%AE%80%E5%8D%95%E5%8D%95%E5%86%99%E4%B8%80%E4%B8%AA%20Redis%20%E5%AE%A2%E6%88%B7%E7%AB%AF/" class="article-date">
+  <time datetime="2018-09-30T16:01:01.000Z" itemprop="datePublished">2018-10-01</time>
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/Redis/">Redis</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/10/01/2018/2018-10-01-%E7%AE%80%E7%AE%80%E5%8D%95%E5%8D%95%E5%86%99%E4%B8%80%E4%B8%AA%20Redis%20%E5%AE%A2%E6%88%B7%E7%AB%AF/">简简单单写一个 Redis 客户端</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这篇文章很简单，就是写一个 Java 版本的 Redis Client，而且不是一个生产级别的项目，只是一个验证类型的 demo。用于了解“实现一个 Redis Client” 需要注意哪些事情。</p>
-<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h2><ol>
-<li><p>首先，Redis 是一个服务器，有 ip，有端口，那么，我们就可以用 Java 的 Socket 来和他交互，也可以用 telnet 来交互。说白了，就是一个 TCP 服务器，只要打开了  TCP 通道，然后进行一次连接 3 次握手，建立起全双工通道，就能够互相发送数据。</p>
-</li>
-<li><p>从我们之前的编程经验中，我知道，和一个服务器交互，通常是需要协议的，例如 HTTP 服务器，你需要 HTTP 协议，和 Dubbo 交互，你需要了解 Dubbo 协议，当然，这些都是建立在 TCP 协议之上的。那么，Redis 大概也是有协议的，我们后面再看。</p>
-</li>
-</ol>
-<h2 id="动手"><a href="#动手" class="headerlink" title="动手"></a>动手</h2><p>思考了上面的两点，我们可以尝试动手。</p>
-<p>我们可以先用 telnet 访问以下本地的 Redis Server，例如 ：<code>telnet  127.0.0.1 6379</code>，如下：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">➜  master telnet 127.0.0.1 6379</span><br><span class="line">Trying 127.0.0.1...</span><br><span class="line">Connected to localhost.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">set baby hello</span><br><span class="line">+OK</span><br><span class="line">get baby</span><br><span class="line"><span class="meta">$</span><span class="bash">5</span></span><br><span class="line">hello</span><br><span class="line">del baby</span><br><span class="line">:1</span><br><span class="line">xxx</span><br><span class="line">-ERR unknown command &#x27;xxx&#x27;</span><br></pre></td></tr></table></figure>
-
-<p>步骤：</p>
-<ol>
-<li>我们连接上了本机的 Redis Server。</li>
-<li>执行 set baby hello 命令，也就是保存一个键值对。</li>
-<li>返回了 +OK 字符串</li>
-<li>然后我们获取刚刚的 baby 字符串。</li>
-<li>返回了 $5 <code>换行</code> hello</li>
-<li>然后我们删除了 baby 字符串。</li>
-<li>返回了 :1 ，1表示删除成功。</li>
-<li>然后我们尝试执行一个不存在的命令。</li>
-<li>返回了 <code>-ERR unknown command &#39;xxx&#39;</code>.</li>
-</ol>
-<p>我们使用  Redis 官方提供的 redis-cli 客户端执行这些命令看看结果：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">➜  master redis-cli</span><br><span class="line">127.0.0.1:6379&gt; set baby hello</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; get baby</span><br><span class="line">&quot;hello&quot;</span><br><span class="line">127.0.0.1:6379&gt; del baby</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; xxx</span><br><span class="line">(error) ERR unknown command &#x27;xxx&#x27;</span><br><span class="line">127.0.0.1:6379&gt; </span><br></pre></td></tr></table></figure>
-
-<p>很明显，redis-cli 客户端和 telnet 的使用区别就是返回值的不同，telnet 多了一些奇怪的字符，或者在一些返回值前面加入了一些符合，例如在 OK 前面加入了+ 号。在get baby 后，返回了一个 $5 字符串。我们猜想，telnet 得到的数据是 Redis-Server 真正返回的数据，redis-cli 对这些数据进行了处理。</p>
-<p>好了，大概了解了操作，我们用 Java 写一个 Socket 访问一下 Redis Server。</p>
-<h2 id="用-Java-Socket-访问-Redis-Server"><a href="#用-Java-Socket-访问-Redis-Server" class="headerlink" title="用 Java Socket 访问 Redis Server"></a>用 Java Socket 访问 Redis Server</h2><p>代码很简单，如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> Socket client = <span class="keyword">new</span> Socket();</span><br><span class="line"><span class="keyword">static</span> InputStream is;</span><br><span class="line"><span class="keyword">static</span> OutputStream os;</span><br><span class="line"><span class="keyword">static</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        client.connect(<span class="keyword">new</span> InetSocketAddress(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">6379</span>));</span><br><span class="line">        is = client.getInputStream();</span><br><span class="line">        os = client.getOutputStream();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="string">&quot;set baby hello \n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="comment">// result : +OK</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="string">&quot;get baby \n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="number">1</span>);<span class="comment">// 等 redis 返回数据</span></span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="comment">// result : $5</span></span><br><span class="line">    <span class="comment">// result : hello</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="string">&quot;del baby \n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="number">1</span>);<span class="comment">// 等 redis 返回数据</span></span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="comment">// result  :1</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="string">&quot;xxx \n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="number">1</span>);<span class="comment">// 等 redis 返回数据</span></span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="comment">// -ERR unknown command `xxx`, with args beginning with:</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="string">&quot;mget hello baby \r\n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="number">1</span>);</span><br><span class="line">    printResult();</span><br><span class="line"></span><br><span class="line">    closeStream();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">writeAndFlush</span><span class="params">(String content)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        os.write(content.getBytes());</span><br><span class="line">        os.flush();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">closeStream</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        is.close();</span><br><span class="line">        os.close();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">printResult</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> a = is.available();</span><br><span class="line">        <span class="keyword">byte</span>[] b = <span class="keyword">new</span> <span class="keyword">byte</span>[a];</span><br><span class="line">        is.read(b);</span><br><span class="line"></span><br><span class="line">        String result = <span class="keyword">new</span> String(b);</span><br><span class="line">        System.out.println(result);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以看到， 使用 Java Socket 和使用 telnet 的效果是相同的。</p>
-<p>所以，要想达到 redis-cli  的效果，那么就需要对返回值进行处理，例如 $5 、:1 这些符号，到底是什么意思？即：解析 redis 自己的应用层协议。</p>
-<h2 id="Redis-序列化协议（RESP）"><a href="#Redis-序列化协议（RESP）" class="headerlink" title="Redis 序列化协议（RESP）"></a>Redis 序列化协议（RESP）</h2><p>答案就在 redis 的官方文档: <a target="_blank" rel="noopener" href="http://redisdoc.com/topic/protocol.html">通信协议（protocol）</a></p>
-<p>redis 协议称之为 RESP（REdis Serialization Protocol），即 redis 序列化协议。</p>
-<p>该协议的设计目标：</p>
-<ol>
-<li>实现简单。</li>
-<li>快速解析。</li>
-<li>人类易读。</li>
-</ol>
-<p>所有的命令一律以 <code>\r\n</code> 结尾。</p>
-<p>Redis 收到命令后，对命令进行处理，然后返回数据。</p>
-<p>redis 1.2 版本后，支持批量回复：Buik Reply。</p>
-<p>关于回复，有多种类型：<br>通过检查服务器发回数据的第一个字节， 可以确定这个回复是什么类型：</p>
-<ul>
-<li> 状态回复（status reply）的第一个字节是 <code>&quot;+&quot;</code></li>
-<li>错误回复（error reply）的第一个字节是<code> &quot;-&quot;</code></li>
-<li>整数回复（integer reply）的第一个字节是<code> &quot;:&quot;</code></li>
-<li>批量回复（bulk reply）的第一个字节是 <code>&quot;$&quot;</code></li>
-<li>多条批量回复（multi bulk reply）的第一个字节是<code> &quot;*&quot;</code></li>
-</ul>
-<p>我们回到我们的 Socket 小程序里，可以看到，</p>
-<ul>
-<li>当我执行 <code>set</code> 命令，返回的是 <code>+OK</code>，即这个是状态回复。</li>
-<li>当我们执行 <code>xxx</code> 命令，返回值的开头是 - 号，即这个是错误回复。</li>
-<li>当我们执行 <code>get</code> 命令，返回的是 <code>$5 hello</code>，即这个是批量回复，同时<code>5</code>表示后面将返回  5 个字节。字符串的最大长度为 512 MB。</li>
-<li>当我们执行<code>del</code>命令，返回的是<code>:1</code>，表示这个是整数回复，只在操作真正被执行了的时候， 才返回 <code>1</code> ， 否则返回 0， 1表示<code> true</code>。</li>
-<li>当我们执行 <code>mget hello baby  \r\n</code> 时，返回的第一个字符就是 * 号，表示这是一个多条批量回复。* 号后面的值记录了多条回复的数量，我们这里返回的是 <code>*2\r\n $5\r\n world \r\n $-1\r\n</code>， <code>*2</code> 表示后面有 2 条回复。<code>$5</code> 表示后面有 5 个字节。 <code>$-1</code> 表示 <code>baby</code> 这个<code>key</code> 是没有数据的，<code>-1</code> 表示什么都没有。</li>
-</ul>
-<p>通过对协议的解析，我们就能做出一个类似 redis-cli 的客户端。</p>
-<p>我这里抛转引玉，写了一个最简单的，大家看看就好 ：）</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">respParseHandler</span><span class="params">(String result)</span> </span>&#123;</span><br><span class="line">       <span class="keyword">try</span> &#123;</span><br><span class="line">           <span class="keyword">if</span> (result.startsWith(<span class="string">&quot;+&quot;</span>)) &#123;</span><br><span class="line">               <span class="comment">// 状态回复</span></span><br><span class="line">               System.out.println(result.substring(<span class="number">1</span>));</span><br><span class="line">               <span class="keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="keyword">if</span> (result.startsWith(<span class="string">&quot;-&quot;</span>)) &#123;</span><br><span class="line">               <span class="comment">// 错误回复</span></span><br><span class="line">               System.err.println(result.substring(<span class="number">1</span>));</span><br><span class="line">               <span class="keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span> (result.startsWith(<span class="string">&quot;:&quot;</span>)) &#123;</span><br><span class="line">               <span class="comment">// 整数回复</span></span><br><span class="line">               <span class="keyword">if</span> (result.substring(<span class="number">1</span>).equalsIgnoreCase(<span class="string">&quot;1&quot;</span>)) &#123;</span><br><span class="line">                   System.out.println(<span class="string">&quot;success&quot;</span>);</span><br><span class="line">               &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                   System.out.println(<span class="string">&quot;error&quot;</span>);</span><br><span class="line">               &#125;</span><br><span class="line">               <span class="keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span> (result.startsWith(<span class="string">&quot;$&quot;</span>)) &#123;</span><br><span class="line">               <span class="comment">// 批量回复</span></span><br><span class="line">               <span class="keyword">if</span> (result.substring(<span class="number">1</span>, <span class="number">3</span>).equalsIgnoreCase(<span class="string">&quot;-1&quot;</span>)) &#123;</span><br><span class="line">                   System.out.println(<span class="string">&quot;no data, redis return -1&quot;</span>);</span><br><span class="line">                   <span class="keyword">return</span>;</span><br><span class="line">               &#125;</span><br><span class="line">   </span><br><span class="line">               <span class="keyword">int</span> line = result.indexOf(<span class="string">&quot;\r\n&quot;</span>);</span><br><span class="line">               System.out.println(result.substring(line + <span class="number">2</span>));</span><br><span class="line">               <span class="keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span> (result.startsWith(<span class="string">&quot;*&quot;</span>)) &#123;</span><br><span class="line">               <span class="comment">// 多条批量回复</span></span><br><span class="line">               <span class="keyword">char</span> num = result.charAt(<span class="number">1</span>);</span><br><span class="line">               <span class="keyword">int</span> first = result.indexOf(<span class="string">&#x27;$&#x27;</span>);</span><br><span class="line">               <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; Integer.valueOf(String.valueOf(num)); i++) &#123;</span><br><span class="line"></span><br><span class="line">                   <span class="keyword">int</span> next = result.indexOf(<span class="string">&#x27;$&#x27;</span>, first + <span class="number">1</span>);</span><br><span class="line">                   <span class="keyword">if</span> (next != -<span class="number">1</span>) &#123;</span><br><span class="line">                       respParseHandler(result.substring(first, next));</span><br><span class="line">                   &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                       respParseHandler(result.substring(first));</span><br><span class="line">                   &#125;</span><br><span class="line">                   first = next;</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">           e.printStackTrace();</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/10/01/2018/2018-10-01-%E7%AE%80%E7%AE%80%E5%8D%95%E5%8D%95%E5%86%99%E4%B8%80%E4%B8%AA%20Redis%20%E5%AE%A2%E6%88%B7%E7%AB%AF/" data-id="ckwev5idw00du24s1ebvm67wk" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
-
-  
-    <article id="post-2018/2018-09-09-SOFA RPC 客户端设计模式" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/09/09/2018/2018-09-09-SOFA%20RPC%20%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="article-date">
-  <time datetime="2018-09-08T16:01:01.000Z" itemprop="datePublished">2018-09-09</time>
-</a>
     
+    <article
+  id="post-2018/2018-09-09-SOFA RPC 客户端设计模式"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/09/09/2018/2018-09-09-SOFA%20RPC%20%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"
+    >SOFA RPC 客户端设计模式</a> 
+</h2>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/09/09/2018/2018-09-09-SOFA%20RPC%20%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="article-date">
+  <time datetime="2018-09-08T16:01:01.000Z" itemprop="datePublished">2018-09-09</time>
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/SOFA/">SOFA</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/09/2018/2018-09-09-SOFA%20RPC%20%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">SOFA RPC 客户端设计模式</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2018/09/09/2018/2018-09-09-SOFA%20RPC%20%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/#more">Read More</a>
-          </p>
-        
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/09/09/2018/2018-09-09-SOFA%20RPC%20%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" data-id="ckwev5idv00ds24s19d3n68pd" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
-
-  
-    <article id="post-2018/2018-09-04-Netty LineBasedFrameDecoder 剖析（Netty Bug）" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/09/04/2018/2018-09-04-Netty%20LineBasedFrameDecoder%20%E5%89%96%E6%9E%90%EF%BC%88Netty%20Bug%EF%BC%89/" class="article-date">
-  <time datetime="2018-09-03T16:01:01.000Z" itemprop="datePublished">2018-09-04</time>
-</a>
     
+    <article
+  id="post-2018/2018-09-04-Netty LineBasedFrameDecoder 剖析（Netty Bug）"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/09/04/2018/2018-09-04-Netty%20LineBasedFrameDecoder%20%E5%89%96%E6%9E%90%EF%BC%88Netty%20Bug%EF%BC%89/"
+    >Netty LineBasedFrameDecoder 剖析（Netty Bug）</a> 
+</h2>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/09/04/2018/2018-09-04-Netty%20LineBasedFrameDecoder%20%E5%89%96%E6%9E%90%EF%BC%88Netty%20Bug%EF%BC%89/" class="article-date">
+  <time datetime="2018-09-03T16:01:01.000Z" itemprop="datePublished">2018-09-04</time>
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/Netty/">Netty</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/04/2018/2018-09-04-Netty%20LineBasedFrameDecoder%20%E5%89%96%E6%9E%90%EF%BC%88Netty%20Bug%EF%BC%89/">Netty LineBasedFrameDecoder 剖析（Netty Bug）</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2018/09/04/2018/2018-09-04-Netty%20LineBasedFrameDecoder%20%E5%89%96%E6%9E%90%EF%BC%88Netty%20Bug%EF%BC%89/#more">Read More</a>
-          </p>
-        
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/09/04/2018/2018-09-04-Netty%20LineBasedFrameDecoder%20%E5%89%96%E6%9E%90%EF%BC%88Netty%20Bug%EF%BC%89/" data-id="ckwev5idv00dq24s1anwz6sn4" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
-
-  
-    <article id="post-2018/2018-09-01-闲书 &lt;&lt;当我跑步时,我谈些什么&gt;&gt; 摘抄" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/09/01/2018/2018-09-01-%E9%97%B2%E4%B9%A6%20%3C%3C%E5%BD%93%E6%88%91%E8%B7%91%E6%AD%A5%E6%97%B6,%E6%88%91%E8%B0%88%E4%BA%9B%E4%BB%80%E4%B9%88%3E%3E%20%E6%91%98%E6%8A%84/" class="article-date">
-  <time datetime="2018-08-31T16:01:01.000Z" itemprop="datePublished">2018-09-01</time>
-</a>
     
+    <article
+  id="post-2018/2018-09-01-闲书 &lt;&lt;当我跑步时,我谈些什么&gt;&gt; 摘抄"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/09/01/2018/2018-09-01-%E9%97%B2%E4%B9%A6%20%3C%3C%E5%BD%93%E6%88%91%E8%B7%91%E6%AD%A5%E6%97%B6,%E6%88%91%E8%B0%88%E4%BA%9B%E4%BB%80%E4%B9%88%3E%3E%20%E6%91%98%E6%8A%84/"
+    >闲书 &lt;&lt;当我跑步时,我谈些什么&gt;&gt; 摘抄</a> 
+</h2>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/09/01/2018/2018-09-01-%E9%97%B2%E4%B9%A6%20%3C%3C%E5%BD%93%E6%88%91%E8%B7%91%E6%AD%A5%E6%97%B6,%E6%88%91%E8%B0%88%E4%BA%9B%E4%BB%80%E4%B9%88%3E%3E%20%E6%91%98%E6%8A%84/" class="article-date">
+  <time datetime="2018-08-31T16:01:01.000Z" itemprop="datePublished">2018-09-01</time>
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/09/01/2018/2018-09-01-%E9%97%B2%E4%B9%A6%20%3C%3C%E5%BD%93%E6%88%91%E8%B7%91%E6%AD%A5%E6%97%B6,%E6%88%91%E8%B0%88%E4%BA%9B%E4%BB%80%E4%B9%88%3E%3E%20%E6%91%98%E6%8A%84/">闲书 &lt;&lt;当我跑步时,我谈些什么&gt;&gt; 摘抄</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2018/09/01/2018/2018-09-01-%E9%97%B2%E4%B9%A6%20%3C%3C%E5%BD%93%E6%88%91%E8%B7%91%E6%AD%A5%E6%97%B6,%E6%88%91%E8%B0%88%E4%BA%9B%E4%BB%80%E4%B9%88%3E%3E%20%E6%91%98%E6%8A%84/#more">Read More</a>
-          </p>
-        
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/09/01/2018/2018-09-01-%E9%97%B2%E4%B9%A6%20%3C%3C%E5%BD%93%E6%88%91%E8%B7%91%E6%AD%A5%E6%97%B6,%E6%88%91%E8%B0%88%E4%BA%9B%E4%BB%80%E4%B9%88%3E%3E%20%E6%91%98%E6%8A%84/" data-id="ckwev5idu00do24s1eozu57f7" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
+    
+    <article
+  id="post-2018/2018-08-24-总结一次 Pika 迁移遇到的坑"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/08/23/2018/2018-08-24-%E6%80%BB%E7%BB%93%E4%B8%80%E6%AC%A1%20Pika%20%E8%BF%81%E7%A7%BB%E9%81%87%E5%88%B0%E7%9A%84%E5%9D%91/"
+    >总结一次 Pika 迁移遇到的坑</a> 
+</h2>
+ 
 
-  
-    <article id="post-2018/2018-08-24-总结一次 Pika 迁移遇到的坑" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/08/23/2018/2018-08-24-%E6%80%BB%E7%BB%93%E4%B8%80%E6%AC%A1%20Pika%20%E8%BF%81%E7%A7%BB%E9%81%87%E5%88%B0%E7%9A%84%E5%9D%91/" class="article-date">
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/08/23/2018/2018-08-24-%E6%80%BB%E7%BB%93%E4%B8%80%E6%AC%A1%20Pika%20%E8%BF%81%E7%A7%BB%E9%81%87%E5%88%B0%E7%9A%84%E5%9D%91/" class="article-date">
   <time datetime="2018-08-23T07:00:01.000Z" itemprop="datePublished">2018-08-23</time>
-</a>
-    
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/Redis/">Redis</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/08/23/2018/2018-08-24-%E6%80%BB%E7%BB%93%E4%B8%80%E6%AC%A1%20Pika%20%E8%BF%81%E7%A7%BB%E9%81%87%E5%88%B0%E7%9A%84%E5%9D%91/">总结一次 Pika 迁移遇到的坑</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2018/08/23/2018/2018-08-24-%E6%80%BB%E7%BB%93%E4%B8%80%E6%AC%A1%20Pika%20%E8%BF%81%E7%A7%BB%E9%81%87%E5%88%B0%E7%9A%84%E5%9D%91/#more">Read More</a>
-          </p>
-        
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/08/23/2018/2018-08-24-%E6%80%BB%E7%BB%93%E4%B8%80%E6%AC%A1%20Pika%20%E8%BF%81%E7%A7%BB%E9%81%87%E5%88%B0%E7%9A%84%E5%9D%91/" data-id="ckwev5idu00dm24s12hlx1b00" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
+    
+    <article
+  id="post-2018/2018-08-10-Redis 面试常见问答"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/08/09/2018/2018-08-10-Redis%20%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%97%AE%E7%AD%94/"
+    >Redis 面试常见问答</a> 
+</h2>
+ 
 
-  
-    <article id="post-2018/2018-08-10-Redis 面试常见问答" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/08/09/2018/2018-08-10-Redis%20%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%97%AE%E7%AD%94/" class="article-date">
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/08/09/2018/2018-08-10-Redis%20%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%97%AE%E7%AD%94/" class="article-date">
   <time datetime="2018-08-09T07:01:01.000Z" itemprop="datePublished">2018-08-09</time>
-</a>
-    
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/Redis/">Redis</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/08/09/2018/2018-08-10-Redis%20%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%97%AE%E7%AD%94/">Redis 面试常见问答</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2018/08/09/2018/2018-08-10-Redis%20%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%97%AE%E7%AD%94/#more">Read More</a>
-          </p>
-        
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/08/09/2018/2018-08-10-Redis%20%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%97%AE%E7%AD%94/" data-id="ckwev5idt00dk24s11ey96ker" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
+    
+    <article
+  id="post-2018/2018-08-09-Mac 搭建 Redis Sentinel 集群"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/08/08/2018/2018-08-09-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20Sentinel%20%E9%9B%86%E7%BE%A4/"
+    >Mac 搭建 Redis Sentinel 集群</a> 
+</h2>
+ 
 
-  
-    <article id="post-2018/2018-08-09-Mac 搭建 Redis Sentinel 集群" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/08/08/2018/2018-08-09-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20Sentinel%20%E9%9B%86%E7%BE%A4/" class="article-date">
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/08/08/2018/2018-08-09-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20Sentinel%20%E9%9B%86%E7%BE%A4/" class="article-date">
   <time datetime="2018-08-08T07:01:01.000Z" itemprop="datePublished">2018-08-08</time>
-</a>
-    
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/Redis/">Redis</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/08/08/2018/2018-08-09-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20Sentinel%20%E9%9B%86%E7%BE%A4/">Mac 搭建 Redis Sentinel 集群</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2018/08/08/2018/2018-08-09-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20Sentinel%20%E9%9B%86%E7%BE%A4/#more">Read More</a>
-          </p>
-        
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/08/08/2018/2018-08-09-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20Sentinel%20%E9%9B%86%E7%BE%A4/" data-id="ckwev5idt00di24s13nb64ath" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
+    
+    <article
+  id="post-2018/2018-08-08-Mac 搭建 Redis 集群"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/08/07/2018/2018-08-08-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20%E9%9B%86%E7%BE%A4/"
+    >Mac 搭建 Redis 集群</a> 
+</h2>
+ 
 
-  
-    <article id="post-2018/2018-08-08-Mac 搭建 Redis 集群" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/08/07/2018/2018-08-08-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20%E9%9B%86%E7%BE%A4/" class="article-date">
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/08/07/2018/2018-08-08-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20%E9%9B%86%E7%BE%A4/" class="article-date">
   <time datetime="2018-08-07T07:01:01.000Z" itemprop="datePublished">2018-08-07</time>
-</a>
-    
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/Redis/">Redis</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/08/07/2018/2018-08-08-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20%E9%9B%86%E7%BE%A4/">Mac 搭建 Redis 集群</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2018/08/07/2018/2018-08-08-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20%E9%9B%86%E7%BE%A4/#more">Read More</a>
-          </p>
-        
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/08/07/2018/2018-08-08-Mac%20%E6%90%AD%E5%BB%BA%20Redis%20%E9%9B%86%E7%BE%A4/" data-id="ckwev5ids00dg24s1hhxgecu9" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
+    
+    <article
+  id="post-2018/2018-08-07-Jedis 如何支持 Cluster"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/08/06/2018/2018-08-07-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Cluster/"
+    >Jedis 如何支持 Cluster</a> 
+</h2>
+ 
 
-  
-    <article id="post-2018/2018-08-07-Jedis 如何支持 Cluster" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/08/06/2018/2018-08-07-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Cluster/" class="article-date">
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/08/06/2018/2018-08-07-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Cluster/" class="article-date">
   <time datetime="2018-08-06T07:01:01.000Z" itemprop="datePublished">2018-08-06</time>
-</a>
-    
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/Redis/">Redis</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/08/06/2018/2018-08-07-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Cluster/">Jedis 如何支持 Cluster</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2018/08/06/2018/2018-08-07-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Cluster/#more">Read More</a>
-          </p>
-        
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/08/06/2018/2018-08-07-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Cluster/" data-id="ckwev5idr00dd24s163k94a60" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
+    
+    <article
+  id="post-2018/2018-08-06-Jedis 如何支持 Sentinel"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/08/04/2018/2018-08-06-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Sentinel/"
+    >Jedis 如何支持 Sentinel</a> 
+</h2>
+ 
 
-  
-    <article id="post-2018/2018-08-05-Redis 复制运维及优化" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/08/04/2018/2018-08-05-Redis%20%E5%A4%8D%E5%88%B6%E8%BF%90%E7%BB%B4%E5%8F%8A%E4%BC%98%E5%8C%96/" class="article-date">
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/08/04/2018/2018-08-06-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Sentinel/" class="article-date">
   <time datetime="2018-08-04T07:01:01.000Z" itemprop="datePublished">2018-08-04</time>
-</a>
-    
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/Redis/">Redis</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/08/04/2018/2018-08-05-Redis%20%E5%A4%8D%E5%88%B6%E8%BF%90%E7%BB%B4%E5%8F%8A%E4%BC%98%E5%8C%96/">Redis 复制运维及优化</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2018/08/04/2018/2018-08-05-Redis%20%E5%A4%8D%E5%88%B6%E8%BF%90%E7%BB%B4%E5%8F%8A%E4%BC%98%E5%8C%96/#more">Read More</a>
-          </p>
-        
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/08/04/2018/2018-08-05-Redis%20%E5%A4%8D%E5%88%B6%E8%BF%90%E7%BB%B4%E5%8F%8A%E4%BC%98%E5%8C%96/" data-id="ckwev5idq00d824s1hxkhbh8t" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
+    
+    <article
+  id="post-2018/2018-08-05-Redis 复制运维及优化"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/08/04/2018/2018-08-05-Redis%20%E5%A4%8D%E5%88%B6%E8%BF%90%E7%BB%B4%E5%8F%8A%E4%BC%98%E5%8C%96/"
+    >Redis 复制运维及优化</a> 
+</h2>
+ 
 
-  
-    <article id="post-2018/2018-08-06-Jedis 如何支持 Sentinel" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/08/04/2018/2018-08-06-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Sentinel/" class="article-date">
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/08/04/2018/2018-08-05-Redis%20%E5%A4%8D%E5%88%B6%E8%BF%90%E7%BB%B4%E5%8F%8A%E4%BC%98%E5%8C%96/" class="article-date">
   <time datetime="2018-08-04T07:01:01.000Z" itemprop="datePublished">2018-08-04</time>
-</a>
-    
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/Redis/">Redis</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/08/04/2018/2018-08-06-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Sentinel/">Jedis 如何支持 Sentinel</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2018/08/04/2018/2018-08-06-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Sentinel/#more">Read More</a>
-          </p>
-        
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/08/04/2018/2018-08-06-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Sentinel/" data-id="ckwev5idr00db24s12q3meqdz" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
+    
+    <article
+  id="post-2018/2018-08-04-Redis 复制原理"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/08/03/2018/2018-08-04-Redis%20%E5%A4%8D%E5%88%B6%E5%8E%9F%E7%90%86/"
+    >Redis 复制原理</a> 
+</h2>
+ 
 
-  
-    <article id="post-2018/2018-08-04-Redis 复制原理" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/08/03/2018/2018-08-04-Redis%20%E5%A4%8D%E5%88%B6%E5%8E%9F%E7%90%86/" class="article-date">
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/08/03/2018/2018-08-04-Redis%20%E5%A4%8D%E5%88%B6%E5%8E%9F%E7%90%86/" class="article-date">
   <time datetime="2018-08-03T07:01:01.000Z" itemprop="datePublished">2018-08-03</time>
-</a>
-    
+</a> 
   <div class="article-category">
     <a class="article-category-link" href="/categories/Redis/">Redis</a>
   </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/08/03/2018/2018-08-04-Redis%20%E5%A4%8D%E5%88%B6%E5%8E%9F%E7%90%86/">Redis 复制原理</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2018/08/03/2018/2018-08-04-Redis%20%E5%A4%8D%E5%88%B6%E5%8E%9F%E7%90%86/#more">Read More</a>
-          </p>
-        
-      
+   
     </div>
+       
+
+    <!-- copyright -->
+    
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2018/08/03/2018/2018-08-04-Redis%20%E5%A4%8D%E5%88%B6%E5%8E%9F%E7%90%86/" data-id="ckwev5idq00d624s1gxunh79b" class="article-share-link">分享</a>
-      
-      
+       
     </footer>
   </div>
-  
+
+    
+ 
+    
 </article>
 
-
+    
+  </article>
   
 
-
-  <nav id="page-nav">
+  
+  <nav class="page-nav">
     
-    <a class="extend prev" rel="prev" href="/page/5/">&amp;laquo; 上一页</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/">7</a><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/21/">21</a><a class="extend next" rel="next" href="/page/7/">下一页 &amp;raquo;</a>
+    <a class="extend prev" rel="prev" href="/page/5/">上一页</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/">7</a><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/21/">21</a><a class="extend next" rel="next" href="/page/7/">下一页</a>
   </nav>
-
+  
 </section>
-        
-          <aside id="sidebar">
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">文章分类</h3>
-    <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Apollo/">Apollo</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Canal/">Canal</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/JVM/">JVM</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/">Java 中间件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">Java 性能优化</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Java-%E8%AE%BE%E8%AE%A1/">Java 设计</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Message-Queue/">Message Queue</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mybatis/">Mybatis</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Netty/">Netty</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/SOFA/">SOFA</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Spring/">Spring</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat/">Tomcat</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/my-open-source/">my open source</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/zuul/">zuul</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E4%BA%AB%E6%96%87%E7%AB%A0/">分享文章</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87/">工作效率</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%AE%97%E6%B3%95/">算法</a><span class="category-list-count">10</span></li></ul>
-    </div>
-  </div>
+</div>
 
-
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">文章归档</h3>
-    <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/11/">十一月 2021</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">十月 2019</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">三月 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">二月 2019</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/01/">一月 2019</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">十二月 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">十月 2018</a><span class="archive-list-count">22</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">九月 2018</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a><span class="archive-list-count">9</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a><span class="archive-list-count">10</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/">五月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">四月 2018</a><span class="archive-list-count">25</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">三月 2018</a><span class="archive-list-count">27</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">二月 2018</a><span class="archive-list-count">11</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/01/">一月 2018</a><span class="archive-list-count">18</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">十二月 2017</a><span class="archive-list-count">14</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">十一月 2017</a><span class="archive-list-count">13</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a><span class="archive-list-count">20</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">八月 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">六月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">五月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">二月 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">一月 2017</a><span class="archive-list-count">3</span></li></ul>
-    </div>
-  </div>
-
-
-  
-</aside>
-        
-      </div>
-      <footer id="footer">
-  
+      <footer class="footer">
   <div class="outer">
-    <div id="footer-info" class="inner">
-      &copy; 2021 莫那·鲁道<br>
-      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
-    </div>
+    <ul>
+      <li>
+        Copyrights &copy;
+        2017-2021
+        <i class="ri-heart-fill heart_icon"></i> 莫那·鲁道
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+        <script type="text/javascript" src='https://s9.cnzz.com/z_stat.php?id=1278069914&amp;web_id=1278069914'></script>
+        
+      </li>
+    </ul>
   </div>
-</footer>
+</footer>    
+    </main>
+    <div class="float_btns">
+      <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
     </div>
-    <nav id="mobile-nav">
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
   
-    <a href="/" class="mobile-nav-link">莫那·鲁道</a>
+  <div class="logo">
+    <a href="/"><img src="/images/ayer-side.svg" alt="莫那·鲁道的技术博客"></a>
+  </div>
   
-    <a href="/archives" class="mobile-nav-link">文章归档</a>
-  
-</nav>
+  <ul class="nav nav-main">
     
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">归档</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags/">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/about/">关于我</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="搜索">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <div id="mask"></div>
 
-<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-3.6.0.min.js"></script>
+ 
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Tocbot -->
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css"
+/>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+ <!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script> 
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+
+<!-- ClickLove -->
+
+<!-- ClickBoom1 -->
+
+<!-- ClickBoom2 -->
+
+<!-- CodeCopy -->
+ 
+<link rel="stylesheet" href="/css/clipboard.css">
+ <script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+ 
+<!-- CanvasBackground -->
+
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ theme: "forest" });
+  }
+</script>
 
 
-  
-<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
-
-  
-<script src="/fancybox/jquery.fancybox.pack.js"></script>
-
-
-
-
-<script src="/js/script.js"></script>
-
-
-
+    
+    
 
   </div>
 </body>
+
 </html>
