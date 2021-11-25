@@ -64,99 +64,6 @@
       <div class="outer">
         <section id="main">
   
-    <article id="post-2017/2017-10-08-内存管理" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2017/10/08/2017/2017-10-08-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" class="article-date">
-  <time datetime="2017-10-07T18:11:11.000Z" itemprop="datePublished">2017-10-08</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/10/08/2017/2017-10-08-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">内存管理</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <meta name="referrer" content="no-referrer" />
-        
-          <p class="article-more-link">
-            <a href="/2017/10/08/2017/2017-10-08-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" data-id="ckwes9aax000rkrs11q9h9jwq" class="article-share-link">分享</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-2017/2017-10-08-外围设备" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2017/10/08/2017/2017-10-08-%E5%A4%96%E5%9B%B4%E8%AE%BE%E5%A4%87/" class="article-date">
-  <time datetime="2017-10-07T18:11:11.000Z" itemprop="datePublished">2017-10-08</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/10/08/2017/2017-10-08-%E5%A4%96%E5%9B%B4%E8%AE%BE%E5%A4%87/">外围设备</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h4 id="外围设备"><a href="#外围设备" class="headerlink" title="外围设备"></a>外围设备</h4><p>各种外围设备的数据传输速率相差很大。如果保证主机与外围设备在时间上同步，则设计外围设备的定时问题。</p>
-<p>在计算机系统中，CPU对外围设备的管理有一下五种方式：1.程序查询方式；2.程序中断方式；3.直接存储访问（DMA）方式；4.通道方式；5.外围处理机（PPU）方式；其中第一种对CPU的资源浪费最大，而第五种使CPU得效率得到最大发挥，但是需要更多的硬件支持。</p>
-<p>程序中断方式是各类计算机中广泛使用的一种数据交换方式。当某一外设的数据准备就绪后，他“主动”向CPU发送请求信号，CPU响应中断请求后，暂停运行主程序，自动转移到该设备的中断服务子程序，为该设备进行服务，结束时放回主程序。中断处理过程可以嵌套进行，优先级高的设备可以中断优先级低的中断服务程序。为此，需要有响应的中断优先级仲裁，中断向量产生和中断控制逻辑等硬件支持。</p>
-<p>DMA技术的出现，<strong>使得外围设备可以通过DMA控制器直接访问内存</strong>，与此同时，CPU可以继续程序。DMA方式采用以下三种方法：1.停止CPU访问；2周期挪用；3.DMA与CPU交替访问。DMA控制器按其组成结构，分为选择性和多路型两类。选择型控制器在物理上可以连接多个设备，而在逻辑上只允许一个设备，适合于连接高速设备。多路型控制器不仅在屋里上而且在逻辑上可以连接多个设备，适合于连接慢速设备。</p>
-<p>通道是一个特殊功能的处理器。他有自己的指令和程序专门负责数据输入输出的传输控制，从而使CPU将“传输控制”的功能下放给通道，CPU只负责“数据处理”功能。这样，通道与CPU分时使用内存，实现了CPU内部的数据处理与I/O设备的平行工作。通道有三种类型；1.选择通道，物理上可以连接多个设备，但在某一时间段内只选择一个设备工作，适用于连接磁盘一类高速外围设备，信息以成组方式高速传输。 2.<strong>数组多路通道</strong>，保留了选择通道高速传送数据的优点，又充分利用了控制性操作的时间间隔为其他设备服务，使通道效率充分得到发挥。3.字节多路通道，与数组多路通道相同处在于，他们是多路通道，在一段时间内交替执行多个设备的通道程序，使这些设备同时工作。不同处在于，数组多路通道只允许一个设备进行传输型操作，数据传送单位是数据块；字节多路通道可允许每个设备进行传输性操作，数据传送单位是字节。</p>
-<p>标准化是建立开放式系统的基础，CPU，系统总线，I/O总线及标准接口技术近年来取得了重大进步。其中并行I/O接口SCSI与串行I/O接口IEEE1394是两个最具权威性和发展前景的标准接口技术。</p>
-<p>SCSI 是系统级接口，是处于主适配器和智能设备控制器之间的并行I/O接口，改进的SCSI可允许连接1-15台不同类型的高速外围设备。SCSI的不足处在于硬件较昂贵，并需要通用设备程序和各类设备的驱动程序模块的支持。</p>
-<p>IEEE 1394 是串行I/O接口。与SCSI并行I/O接口相比，它具有更高的数据传输速率和数据传送的实时性，具有更小的体积和连接的方便性，IEEE 1394的一个重大特点是，各被连接的设备的关系是平等的，不同PC介入也能自成系统。因此IEEE 1394 已成为Intel，Microsoft等公司联手制定的PC 98系统设计指南的新标准。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E5%A4%96%E5%9B%B4%E8%AE%BE%E5%A4%87/" data-id="ckwes9aax000ukrs121ijhzgu" class="article-share-link">分享</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
     <article id="post-2017/2017-10-08-处理机调度" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2017/10/08/2017/2017-10-08-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/" class="article-date">
@@ -237,7 +144,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/" data-id="ckwes9aay000wkrs1czu82btd" class="article-share-link">分享</a>
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/" data-id="ckwev4yls000qros165pi47iw" class="article-share-link">分享</a>
       
       
     </footer>
@@ -247,9 +154,54 @@
 
 
   
-    <article id="post-2017/2017-10-08-存储系统" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-2017/2017-10-08-Think-In-Java-读后感" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2017/10/08/2017/2017-10-08-%E5%AD%98%E5%82%A8%E7%B3%BB%E7%BB%9F/" class="article-date">
+    <a href="/2017/10/08/2017/2017-10-08-Think-In-Java-%E8%AF%BB%E5%90%8E%E6%84%9F/" class="article-date">
+  <time datetime="2017-10-07T18:11:11.000Z" itemprop="datePublished">2017-10-08</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%89%AF%E6%B7%A1/">扯淡</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/10/08/2017/2017-10-08-Think-In-Java-%E8%AF%BB%E5%90%8E%E6%84%9F/">Think-in-Java-读后感</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <meta name="referrer" content="no-referrer" />
+        
+          <p class="article-more-link">
+            <a href="/2017/10/08/2017/2017-10-08-Think-In-Java-%E8%AF%BB%E5%90%8E%E6%84%9F/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-Think-In-Java-%E8%AF%BB%E5%90%8E%E6%84%9F/" data-id="ckwev4yls000rros1ed728c9m" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-2017/2017-10-08-内存管理" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/10/08/2017/2017-10-08-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" class="article-date">
   <time datetime="2017-10-07T18:11:11.000Z" itemprop="datePublished">2017-10-08</time>
 </a>
     
@@ -265,7 +217,7 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2017/10/08/2017/2017-10-08-%E5%AD%98%E5%82%A8%E7%B3%BB%E7%BB%9F/">存储系统</a>
+      <a class="article-title" href="/2017/10/08/2017/2017-10-08-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">内存管理</a>
     </h1>
   
 
@@ -273,18 +225,64 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h4 id="存储系统"><a href="#存储系统" class="headerlink" title="存储系统"></a>存储系统</h4><p>计算机对存储器的要求是容量大，速度快，成本低。为了解决这三方面的矛盾，计算机采用多级存储体系结构，即cache，主存和外存。cpu能直接发你给我内存（cache， 主存），但不能直接访问外存。存储器的技术指标有存储容量，存取时间，存储周期，存储器带宽。</p>
-<p>广泛使用的SRAM和DRAM都是半导体随机读写存储器，前者速度比后者快，按集成度不如后者高。二者的有点是体积小，可靠性高，价格低廉，缺点是断电后不能保存信息。只读存储器和闪速存储器正好弥补了SRAM和DRAM的缺点，即使断电后也能保存原先使用的数据，特别是闪速存储器能提供高性能，低功耗，高可靠性以及瞬时启动能力，因而有可能使现有的存储器体系结构发生重大变化。</p>
-<p>双端口存储器和多模块交叉存储器属于并行存储器结构。前者采用空间并行技术，后者采用时间并行技术。</p>
-<p><strong>相联存储器不是按地址而是按内容访问的存储器，在cache中用来存放地址表，在虚拟存储器中用来存放段表，页表和快表。在这两种应用中，都需要快速查找。</strong></p>
-<p>cache是一种告诉缓存存储器，是为了解决CPU和内存之间速度不匹配而采用的一项重要的硬件技术，并且发展为多节cache体系，指令cache和数据cache分设体系。要求cache的命中率接近于1.主存于cache的地址映射有全相连，直接，组相连三种方式。其中组相连方式是前两者的折中方案，适度的兼顾了两者的优点又尽量避免其缺点，从灵活性，命中率，硬件投资来说较为理想，因而得到普遍采用。</p>
-<p>虚拟存储器指的是主存-外存层次，它给用户提供了一个比实际主存空间大得多的虚拟地址空间。因此虚拟存储器只是一个容量非常大的存储器分逻辑模型，不是任何实际的物理存储器，按照主存-外存层次的信息传送单位不同，虚拟存储器有页式，段式，段页式三类。</p>
-<p>多个用户共享主存时，系统应提供存储保护。通常采用的方法存储区域保护和访问方式保护，并用硬件来实现。有些机器中提供特权指令来实现某种保护。</p>
+        <meta name="referrer" content="no-referrer" />
+        
+          <p class="article-more-link">
+            <a href="/2017/10/08/2017/2017-10-08-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" data-id="ckwev4ylt000uros1h0f2afhx" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-2017/2017-10-08-外围设备" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/10/08/2017/2017-10-08-%E5%A4%96%E5%9B%B4%E8%AE%BE%E5%A4%87/" class="article-date">
+  <time datetime="2017-10-07T18:11:11.000Z" itemprop="datePublished">2017-10-08</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/10/08/2017/2017-10-08-%E5%A4%96%E5%9B%B4%E8%AE%BE%E5%A4%87/">外围设备</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="外围设备"><a href="#外围设备" class="headerlink" title="外围设备"></a>外围设备</h4><p>各种外围设备的数据传输速率相差很大。如果保证主机与外围设备在时间上同步，则设计外围设备的定时问题。</p>
+<p>在计算机系统中，CPU对外围设备的管理有一下五种方式：1.程序查询方式；2.程序中断方式；3.直接存储访问（DMA）方式；4.通道方式；5.外围处理机（PPU）方式；其中第一种对CPU的资源浪费最大，而第五种使CPU得效率得到最大发挥，但是需要更多的硬件支持。</p>
+<p>程序中断方式是各类计算机中广泛使用的一种数据交换方式。当某一外设的数据准备就绪后，他“主动”向CPU发送请求信号，CPU响应中断请求后，暂停运行主程序，自动转移到该设备的中断服务子程序，为该设备进行服务，结束时放回主程序。中断处理过程可以嵌套进行，优先级高的设备可以中断优先级低的中断服务程序。为此，需要有响应的中断优先级仲裁，中断向量产生和中断控制逻辑等硬件支持。</p>
+<p>DMA技术的出现，<strong>使得外围设备可以通过DMA控制器直接访问内存</strong>，与此同时，CPU可以继续程序。DMA方式采用以下三种方法：1.停止CPU访问；2周期挪用；3.DMA与CPU交替访问。DMA控制器按其组成结构，分为选择性和多路型两类。选择型控制器在物理上可以连接多个设备，而在逻辑上只允许一个设备，适合于连接高速设备。多路型控制器不仅在屋里上而且在逻辑上可以连接多个设备，适合于连接慢速设备。</p>
+<p>通道是一个特殊功能的处理器。他有自己的指令和程序专门负责数据输入输出的传输控制，从而使CPU将“传输控制”的功能下放给通道，CPU只负责“数据处理”功能。这样，通道与CPU分时使用内存，实现了CPU内部的数据处理与I/O设备的平行工作。通道有三种类型；1.选择通道，物理上可以连接多个设备，但在某一时间段内只选择一个设备工作，适用于连接磁盘一类高速外围设备，信息以成组方式高速传输。 2.<strong>数组多路通道</strong>，保留了选择通道高速传送数据的优点，又充分利用了控制性操作的时间间隔为其他设备服务，使通道效率充分得到发挥。3.字节多路通道，与数组多路通道相同处在于，他们是多路通道，在一段时间内交替执行多个设备的通道程序，使这些设备同时工作。不同处在于，数组多路通道只允许一个设备进行传输型操作，数据传送单位是数据块；字节多路通道可允许每个设备进行传输性操作，数据传送单位是字节。</p>
+<p>标准化是建立开放式系统的基础，CPU，系统总线，I/O总线及标准接口技术近年来取得了重大进步。其中并行I/O接口SCSI与串行I/O接口IEEE1394是两个最具权威性和发展前景的标准接口技术。</p>
+<p>SCSI 是系统级接口，是处于主适配器和智能设备控制器之间的并行I/O接口，改进的SCSI可允许连接1-15台不同类型的高速外围设备。SCSI的不足处在于硬件较昂贵，并需要通用设备程序和各类设备的驱动程序模块的支持。</p>
+<p>IEEE 1394 是串行I/O接口。与SCSI并行I/O接口相比，它具有更高的数据传输速率和数据传送的实时性，具有更小的体积和连接的方便性，IEEE 1394的一个重大特点是，各被连接的设备的关系是平等的，不同PC介入也能自成系统。因此IEEE 1394 已成为Intel，Microsoft等公司联手制定的PC 98系统设计指南的新标准。</p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E5%AD%98%E5%82%A8%E7%B3%BB%E7%BB%9F/" data-id="ckwes9aaz000zkrs198yk5k60" class="article-share-link">分享</a>
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E5%A4%96%E5%9B%B4%E8%AE%BE%E5%A4%87/" data-id="ckwev4ylu000vros19ykk0xcz" class="article-share-link">分享</a>
       
       
     </footer>
@@ -335,7 +333,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E6%80%BB%E7%BA%BF%E7%B3%BB%E7%BB%9F/" data-id="ckwes9aaz0010krs13y8ub0mm" class="article-share-link">分享</a>
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E6%80%BB%E7%BA%BF%E7%B3%BB%E7%BB%9F/" data-id="ckwev4ylu000yros1gftk07w5" class="article-share-link">分享</a>
       
       
     </footer>
@@ -382,7 +380,52 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E6%8C%87%E4%BB%A4%E7%B3%BB%E7%BB%9F/" data-id="ckwes9ab00012krs17krm1bk4" class="article-share-link">分享</a>
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E6%8C%87%E4%BB%A4%E7%B3%BB%E7%BB%9F/" data-id="ckwev4ylv0010ros1fygbbrnd" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-2017/2017-10-08-概论" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/10/08/2017/2017-10-08-%E6%A6%82%E8%AE%BA/" class="article-date">
+  <time datetime="2017-10-07T18:11:11.000Z" itemprop="datePublished">2017-10-08</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/10/08/2017/2017-10-08-%E6%A6%82%E8%AE%BA/">概论</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="计算机组成原理概论"><a href="#计算机组成原理概论" class="headerlink" title="计算机组成原理概论"></a>计算机组成原理概论</h3><p>习惯上所称的“电子计算机”是指现在广泛引用的电子数字计算机，它分为专用计算机和通用计算机两大类。专用和通用是根据计算机的效率，速度，价格，运行的经济性和适应性来划分的。通用计算机又分为巨型机，大型机，中型机，小型机，微型机，单片机六类，其结构复杂性，性能，价格依次递减。</p>
+<p>计算机的生命力在于他的广泛应用，应用的范围几乎涉及人类社会的所有领域。归纳下来，在科学计算，自动控制，测量与测试，信息处理，教育卫生，家用电器，人工智能等领域中的应用成就最为突出。</p>
+<p>计算机的硬件是由有形的电子器件等构成的，它包括运算器，存储器，控制器，适配器，输入输出设备。传统上将运算器和控制器称为cpu，而将cpu和存储器称为主机。存储程序并按地址顺序执行，这是冯*诺依曼计算机的工作原理。也是计算机自动化工作的关键。</p>
+<p>计算机的软件是计算机系统结构的重要组成部分，也是计算机不同于一般电子设备的本质所在。计算机软件一般分为系统程序和应用程序两大类。系统程序用来简化程序设计，简化使用方法。提高计算机的使用效率，发挥和扩大计算机的功能和用途，它包括：1. 各种服务型程序。2. 操作系统。 3. 语言类程序，4. 数据库管理系统。应用程序是针对某一应用课题领域开发的软件。</p>
+<p>计算机系统是一个由硬件，软件组成的多级层次结构，它通常由微程序级，一般机器级，操作系统级，汇编语言级，高级语言级组成，每一级都能进行程序设计，且得到下面各级的支持。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E6%A6%82%E8%AE%BA/" data-id="ckwev4ylw0013ros12qoq8tkk" class="article-share-link">分享</a>
       
       
     </footer>
@@ -429,97 +472,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%B9%B6%E5%8F%91/" data-id="ckwes9ab10014krs15z708n0b" class="article-share-link">分享</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-2017/2017-10-08-文件管理" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2017/10/08/2017/2017-10-08-%E6%96%87%E4%BB%B6%E7%AE%A1%E7%90%86/" class="article-date">
-  <time datetime="2017-10-07T18:11:11.000Z" itemprop="datePublished">2017-10-08</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/10/08/2017/2017-10-08-%E6%96%87%E4%BB%B6%E7%AE%A1%E7%90%86/">文件管理</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>一个文件管理系统是一组系统软件，通过文件的使用为用户和应用提供服务，包括文件存取，目录维护和存取控制。文件管理系统可以看成一个系统服务，它本身由操作系统提供服务，而不是操作系统的一部分。但是，任何系统中，至少有一部分文件管理功能有操作系统提供。</p>
-<p>文件是记录的集合，访问记录的方法决定记录的逻辑结构，而且在某种程度上决定记录在磁盘上的物理组织。如果一个文件主要是整体处理，那么顺序文件结构是最简单，最合适的。若干既需要顺序访问，也需要对一个文件随机访问，则一个索引顺序文件可以提供很高的性能。如果对文件是随机访问，那么索引文件或堆文件是最合适的。</p>
-<p>无论选用哪种文件结构，都需要一个目录服务，以让文件组织成分层形式。这个结构对用户跟踪文件是十分有用的，对于文件管理系统为用户提供访问控制或其他访问也是有用的。</p>
-<p>文件记录，即使是定长的，通常也不和物理磁盘块的尺寸相同。相应的，需要一些分块策略，复杂度，性能，和空间的使用决定使用的分块策略。</p>
-<p>任何文件管理方法的一个关键功能是管理磁盘空间。其中包括了分配磁盘块给文件的策略。文件的分配使用了许多种方法和数据结构。另外，还需要对磁盘上没有使用的磁盘进行管理。其中主要维护含有空闲新的磁盘分配表。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E6%96%87%E4%BB%B6%E7%AE%A1%E7%90%86/" data-id="ckwes9ab30015krs1cbaggp8v" class="article-share-link">分享</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-2017/2017-10-08-概论" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2017/10/08/2017/2017-10-08-%E6%A6%82%E8%AE%BA/" class="article-date">
-  <time datetime="2017-10-07T18:11:11.000Z" itemprop="datePublished">2017-10-08</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/10/08/2017/2017-10-08-%E6%A6%82%E8%AE%BA/">概论</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="计算机组成原理概论"><a href="#计算机组成原理概论" class="headerlink" title="计算机组成原理概论"></a>计算机组成原理概论</h3><p>习惯上所称的“电子计算机”是指现在广泛引用的电子数字计算机，它分为专用计算机和通用计算机两大类。专用和通用是根据计算机的效率，速度，价格，运行的经济性和适应性来划分的。通用计算机又分为巨型机，大型机，中型机，小型机，微型机，单片机六类，其结构复杂性，性能，价格依次递减。</p>
-<p>计算机的生命力在于他的广泛应用，应用的范围几乎涉及人类社会的所有领域。归纳下来，在科学计算，自动控制，测量与测试，信息处理，教育卫生，家用电器，人工智能等领域中的应用成就最为突出。</p>
-<p>计算机的硬件是由有形的电子器件等构成的，它包括运算器，存储器，控制器，适配器，输入输出设备。传统上将运算器和控制器称为cpu，而将cpu和存储器称为主机。存储程序并按地址顺序执行，这是冯*诺依曼计算机的工作原理。也是计算机自动化工作的关键。</p>
-<p>计算机的软件是计算机系统结构的重要组成部分，也是计算机不同于一般电子设备的本质所在。计算机软件一般分为系统程序和应用程序两大类。系统程序用来简化程序设计，简化使用方法。提高计算机的使用效率，发挥和扩大计算机的功能和用途，它包括：1. 各种服务型程序。2. 操作系统。 3. 语言类程序，4. 数据库管理系统。应用程序是针对某一应用课题领域开发的软件。</p>
-<p>计算机系统是一个由硬件，软件组成的多级层次结构，它通常由微程序级，一般机器级，操作系统级，汇编语言级，高级语言级组成，每一级都能进行程序设计，且得到下面各级的支持。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E6%A6%82%E8%AE%BA/" data-id="ckwes9ab30018krs1ej562e89" class="article-share-link">分享</a>
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%B9%B6%E5%8F%91/" data-id="ckwev4ylw0014ros10cj7fi8j" class="article-share-link">分享</a>
       
       
     </footer>
@@ -564,7 +517,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E7%BC%96%E7%A0%81-%E9%9A%90%E5%8C%BF%E5%9C%A8%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%BD%AF%E7%A1%AC%E4%BB%B6%E8%83%8C%E5%90%8E%E7%9A%84%E7%A7%98%E5%AF%86/" data-id="ckwes9ab40019krs1ap0g90yl" class="article-share-link">分享</a>
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E7%BC%96%E7%A0%81-%E9%9A%90%E5%8C%BF%E5%9C%A8%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%BD%AF%E7%A1%AC%E4%BB%B6%E8%83%8C%E5%90%8E%E7%9A%84%E7%A7%98%E5%AF%86/" data-id="ckwev4yly0016ros13fer858w" class="article-share-link">分享</a>
       
       
     </footer>
@@ -609,7 +562,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E8%AE%A1%E7%AE%97%E5%99%A8%E5%92%8C%E8%BF%90%E7%AE%97%E5%99%A8/" data-id="ckwes9ab5001ckrs13koybzct" class="article-share-link">分享</a>
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E8%AE%A1%E7%AE%97%E5%99%A8%E5%92%8C%E8%BF%90%E7%AE%97%E5%99%A8/" data-id="ckwev4ylz0018ros11wuch6ly" class="article-share-link">分享</a>
       
       
     </footer>
@@ -619,9 +572,9 @@
 
 
   
-    <article id="post-2017/2017-10-08-计算机组成原理" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-2017/2017-10-08-文件管理" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2017/10/08/2017/2017-10-08-%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E5%8E%9F%E7%90%86/" class="article-date">
+    <a href="/2017/10/08/2017/2017-10-08-%E6%96%87%E4%BB%B6%E7%AE%A1%E7%90%86/" class="article-date">
   <time datetime="2017-10-07T18:11:11.000Z" itemprop="datePublished">2017-10-08</time>
 </a>
     
@@ -637,7 +590,52 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2017/10/08/2017/2017-10-08-%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E5%8E%9F%E7%90%86/">计算机组成原理</a>
+      <a class="article-title" href="/2017/10/08/2017/2017-10-08-%E6%96%87%E4%BB%B6%E7%AE%A1%E7%90%86/">文件管理</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>一个文件管理系统是一组系统软件，通过文件的使用为用户和应用提供服务，包括文件存取，目录维护和存取控制。文件管理系统可以看成一个系统服务，它本身由操作系统提供服务，而不是操作系统的一部分。但是，任何系统中，至少有一部分文件管理功能有操作系统提供。</p>
+<p>文件是记录的集合，访问记录的方法决定记录的逻辑结构，而且在某种程度上决定记录在磁盘上的物理组织。如果一个文件主要是整体处理，那么顺序文件结构是最简单，最合适的。若干既需要顺序访问，也需要对一个文件随机访问，则一个索引顺序文件可以提供很高的性能。如果对文件是随机访问，那么索引文件或堆文件是最合适的。</p>
+<p>无论选用哪种文件结构，都需要一个目录服务，以让文件组织成分层形式。这个结构对用户跟踪文件是十分有用的，对于文件管理系统为用户提供访问控制或其他访问也是有用的。</p>
+<p>文件记录，即使是定长的，通常也不和物理磁盘块的尺寸相同。相应的，需要一些分块策略，复杂度，性能，和空间的使用决定使用的分块策略。</p>
+<p>任何文件管理方法的一个关键功能是管理磁盘空间。其中包括了分配磁盘块给文件的策略。文件的分配使用了许多种方法和数据结构。另外，还需要对磁盘上没有使用的磁盘进行管理。其中主要维护含有空闲新的磁盘分配表。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E6%96%87%E4%BB%B6%E7%AE%A1%E7%90%86/" data-id="ckwev4ylz0019ros12jhndk8l" class="article-share-link">分享</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-2017/2017-10-08-进程" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/10/08/2017/2017-10-08-%E8%BF%9B%E7%A8%8B/" class="article-date">
+  <time datetime="2017-10-07T18:11:11.000Z" itemprop="datePublished">2017-10-08</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%9F%BA%E7%A1%80/">基础</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/10/08/2017/2017-10-08-%E8%BF%9B%E7%A8%8B/">进程</a>
     </h1>
   
 
@@ -648,13 +646,13 @@
         <meta name="referrer" content="no-referrer" />
         
           <p class="article-more-link">
-            <a href="/2017/10/08/2017/2017-10-08-%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E5%8E%9F%E7%90%86/#more">Read More</a>
+            <a href="/2017/10/08/2017/2017-10-08-%E8%BF%9B%E7%A8%8B/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E5%8E%9F%E7%90%86/" data-id="ckwes9ab6001dkrs1d0oidmq4" class="article-share-link">分享</a>
+      <a data-url="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E8%BF%9B%E7%A8%8B/" data-id="ckwev4ym0001cros13u7neucg" class="article-share-link">分享</a>
       
       
     </footer>
