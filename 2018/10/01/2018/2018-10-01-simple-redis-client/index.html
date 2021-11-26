@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-CN">
+  
+
+    <head>
+      <meta charset="utf-8" />
+        
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1"
+      />
+      <title>简简单单写一个 Redis 客户端 |  莫那·鲁道的技术博客</title>
+  <meta name="generator" content="hexo-theme-ayer">
+      
+      <link rel="shortcut icon" href="/favicon.ico" />
+       
+<link rel="stylesheet" href="/dist/main.css">
+
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css"
+      />
+      
+<link rel="stylesheet" href="/css/custom.css">
+ 
+      <script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+       
+ 
+
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bulma@5.0.1/bulma.min.css"
+      />
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.js"></script>
+
+      <!-- mermaid -->
+      
+      <style>
+        .swal2-styled.swal2-confirm {
+          font-size: 1.6rem;
+        }
+      </style>
+    </head>
+  </html>
+</html>
+
+
+<body>
+  <div id="app">
+    
+      
+    <main class="content on">
+      <section class="outer">
+  <article
+  id="post-2018/2018-10-01-simple-redis-client"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  简简单单写一个 Redis 客户端
+</h1>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2018/10/01/2018/2018-10-01-simple-redis-client/" class="article-date">
+  <time datetime="2018-09-30T16:01:01.000Z" itemprop="datePublished">2018-10-01</time>
+</a> 
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Redis/">Redis</a>
+  </div>
+  
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> 字数统计:</span>
+            <span class="post-count">1.7k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> 阅读时长≈</span>
+            <span class="post-count">7 分钟</span>
+        </span>
+    </span>
+</div>
+ 
+    </div>
+      
+    <div class="tocbot"></div>
+
+
+
+
+  
+    <div class="article-entry" itemprop="articleBody">
+       
+  <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这篇文章很简单，就是写一个 Java 版本的 Redis Client，而且不是一个生产级别的项目，只是一个验证类型的 demo。用于了解“实现一个 Redis Client” 需要注意哪些事情。</p>
+<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h2><ol>
+<li><p>首先，Redis 是一个服务器，有 ip，有端口，那么，我们就可以用 Java 的 Socket 来和他交互，也可以用 telnet 来交互。说白了，就是一个 TCP 服务器，只要打开了  TCP 通道，然后进行一次连接 3 次握手，建立起全双工通道，就能够互相发送数据。</p>
+</li>
+<li><p>从我们之前的编程经验中，我知道，和一个服务器交互，通常是需要协议的，例如 HTTP 服务器，你需要 HTTP 协议，和 Dubbo 交互，你需要了解 Dubbo 协议，当然，这些都是建立在 TCP 协议之上的。那么，Redis 大概也是有协议的，我们后面再看。</p>
+</li>
+</ol>
+<h2 id="动手"><a href="#动手" class="headerlink" title="动手"></a>动手</h2><p>思考了上面的两点，我们可以尝试动手。</p>
+<p>我们可以先用 telnet 访问以下本地的 Redis Server，例如 ：<code>telnet  127.0.0.1 6379</code>，如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">➜  master telnet 127.0.0.1 6379</span><br><span class="line">Trying 127.0.0.1...</span><br><span class="line">Connected to localhost.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">set baby hello</span><br><span class="line">+OK</span><br><span class="line">get baby</span><br><span class="line"><span class="meta">$</span><span class="bash">5</span></span><br><span class="line">hello</span><br><span class="line">del baby</span><br><span class="line">:1</span><br><span class="line">xxx</span><br><span class="line">-ERR unknown command &#x27;xxx&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>步骤：</p>
+<ol>
+<li>我们连接上了本机的 Redis Server。</li>
+<li>执行 set baby hello 命令，也就是保存一个键值对。</li>
+<li>返回了 +OK 字符串</li>
+<li>然后我们获取刚刚的 baby 字符串。</li>
+<li>返回了 $5 <code>换行</code> hello</li>
+<li>然后我们删除了 baby 字符串。</li>
+<li>返回了 :1 ，1表示删除成功。</li>
+<li>然后我们尝试执行一个不存在的命令。</li>
+<li>返回了 <code>-ERR unknown command &#39;xxx&#39;</code>.</li>
+</ol>
+<p>我们使用  Redis 官方提供的 redis-cli 客户端执行这些命令看看结果：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">➜  master redis-cli</span><br><span class="line">127.0.0.1:6379&gt; set baby hello</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; get baby</span><br><span class="line">&quot;hello&quot;</span><br><span class="line">127.0.0.1:6379&gt; del baby</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; xxx</span><br><span class="line">(error) ERR unknown command &#x27;xxx&#x27;</span><br><span class="line">127.0.0.1:6379&gt; </span><br></pre></td></tr></table></figure>
+
+<p>很明显，redis-cli 客户端和 telnet 的使用区别就是返回值的不同，telnet 多了一些奇怪的字符，或者在一些返回值前面加入了一些符合，例如在 OK 前面加入了+ 号。在get baby 后，返回了一个 $5 字符串。我们猜想，telnet 得到的数据是 Redis-Server 真正返回的数据，redis-cli 对这些数据进行了处理。</p>
+<p>好了，大概了解了操作，我们用 Java 写一个 Socket 访问一下 Redis Server。</p>
+<h2 id="用-Java-Socket-访问-Redis-Server"><a href="#用-Java-Socket-访问-Redis-Server" class="headerlink" title="用 Java Socket 访问 Redis Server"></a>用 Java Socket 访问 Redis Server</h2><p>代码很简单，如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> Socket client = <span class="keyword">new</span> Socket();</span><br><span class="line"><span class="keyword">static</span> InputStream is;</span><br><span class="line"><span class="keyword">static</span> OutputStream os;</span><br><span class="line"><span class="keyword">static</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        client.connect(<span class="keyword">new</span> InetSocketAddress(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">6379</span>));</span><br><span class="line">        is = client.getInputStream();</span><br><span class="line">        os = client.getOutputStream();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="string">&quot;set baby hello \n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="comment">// result : +OK</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="string">&quot;get baby \n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="number">1</span>);<span class="comment">// 等 redis 返回数据</span></span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="comment">// result : $5</span></span><br><span class="line">    <span class="comment">// result : hello</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="string">&quot;del baby \n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="number">1</span>);<span class="comment">// 等 redis 返回数据</span></span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="comment">// result  :1</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="string">&quot;xxx \n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="number">1</span>);<span class="comment">// 等 redis 返回数据</span></span><br><span class="line"></span><br><span class="line">    printResult();</span><br><span class="line">    <span class="comment">// -ERR unknown command `xxx`, with args beginning with:</span></span><br><span class="line"></span><br><span class="line">    writeAndFlush(<span class="string">&quot;mget hello baby \r\n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Sleep.sleep(<span class="number">1</span>);</span><br><span class="line">    printResult();</span><br><span class="line"></span><br><span class="line">    closeStream();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">writeAndFlush</span><span class="params">(String content)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        os.write(content.getBytes());</span><br><span class="line">        os.flush();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">closeStream</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        is.close();</span><br><span class="line">        os.close();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">printResult</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> a = is.available();</span><br><span class="line">        <span class="keyword">byte</span>[] b = <span class="keyword">new</span> <span class="keyword">byte</span>[a];</span><br><span class="line">        is.read(b);</span><br><span class="line"></span><br><span class="line">        String result = <span class="keyword">new</span> String(b);</span><br><span class="line">        System.out.println(result);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到， 使用 Java Socket 和使用 telnet 的效果是相同的。</p>
+<p>所以，要想达到 redis-cli  的效果，那么就需要对返回值进行处理，例如 $5 、:1 这些符号，到底是什么意思？即：解析 redis 自己的应用层协议。</p>
+<h2 id="Redis-序列化协议（RESP）"><a href="#Redis-序列化协议（RESP）" class="headerlink" title="Redis 序列化协议（RESP）"></a>Redis 序列化协议（RESP）</h2><p>答案就在 redis 的官方文档: <a target="_blank" rel="noopener" href="http://redisdoc.com/topic/protocol.html">通信协议（protocol）</a></p>
+<p>redis 协议称之为 RESP（REdis Serialization Protocol），即 redis 序列化协议。</p>
+<p>该协议的设计目标：</p>
+<ol>
+<li>实现简单。</li>
+<li>快速解析。</li>
+<li>人类易读。</li>
+</ol>
+<p>所有的命令一律以 <code>\r\n</code> 结尾。</p>
+<p>Redis 收到命令后，对命令进行处理，然后返回数据。</p>
+<p>redis 1.2 版本后，支持批量回复：Buik Reply。</p>
+<p>关于回复，有多种类型：<br>通过检查服务器发回数据的第一个字节， 可以确定这个回复是什么类型：</p>
+<ul>
+<li> 状态回复（status reply）的第一个字节是 <code>&quot;+&quot;</code></li>
+<li>错误回复（error reply）的第一个字节是<code> &quot;-&quot;</code></li>
+<li>整数回复（integer reply）的第一个字节是<code> &quot;:&quot;</code></li>
+<li>批量回复（bulk reply）的第一个字节是 <code>&quot;$&quot;</code></li>
+<li>多条批量回复（multi bulk reply）的第一个字节是<code> &quot;*&quot;</code></li>
+</ul>
+<p>我们回到我们的 Socket 小程序里，可以看到，</p>
+<ul>
+<li>当我执行 <code>set</code> 命令，返回的是 <code>+OK</code>，即这个是状态回复。</li>
+<li>当我们执行 <code>xxx</code> 命令，返回值的开头是 - 号，即这个是错误回复。</li>
+<li>当我们执行 <code>get</code> 命令，返回的是 <code>$5 hello</code>，即这个是批量回复，同时<code>5</code>表示后面将返回  5 个字节。字符串的最大长度为 512 MB。</li>
+<li>当我们执行<code>del</code>命令，返回的是<code>:1</code>，表示这个是整数回复，只在操作真正被执行了的时候， 才返回 <code>1</code> ， 否则返回 0， 1表示<code> true</code>。</li>
+<li>当我们执行 <code>mget hello baby  \r\n</code> 时，返回的第一个字符就是 * 号，表示这是一个多条批量回复。* 号后面的值记录了多条回复的数量，我们这里返回的是 <code>*2\r\n $5\r\n world \r\n $-1\r\n</code>， <code>*2</code> 表示后面有 2 条回复。<code>$5</code> 表示后面有 5 个字节。 <code>$-1</code> 表示 <code>baby</code> 这个<code>key</code> 是没有数据的，<code>-1</code> 表示什么都没有。</li>
+</ul>
+<p>通过对协议的解析，我们就能做出一个类似 redis-cli 的客户端。</p>
+<p>我这里抛转引玉，写了一个最简单的，大家看看就好 ：）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">respParseHandler</span><span class="params">(String result)</span> </span>&#123;</span><br><span class="line">       <span class="keyword">try</span> &#123;</span><br><span class="line">           <span class="keyword">if</span> (result.startsWith(<span class="string">&quot;+&quot;</span>)) &#123;</span><br><span class="line">               <span class="comment">// 状态回复</span></span><br><span class="line">               System.out.println(result.substring(<span class="number">1</span>));</span><br><span class="line">               <span class="keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="keyword">if</span> (result.startsWith(<span class="string">&quot;-&quot;</span>)) &#123;</span><br><span class="line">               <span class="comment">// 错误回复</span></span><br><span class="line">               System.err.println(result.substring(<span class="number">1</span>));</span><br><span class="line">               <span class="keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span> (result.startsWith(<span class="string">&quot;:&quot;</span>)) &#123;</span><br><span class="line">               <span class="comment">// 整数回复</span></span><br><span class="line">               <span class="keyword">if</span> (result.substring(<span class="number">1</span>).equalsIgnoreCase(<span class="string">&quot;1&quot;</span>)) &#123;</span><br><span class="line">                   System.out.println(<span class="string">&quot;success&quot;</span>);</span><br><span class="line">               &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                   System.out.println(<span class="string">&quot;error&quot;</span>);</span><br><span class="line">               &#125;</span><br><span class="line">               <span class="keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span> (result.startsWith(<span class="string">&quot;$&quot;</span>)) &#123;</span><br><span class="line">               <span class="comment">// 批量回复</span></span><br><span class="line">               <span class="keyword">if</span> (result.substring(<span class="number">1</span>, <span class="number">3</span>).equalsIgnoreCase(<span class="string">&quot;-1&quot;</span>)) &#123;</span><br><span class="line">                   System.out.println(<span class="string">&quot;no data, redis return -1&quot;</span>);</span><br><span class="line">                   <span class="keyword">return</span>;</span><br><span class="line">               &#125;</span><br><span class="line">   </span><br><span class="line">               <span class="keyword">int</span> line = result.indexOf(<span class="string">&quot;\r\n&quot;</span>);</span><br><span class="line">               System.out.println(result.substring(line + <span class="number">2</span>));</span><br><span class="line">               <span class="keyword">return</span>;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span> (result.startsWith(<span class="string">&quot;*&quot;</span>)) &#123;</span><br><span class="line">               <span class="comment">// 多条批量回复</span></span><br><span class="line">               <span class="keyword">char</span> num = result.charAt(<span class="number">1</span>);</span><br><span class="line">               <span class="keyword">int</span> first = result.indexOf(<span class="string">&#x27;$&#x27;</span>);</span><br><span class="line">               <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; Integer.valueOf(String.valueOf(num)); i++) &#123;</span><br><span class="line"></span><br><span class="line">                   <span class="keyword">int</span> next = result.indexOf(<span class="string">&#x27;$&#x27;</span>, first + <span class="number">1</span>);</span><br><span class="line">                   <span class="keyword">if</span> (next != -<span class="number">1</span>) &#123;</span><br><span class="line">                       respParseHandler(result.substring(first, next));</span><br><span class="line">                   &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                       respParseHandler(result.substring(first));</span><br><span class="line">                   &#125;</span><br><span class="line">                   first = next;</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">           e.printStackTrace();</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+      <!-- reward -->
+      
+      <div id="reword-out">
+        <div id="reward-btn">
+          打赏
+        </div>
+      </div>
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <div class="declare">
+      <ul class="post-copyright">
+        <li>
+          <i class="ri-copyright-line"></i>
+          <strong>版权声明： </strong>
+          
+          本博客所有文章除特别声明外，著作权归作者所有。转载请注明出处！
+          
+        </li>
+      </ul>
+    </div>
+    
+    <footer class="article-footer">
+       
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://thinkinjava.cn/2018/10/01/2018/2018-10-01-simple-redis-client/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>  
+    </footer>
+  </div>
+
+   
+  <nav class="article-nav">
+    
+      <a href="/2018/10/03/2018/2018-10-03-ThinkInLife/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            Think in Life
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2018/09/09/2018/2018-09-09-SOFA%20RPC%20%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">SOFA RPC 客户端设计模式</div>
+      </a>
+    
+  </nav>
+
+   
+<!-- valine评论 -->
+<div id="vcomments-box">
+  <div id="vcomments"></div>
+</div>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js"></script>
+<script>
+  new Valine({
+    el: "#vcomments",
+    app_id: "Uv9EE0hbac62lwcJ6oCYgLVN-gzGzoHsz",
+    app_key: "LJaw0zKPmub7N3SG7ybzkfAj",
+    path: window.location.pathname,
+    avatar: "monsterid",
+    placeholder: "给我的文章加点评论吧~",
+    recordIP: true,
+  });
+  const infoEle = document.querySelector("#vcomments .info");
+  if (infoEle && infoEle.childNodes && infoEle.childNodes.length > 0) {
+    infoEle.childNodes.forEach(function (item) {
+      item.parentNode.removeChild(item);
+    });
+  }
+</script>
+<style>
+  #vcomments-box {
+    padding: 5px 30px;
+  }
+
+  @media screen and (max-width: 800px) {
+    #vcomments-box {
+      padding: 5px 0px;
+    }
+  }
+
+  #vcomments-box #vcomments {
+    background-color: #fff;
+  }
+
+  .v .vlist .vcard .vh {
+    padding-right: 20px;
+  }
+
+  .v .vlist .vcard {
+    padding-left: 10px;
+  }
+</style>
+
+ 
+   
+     
+</article>
+
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2017-2021
+        <i class="ri-heart-fill heart_icon"></i> 莫那·鲁道
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+        <script type="text/javascript" src='https://s9.cnzz.com/z_stat.php?id=1278069914&amp;web_id=1278069914'></script>
+        
+      </li>
+    </ul>
+  </div>
+</footer>    
+    </main>
+    <div class="float_btns">
+      <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+    </div>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/ayer-side.svg" alt="莫那·鲁道的技术博客"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">归档</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags/">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/about/">关于我</a>
+    </li>
+    
+    <li class="nav-item">
+          <a class="nav-item-link nav-item-search"  title="搜索">
+            <i class="ri-search-line"></i>
+          </a>
+    </li>
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="搜索">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+
+    </aside>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-3.6.0.min.js"></script>
+ 
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Tocbot -->
+ 
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: ".tocbot",
+    contentSelector: ".article-entry",
+    headingSelector: "h1, h2, h3, h4, h5, h6",
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: "main",
+    positionFixedSelector: ".tocbot",
+    positionFixedClass: "is-position-fixed",
+    fixedSidebarOffset: "auto",
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css"
+/>
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+ <!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script> 
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+
+<!-- ClickLove -->
+
+<!-- ClickBoom1 -->
+
+<!-- ClickBoom2 -->
+
+<!-- CodeCopy -->
+ 
+<link rel="stylesheet" href="/css/clipboard.css">
+ <script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+ 
+<!-- CanvasBackground -->
+
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ theme: "forest" });
+  }
+</script>
+
+
+    
+    
+
+  </div>
+</body>
+
+</html>
