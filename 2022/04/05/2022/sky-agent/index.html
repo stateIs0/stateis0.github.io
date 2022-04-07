@@ -133,11 +133,11 @@
 <p>而 AgentClassLoader 的路径则是 plugins 和 activations 目录，AgentClassLoader 可以在这 2个路径下查找 Class。</p>
 <p>当加载一个类时，比如 Jedis，那么就会触发 javaAgent 的 Instrumentation 钩子，Instrumentation 内部则实现了一整套逻辑。Skywalking 会检查是否有 Jedis 的插件（这个规则是Jedis 插件里的 <code>skywalking-plugin.def</code> 定义，此文件在启动时就加载了），如果有，就使用一个新的 AgentClassLoader （parent 是目标类加载器）来加载拦截器，并将拦截器插入到调用方法的前面和后面（代码位置 <code>ClassEnhancePluginDefine#enhance</code>）。</p>
 <p>为什么要用一个新的 AgentClassLoader 呢？假设不用 AgentClassLoader，用默认的 AgentClassLoader，这个 AgentClassLoader 的 parent 是 JDK AppClassLoader，而如果 Jedis 是 一个自定义类加载器加载的，且插件里又访问 Jedis 这个类，因为 AgentClassLoader 是无法访问到 Jedis 这个类文件的，因此只能向上查找，向上查找到 AppClassLoader，肯定是查不到的，因为 Jedis 是自定义类加载器加载的。</p>
-<p>如下图：<br><img src="/img/2022/04/agent/1.png"></p>
+<p>如下图：<br><img src="/img/2022/04-agent/1.png"></p>
 <p>而如果我们使用一个新的 AgentClassLoader，并将其 parent 设置为 Jedis 的 ClassLoader，则可以解决这个问题，如下图：</p>
-<p><img src="/img/2022/04/agent/2.png"></p>
+<p><img src="/img/2022/04-agent/2.png"></p>
 <p>插件分为 3 种：构造器插件，静态方法插件，实例方法插件。分别是 InstanceConstructorInterceptor 接口，StaticMethodsAroundInterceptor 接口， InstanceMethodsAroundInterceptor 接口。</p>
-<p>我们随便点开一个插件，例如 HttpClient 插件：<br><img src="/img/2022/04/agent/3.png"></p>
+<p>我们随便点开一个插件，例如 HttpClient 插件：<br><img src="/img/2022/04-agent/3.png"></p>
 <p>该插件在拦截器代码里访问 apache http 的类。我们可以在其执行execute方法时，拦截到请求参数，并进行解析。根据 Skywalking 的规范，设置各种标签和 Span。关于 Span ，下面会单独详解。</p>
 <h2 id="Trace-Segment-Span-详解"><a href="#Trace-Segment-Span-详解" class="headerlink" title="Trace Segment Span 详解"></a>Trace Segment Span 详解</h2><p>Skywalking 是全链路追踪和 APM 插件，我们这里先讨论全链路跟踪，暂时不讨论 APM。自从 google 2010 发布 Dapper 论文以来，各种全链路跟踪插件如雨后春笋般的出现。Skywalking是其中优秀的代表。</p>
 <p>全链路跟踪一般有几个概念 Trace，Span。Trace 代表了一次调用所产生的链路，并且会有一个全局唯一的 ID，在 google的论文中，他是一组 span 的集合，Span 表示一个组件的调用信息，是整个 Trace 中的一个节点，他的 ID 在 trace 中是唯一的。</p>
@@ -158,23 +158,23 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TracingContext</span> <span class="keyword">implements</span> <span class="title">AbstractTracerContext</span> </span>&#123;</span><br><span class="line"> 	<span class="keyword">private</span> TraceSegment segment; <span class="comment">// 当前调用的 Segment</span></span><br><span class="line">    <span class="comment">// 当前调用的所有 Span，使用链表维护，模拟栈的进出</span></span><br><span class="line">    <span class="keyword">private</span> LinkedList&lt;AbstractSpan&gt; activeSpanStack = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> spanIdGenerator; <span class="comment">// id 生成器</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">int</span> asyncSpanCounter; 异步计数器</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> isRunningInAsyncMode; 是否为异步模式</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> ReentrantLock asyncFinishLock; 异步执行锁</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> running; 是否结束</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> createTime; 创建时间</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>此类的关键就是 activeSpanStack，其使用链表模拟了栈的进出，为什么使用栈的结构呢？使用栈结构能够更方便的管理 Span 的生命周期。在 SKywalking 中，一个 Span 创建成功，就是入栈操作，该 Span 执行结束，则是出栈操作。当这个栈空了，表示这个 Segment 执行结束了。</p>
-<p>具体如下图所示：<br><img src="/img/2022/04/agent/4.png"></p>
+<p>具体如下图所示：<br><img src="/img/2022/04-agent/4.png"></p>
 <p>上图中，显示了 SKywalking 中如何管理 Span 的生命周期：当第一个 Span 创建时，例如 Tomcat Span，则会放到栈底，当 Jedis Span 对外访问时（例如执行 get 命令），则放在栈顶。当 Jedis 操作执行结束时，则会出栈，当 ThreadSpan 执行 Run 方法结束时，也会出栈，当访问 Tomcat 的请求执行结束时，则也会出栈，直至栈为空。当栈为空，则会将这些 Span 发送到后端 OAP server 进行保存。</p>
-<p>然后我们总结下 trace Segment span 的关系：<br><img src="/img/2022/04/agent/5.png"></p>
+<p>然后我们总结下 trace Segment span 的关系：<br><img src="/img/2022/04-agent/5.png"></p>
 <p>大体上，就是这样的一个关系。</p>
 <h2 id="异步-Trace-详解"><a href="#异步-Trace-详解" class="headerlink" title="异步 Trace 详解"></a>异步 Trace 详解</h2><p>前面我们了解了 Span 和 Segment 的原理，其实还有一点，SKywalking Agent 用来存储 Span 的容器是 ThreadLocal，便于在单个线程中，随时取出 Span 对象。当栈为空时，则会删除 ThreadLocal 对象，防止内存泄漏。</p>
 <p>那如果是异步 Trace，该怎么办呢？SKywalking 提供了 capture 和 continued(snapshot)，前者表示将当前栈顶的 Span 复制并返回一个快照，continued 表示将快照恢复为当前栈顶 Span 的父 Span，以此来完成 Span 和 Span 之间的链接。</p>
 <p>例如，当我们使用异步线程执行任务时，SKywalking 在默认情况下，是无法链接当前线程的 Span 和异步线程的 Span 的，除非我们在 Runnable 实现类使用 TraceCrossThread 类似的注解，表示这个 Runnable 需要跨线程追踪，那么，SKywalking 就会做出 capture 和 continued(snapshot) 操作，将主线程的 Span+Segment 复制到 Runnable 中，并将这 2 个 Span 进行链接。如下图</p>
-<p><img src="/img/2022/04/agent/6.png"></p>
+<p><img src="/img/2022/04-agent/6.png"></p>
 <p>上图中，主线程复制当前线程 Segment 和 Span 的基本信息，包括 Segment ID，Span ID，Name 等信息。然后在子线程中，进行回放，回放的操作，就是将这个 快照 的信息，保存到 Span 的父 Span 中，标记子线程的父 Span 就是这个 Span。</p>
 <p>还有一种场景的异步 Span，比如在 A 线程开启，在 B 线程关闭，我们需要记录这个 Span 的耗时。比方说，异步 HttpClient，我们在主线程开启了访问，在异步线程得到结果，就复合刚刚我们说的场景。</p>
 <p>SKywalking 为我们提供了 <code>prepareForAsync</code> 和 <code>asyncFinish</code> 这两个方法，当我们在 A 线程创建了一个 <code>Span</code>，我们可以执行 <code>span.prepareForAsync</code> 方法，表示这个 span 开始了访问，即将进入异步线程。当在 B 线程得到结果后，执行 <code>span.asyncFinish</code> 则表示，这个 span 执行结束了，那么， A 线程就可以将整个 <code>Segment </code>标记结束，并返回到 OAP server 中进行统计。那么如何在 B 线程里得到这个 Span 的实例，然后调用 <code>asyncFinish</code> 方法呢？实际上，是需要插件开发者自己想办法传递的，比如在被拦截对象的参数里、构造函数里传递。</p>
 <p>那么这 2 种异步模式的区别是什么呢？说实话，我在刚刚看到这两个的时候，脑子也有点迷糊，经过总结，发现两者虽然看起来相似，当谁也代替不了谁。</p>
 <p>简单来说，prepareForAsync 和 asyncFinish 只是为了统计一个 Span 跨越 2 个线程的场景，例如上面的提到 HttpAsyncClient 场景。在 A 线程创建，在 B 线程结束，我们需要在 B 线程拿到返回值和耗时。</p>
 <p>而 capture 和 continued(snapshot) 的使用场景是为了连接 2 个线程的不同 Span。我们将主线程的最后一个 Span 和子线程的第一个 Span 相连接。</p>
-<p>而两者也是可以结合使用。如下图：<br><img src="/img/2022/04/agent/7.png"></p>
+<p>而两者也是可以结合使用。如下图：<br><img src="/img/2022/04-agent/7.png"></p>
 <p>以上，表示了一次 HttpAsyncClient 请求中，如何将 Span 进行跨线程连接，并记录返回值。</p>
-<p><img src="/img/2022/04/agent/8.png"></p>
+<p><img src="/img/2022/04-agent/8.png"></p>
 <p>最终的效果如上。</p>
 <h2 id="如何正确地编写插件防止内存泄漏"><a href="#如何正确地编写插件防止内存泄漏" class="headerlink" title="如何正确地编写插件防止内存泄漏"></a>如何正确地编写插件防止内存泄漏</h2><p>在使用 SKywalking 的过程中，我也写过一些公司内部的插件，如果是同步调用的话，就比较简单，例如，在 before 方法中创建一个 span（就是向栈中推入一个 Span），在 after 方法中，执行 stop span（就是从栈中弹出一个 Span）。</p>
 <p>当编写异步插件时，需要考虑的情况就比较复杂。有几个点需要注意：</p>
