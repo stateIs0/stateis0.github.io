@@ -17711,4 +17711,115 @@ public class BuilderB extends Builder &#123;
         <category>Java 设计</category>
       </categories>
   </entry>
+  <entry>
+    <title>深入理解 Skywalking Agent</title>
+    <url>/2022/04/05/2022/sky-agent/</url>
+    <content><![CDATA[<ol>
+<li>概述</li>
+<li>Agent 功能介绍 + 整体结构 + 设计</li>
+<li>插件机制详解</li>
+<li>Trace Segment Span 详解</li>
+<li>异步 Trace 详解</li>
+<li>如何正确地编写插件并防止内存泄漏</li>
+<li>扩展：如何基于 Skywalking 打造全链路压测</li>
+<li>总结与参考</li>
+</ol>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>在 APM 和全链路监控领域，Skywalking 是非常有名的项目，我司使用的就是该方案来进行应用性能监控和分布式链路跟踪。而我本人最近的工作和 Skywalking 也高度相关，因此，lz想以本文来作为这段时间，对关于 Skywalking 的知识点进行总结和分享，包括插件机制的原理，核心领域模型的分析，异步 trace 可能存在的问题，编写复杂插件时如何避免采坑，如何基于 Skywalking 打造全链路压测等等。如果不当，还请指出，不吝赐教。另外，本文只关注 Skywalking Java Agent，关于 Skywalking 其他的组件，不在本文探讨之列。</p>
+<h2 id="Agent-功能介绍-整体结构-设计"><a href="#Agent-功能介绍-整体结构-设计" class="headerlink" title="Agent 功能介绍 + 整体结构 + 设计"></a>Agent 功能介绍 + 整体结构 + 设计</h2><p>Skywalking Java Agen 使用 Java  premain 作为 Agent 的技术方案，关于 Java  Agent，其实有 2 种，一种是以 premain 作为挂载方式（启动时挂载），另外一种是以 agentmain 作为挂载方式，在程序运行期间随时挂载，例如著名的 arthas 就是使用的该方案；agentmain 会更加灵活，但局限会比 premain 多，例如不能增减父类，不能增加接口，新增的方法只能是  private static/final 的，不能修改字段，类访问符不能变化。而 premian 则没有这些限制。</p>
+<p>另外，agentmain 的挂载方式，对性能是有影响的，他的工作原理是启动一个新的进程，触发ClassFileLoadHook 事件，然后修改正在运行的字节码，那如果这个类正在运行怎么办呢？JVM 会在安全点暂停所有线程，然后触发我们编写的 Agent 钩子，并重新转换字节码。而在暂停所有现场的过程中，程序就会产生可能不可控的延迟。</p>
+<p>另外说一个题外话，关于 Redefine 和 Reransform 的区别，前者会覆盖掉被修改的内容，后者会保留被修改的内容。Redefine 是 Java 1.5 引入的，Reransform 是 Java 1.6 引入的。Redefine 有很多缺陷，例如 Redefine 后的类不能恢复，不能修改删除 field 和 method，包括方法参数，名称和返回值。Jdk 1.6 的 Reransform 则解决了这些问题。关于 Reransform 和 Redefine，可以参考 arthas 作者的一些文章介绍。</p>
+<p>回到 Skywalking 上面，Skywalking 是在 premian 方法中类加载时修改字节码的。使用 ByteBuddy 类库（基于 ASM）实现字节码插桩修改。入口类 <code>SkyWalkingAgent#premain</code> 。</p>
+<p>Skywalking Agent 整体结构基于微内核的方式，即插件化，apm-agent-core 是核心代码，负责启动，加载配置，加载插件，修改字节码，记录调用数据，发送到后端等等。而 apm-sdk-plugin 模块则是各个中间件的插装插件，比如 Jedis，Dubbo，RocketMQ，Kafka 等各种客户端。</p>
+<p>如果想要实现一个中间件的监控，只需要遵守 Skywalking 的插件规范，编写一个 Maven 模块就可以。Skywalking 内核会自动化的加载插件，并插桩字节码。</p>
+<p>Skywalking 的作者曾说：不管是 Linux，Istio 还是 SkyWalking ，都有一个很大的特点：当项目被「高度模块化」之后，贡献者就会开始急剧的提高。</p>
+<p>而模块化，插件化，也是一个软件不容易腐烂的重要特性。Skywalking 的就是遵循这个理念设计。</p>
+<h2 id="插件机制详解"><a href="#插件机制详解" class="headerlink" title="插件机制详解"></a>插件机制详解</h2><p>Skywalking 如何加载插件的呢？ Skywalking 的插件在 maven 打包完成后，会自动放在 plugins 目录下，Skywalking 在启动时，会使用自定义的 AgentClassLoader 进行插件加载，该 ClassLoader 重写了findclass 方法（并没有破坏双亲委派模型）。启动时，Skywalking 就会查找所有的 <code>skywalking-plugin.def</code> 文件，并使用默认的 AgentClassLoader 加载这些文件里定义的插件元数据类，来映射目标 class 和拦截 class 的关系（代码位置 <code>PluginBootstrap#loadPlugins</code> ）。此时真正的拦截插件并不会加载，这些映射规则，则是插件开发者自己定义的。</p>
+<p>在 Skywalking 中，每个业务 classLoader 实例，都会对应一个新的 AgentClassLoader。哪些是业务ClassLoader呢？比如 <code>sun.misc.Launcher$AppClassLoader</code>，<code>org.springframework.boot.loader.LaunchedURLClassLoader </code>,<code>sun.misc.Launcher$ExtClassLoader</code>, <code>sun.reflect.DelegatingClassLoader </code>，业务自己创建的 <code>ClassLoader</code> 等等。</p>
+<p>而 AgentClassLoader 的路径则是 plugins 和 activations 目录，AgentClassLoader 可以在这 2个路径下查找 Class。</p>
+<p>当加载一个类时，比如 Jedis，那么就会触发 javaAgent 的 Instrumentation 钩子，Instrumentation 内部则实现了一整套逻辑。Skywalking 会检查是否有 Jedis 的插件（这个规则是Jedis 插件里的 <code>skywalking-plugin.def</code> 定义，此文件在启动时就加载了），如果有，就使用一个新的 AgentClassLoader （parent 是目标类加载器）来加载拦截器，并将拦截器插入到调用方法的前面和后面（代码位置 <code>ClassEnhancePluginDefine#enhance</code>）。</p>
+<p>为什么要用一个新的 AgentClassLoader 呢？假设不用 AgentClassLoader，用默认的 AgentClassLoader，这个 AgentClassLoader 的 parent 是 JDK AppClassLoader，而如果 Jedis 是 一个自定义类加载器加载的，且插件里又访问 Jedis 这个类，因为 AgentClassLoader 是无法访问到 Jedis 这个类文件的，因此只能向上查找，向上查找到 AppClassLoader，肯定是查不到的，因为 Jedis 是自定义类加载器加载的。</p>
+<p>如下图：<br><img src="/img/2022/04/agent/1.png"></p>
+<p>而如果我们使用一个新的 AgentClassLoader，并将其 parent 设置为 Jedis 的 ClassLoader，则可以解决这个问题，如下图：</p>
+<p><img src="/img/2022/04/agent/2.png"></p>
+<p>插件分为 3 种：构造器插件，静态方法插件，实例方法插件。分别是 InstanceConstructorInterceptor 接口，StaticMethodsAroundInterceptor 接口， InstanceMethodsAroundInterceptor 接口。</p>
+<p>我们随便点开一个插件，例如 HttpClient 插件：<br><img src="/img/2022/04/agent/3.png"></p>
+<p>该插件在拦截器代码里访问 apache http 的类。我们可以在其执行execute方法时，拦截到请求参数，并进行解析。根据 Skywalking 的规范，设置各种标签和 Span。关于 Span ，下面会单独详解。</p>
+<h2 id="Trace-Segment-Span-详解"><a href="#Trace-Segment-Span-详解" class="headerlink" title="Trace Segment Span 详解"></a>Trace Segment Span 详解</h2><p>Skywalking 是全链路追踪和 APM 插件，我们这里先讨论全链路跟踪，暂时不讨论 APM。自从 google 2010 发布 Dapper 论文以来，各种全链路跟踪插件如雨后春笋般的出现。Skywalking是其中优秀的代表。</p>
+<p>全链路跟踪一般有几个概念 Trace，Span。Trace 代表了一次调用所产生的链路，并且会有一个全局唯一的 ID，在 google的论文中，他是一组 span 的集合，Span 表示一个组件的调用信息，是整个 Trace 中的一个节点，他的 ID 在 trace 中是唯一的。</p>
+<p>一般 Span 的结构是这样的 （伪代码）：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Span</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> id; <span class="comment">// 自身 Span 的 ID</span></span><br><span class="line">  <span class="keyword">int</span> parentId; <span class="comment">//  父 Span 的 ID</span></span><br><span class="line">  String name; <span class="comment">// Span 的名称</span></span><br><span class="line">  String traceId; <span class="comment">// 全局 traceID</span></span><br><span class="line">  Date startTime; <span class="comment">// span 的启动时间</span></span><br><span class="line">  Date endTime; <span class="comment">// span 的执行结束时间</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Segment 是 Skywalking 代码里的独有概念，他表示的是一个 JVM 里一个线程里的一次调用链路，通常会有多个 Span。SKywalking Agent 代码中是没有 Trace 实体的，Trace 其实就是多个 Segment 连接成的一个东西。</p>
+<p>一个 Segment 由多个 Span 组成，当一个线程一次调用运行结束了，那么这个 Segment 就结束了（非异步场景），SKywalking 就会把这个调用信息返回到后端统计服务 OAP 中，此时，就可以通过 web 页面进行搜索查看了。</p>
+<p>我们来看下代码是怎么写的，首先看 Segment，该类全称是 TraceSegment </p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TraceSegment</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> String traceSegmentId;</span><br><span class="line">    <span class="keyword">private</span> List&lt;TraceSegmentRef&gt; refs;</span><br><span class="line">    <span class="keyword">private</span> List&lt;AbstractTracingSpan&gt; spans;</span><br><span class="line">    <span class="keyword">private</span> DistributedTraceIds relatedGlobalTraces;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> createTime;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">TraceSegment</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.traceSegmentId = GlobalIdGenerator.generate();</span><br><span class="line">        <span class="keyword">this</span>.spans = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line">        <span class="keyword">this</span>.relatedGlobalTraces = <span class="keyword">new</span> DistributedTraceIds();</span><br><span class="line">        <span class="keyword">this</span>.relatedGlobalTraces.append(<span class="keyword">new</span> NewDistributedTraceId());</span><br><span class="line">        <span class="keyword">this</span>.createTime = System.currentTimeMillis();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>traceSegmentId： 表示自身作为 Segment 的全局唯一 ID；<br>refs：每次有新的流量进入 JVM，都会创建一个新的 Segment，如果他的前面还是有一个 JVM 的话，那么就将前面这个 JVM 的 Segment 保存到 refs 链表中（新版本已经不是链表了，只是一个单对象，链表可能会导致内存泄漏），这样就将 Segment 串联起来了。<br>spans：在 JVM 中运行 Span 节点，都会保存到 spans 中。<br>relatedGlobalTraces：第一个节点生成的唯一 ID，也就是 TraceID；注意，虽然构造方法这里赋值了，但是后面会调用其 Set 方法，将其覆盖。</p>
+<p>Span 结构是怎么样的呢？Span 种类比较多，分为入口 Span（例如 Tomcat 入口，SpringMVC 入口），出口 Span（DB 客户端，Jedis 客户端，Http 客户端），本地方法 Span（本地函数）；</p>
+<p>SKywalking 抽象的 Span 代码如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbstractTracingSpan</span> <span class="keyword">implements</span> <span class="title">AbstractSpan</span> </span>&#123;</span><br><span class="line"> 	<span class="keyword">protected</span> <span class="keyword">int</span> spanId; <span class="comment">// 自身 ID，从0开始</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">int</span> parentSpanId; <span class="comment">// 父 span ID</span></span><br><span class="line">    <span class="keyword">protected</span> List&lt;TagValuePair&gt; tags; <span class="comment">// 执行过程中，记录的数据</span></span><br><span class="line">    <span class="keyword">protected</span> String operationName; <span class="comment">// 名字</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> isInAsyncMode = <span class="keyword">false</span>; <span class="comment">// 是否为异步模式</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> isAsyncStopped = <span class="keyword">false</span>; <span class="comment">// 异步是否停止</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> TracingContext owner;  <span class="comment">// 持有该 Span 的上下文</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">long</span> startTime; <span class="comment">// 开始时间</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">long</span> endTime; <span class="comment">// 结束时间</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">boolean</span> errorOccurred = <span class="keyword">false</span>; <span class="comment">// 是否发生了错误</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">int</span> componentId = <span class="number">0</span>; <span class="comment">// Span 组件 ID</span></span><br><span class="line">    <span class="keyword">protected</span> List&lt;LogDataEntity&gt; logs; <span class="comment">// 日志</span></span><br><span class="line">    <span class="keyword">protected</span> List&lt;TraceSegmentRef&gt; refs; <span class="comment">// 父 Segment</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，SKywalking 的 Span 设计和大部分设计是差不多的。我们注意到有个 TracingContext，这是一个关键对象，用来维护一次调用过程中，所有 Span 的生命周期。</p>
+<p>TracingContext 属性：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TracingContext</span> <span class="keyword">implements</span> <span class="title">AbstractTracerContext</span> </span>&#123;</span><br><span class="line"> 	<span class="keyword">private</span> TraceSegment segment; <span class="comment">// 当前调用的 Segment</span></span><br><span class="line">    <span class="comment">// 当前调用的所有 Span，使用链表维护，模拟栈的进出</span></span><br><span class="line">    <span class="keyword">private</span> LinkedList&lt;AbstractSpan&gt; activeSpanStack = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> spanIdGenerator; <span class="comment">// id 生成器</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">int</span> asyncSpanCounter; 异步计数器</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> isRunningInAsyncMode; 是否为异步模式</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> ReentrantLock asyncFinishLock; 异步执行锁</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> running; 是否结束</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> createTime; 创建时间</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此类的关键就是 activeSpanStack，其使用链表模拟了栈的进出，为什么使用栈的结构呢？使用栈结构能够更方便的管理 Span 的生命周期。在 SKywalking 中，一个 Span 创建成功，就是入栈操作，该 Span 执行结束，则是出栈操作。当这个栈空了，表示这个 Segment 执行结束了。</p>
+<p>具体如下图所示：<br><img src="/img/2022/04/agent/4.png"></p>
+<p>上图中，显示了 SKywalking 中如何管理 Span 的生命周期：当第一个 Span 创建时，例如 Tomcat Span，则会放到栈底，当 Jedis Span 对外访问时（例如执行 get 命令），则放在栈顶。当 Jedis 操作执行结束时，则会出栈，当 ThreadSpan 执行 Run 方法结束时，也会出栈，当访问 Tomcat 的请求执行结束时，则也会出栈，直至栈为空。当栈为空，则会将这些 Span 发送到后端 OAP server 进行保存。</p>
+<p>然后我们总结下 trace Segment span 的关系：<br><img src="/img/2022/04/agent/5.png"></p>
+<p>大体上，就是这样的一个关系。</p>
+<h2 id="异步-Trace-详解"><a href="#异步-Trace-详解" class="headerlink" title="异步 Trace 详解"></a>异步 Trace 详解</h2><p>前面我们了解了 Span 和 Segment 的原理，其实还有一点，SKywalking Agent 用来存储 Span 的容器是 ThreadLocal，便于在单个线程中，随时取出 Span 对象。当栈为空时，则会删除 ThreadLocal 对象，防止内存泄漏。</p>
+<p>那如果是异步 Trace，该怎么办呢？SKywalking 提供了 capture 和 continued(snapshot)，前者表示将当前栈顶的 Span 复制并返回一个快照，continued 表示将快照恢复为当前栈顶 Span 的父 Span，以此来完成 Span 和 Span 之间的链接。</p>
+<p>例如，当我们使用异步线程执行任务时，SKywalking 在默认情况下，是无法链接当前线程的 Span 和异步线程的 Span 的，除非我们在 Runnable 实现类使用 TraceCrossThread 类似的注解，表示这个 Runnable 需要跨线程追踪，那么，SKywalking 就会做出 capture 和 continued(snapshot) 操作，将主线程的 Span+Segment 复制到 Runnable 中，并将这 2 个 Span 进行链接。如下图</p>
+<p><img src="/img/2022/04/agent/6.png"></p>
+<p>上图中，主线程复制当前线程 Segment 和 Span 的基本信息，包括 Segment ID，Span ID，Name 等信息。然后在子线程中，进行回放，回放的操作，就是将这个 快照 的信息，保存到 Span 的父 Span 中，标记子线程的父 Span 就是这个 Span。</p>
+<p>还有一种场景的异步 Span，比如在 A 线程开启，在 B 线程关闭，我们需要记录这个 Span 的耗时。比方说，异步 HttpClient，我们在主线程开启了访问，在异步线程得到结果，就复合刚刚我们说的场景。</p>
+<p>SKywalking 为我们提供了 <code>prepareForAsync</code> 和 <code>asyncFinish</code> 这两个方法，当我们在 A 线程创建了一个 <code>Span</code>，我们可以执行 <code>span.prepareForAsync</code> 方法，表示这个 span 开始了访问，即将进入异步线程。当在 B 线程得到结果后，执行 <code>span.asyncFinish</code> 则表示，这个 span 执行结束了，那么， A 线程就可以将整个 <code>Segment </code>标记结束，并返回到 OAP server 中进行统计。那么如何在 B 线程里得到这个 Span 的实例，然后调用 <code>asyncFinish</code> 方法呢？实际上，是需要插件开发者自己想办法传递的，比如在被拦截对象的参数里、构造函数里传递。</p>
+<p>那么这 2 种异步模式的区别是什么呢？说实话，我在刚刚看到这两个的时候，脑子也有点迷糊，经过总结，发现两者虽然看起来相似，当谁也代替不了谁。</p>
+<p>简单来说，prepareForAsync 和 asyncFinish 只是为了统计一个 Span 跨越 2 个线程的场景，例如上面的提到 HttpAsyncClient 场景。在 A 线程创建，在 B 线程结束，我们需要在 B 线程拿到返回值和耗时。</p>
+<p>而 capture 和 continued(snapshot) 的使用场景是为了连接 2 个线程的不同 Span。我们将主线程的最后一个 Span 和子线程的第一个 Span 相连接。</p>
+<p>而两者也是可以结合使用。如下图：<br><img src="/img/2022/04/agent/7.png"></p>
+<p>以上，表示了一次 HttpAsyncClient 请求中，如何将 Span 进行跨线程连接，并记录返回值。</p>
+<p><img src="/img/2022/04/agent/8.png"></p>
+<p>最终的效果如上。</p>
+<h2 id="如何正确地编写插件防止内存泄漏"><a href="#如何正确地编写插件防止内存泄漏" class="headerlink" title="如何正确地编写插件防止内存泄漏"></a>如何正确地编写插件防止内存泄漏</h2><p>在使用 SKywalking 的过程中，我也写过一些公司内部的插件，如果是同步调用的话，就比较简单，例如，在 before 方法中创建一个 span（就是向栈中推入一个 Span），在 after 方法中，执行 stop span（就是从栈中弹出一个 Span）。</p>
+<p>当编写异步插件时，需要考虑的情况就比较复杂。有几个点需要注意：</p>
+<ol>
+<li><p> 当我们执行 <code>capture</code> 和 <code>continued</code> 时，栈顶一定要有 Span。这样才能将这两个 Span 进行链接。</p>
+</li>
+<li><p> 当我们执行 <code>prepareForAsync</code> 异步时，一定要在其他线程执行 <code>asyncFinish</code>，否则这个 Segment 就会断开，因为如果不执行 <code>asyncFinish</code>，这个 Segment 就不会 finish，也就不会发送到后端 OAP。另外，对一个 Span 执行完 <code>prepareForAsync</code> 后，一定不要忘记执行这个 span 的 stop 方法。</p>
+</li>
+<li><p> 一定要正确的调用 <code>ContextManager.stopSpan()</code>，否则，一定会出现内存泄漏。假设，Tomcat Span 是入口，在 Tomcat 插件的 after 方法里，执行了 <code>stopSpan</code>，但是栈却没有清空，那么 <code>ThreadLocal </code>里的对象就不会清除，当下次在这个线程里调用 <code>continued </code>时，<code>continued</code> 会将其他线程的对象继续添加到这个线程里的 Segment 列表里。导致内存无限增大（新版本限制了链表的大小，但没有从根本解决问题）。</p>
+</li>
+</ol>
+<h2 id="扩展：如何基于-Skywalking-打造全链路压测"><a href="#扩展：如何基于-Skywalking-打造全链路压测" class="headerlink" title="扩展：如何基于 Skywalking 打造全链路压测"></a>扩展：如何基于 Skywalking 打造全链路压测</h2><p>SKywalking 是基于 java agent 技术打造的，而 java agent 又非常的适合开发全链路压测产品，那么，是否可以借助 SKywalking 的现有能力开发出全链路压测呢？答案是可以的。</p>
+<p>全链路压测的核心问题是压测的过程中不能有脏数据，当影子流量进入容器，这些流量不能进入正式的数据库。通常的做法是，例如在执行 SQL 的时候，判断是否是影子流量，如果是，则更换 SQL 数据源，即不能在正式库中执行影子 SQL。</p>
+<p>基于 SKywalking 的目前的实现，我们只需要对一个类实现多个插件即可，并将这些插件进行包装，基于过滤器模式进行串联，实现对一个类的 压测增强 和 全链路Trace增强。</p>
+<h2 id="总结与参考"><a href="#总结与参考" class="headerlink" title="总结与参考"></a>总结与参考</h2><p>以上，就是本人这段时间，对 SKywalking（8.1.0） 学习和使用的总结。SKywalking 版本升级的很快，现在已经是 8.9.0 版本了，又有了很多功能的更新，大家可以参考的看看。</p>
+<p>参考：</p>
+<ol>
+<li><p> opentracing 规范 <a href="https://github.com/opentracing/specification/blob/master/specification.md#the-opentracing-data-model">https://github.com/opentracing/specification/blob/master/specification.md#the-opentracing-data-model</a></p>
+</li>
+<li><p> Instrumentation API <a href="https://www.matools.com/api/java8">https://www.matools.com/api/java8</a></p>
+</li>
+<li><p> Arthas源码分析–jad反编译原理 <a href="https://hengyun.tech/arthas-jad/">https://hengyun.tech/arthas-jad/</a></p>
+</li>
+<li><p> Skywalking原理分析 <a href="http://www.bewindoweb.com/306.html">http://www.bewindoweb.com/306.html</a></p>
+</li>
+<li><p> JVM 源码分析之 javaagent 原理完全解读 <a href="https://www.infoq.cn/article/javaagent-illustrated/">https://www.infoq.cn/article/javaagent-illustrated/</a></p>
+</li>
+<li><p> SkyWalking源码分析<a href="https://www.processon.com/view/link/611fc4c85653bb6788db4039#map">https://www.processon.com/view/link/611fc4c85653bb6788db4039#map</a></p>
+</li>
+<li><p> dapper 论文 <a href="https://static.googleusercontent.com/media/research.google.com/zh-CN//archive/papers/dapper-2010-1.pdf">https://static.googleusercontent.com/media/research.google.com/zh-CN//archive/papers/dapper-2010-1.pdf</a></p>
+</li>
+<li><p> SKywalking Java Agent 源码地址 <a href="https://github.com/apache/skywalking-java">https://github.com/apache/skywalking-java</a></p>
+</li>
+</ol>
+]]></content>
+      <categories>
+        <category>Agent</category>
+      </categories>
+      <tags>
+        <tag>Agent</tag>
+      </tags>
+  </entry>
 </search>
