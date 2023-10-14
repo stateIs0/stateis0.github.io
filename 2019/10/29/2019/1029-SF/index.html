@@ -1,0 +1,761 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="前言之前讨论零拷贝的时候，我们知道，两台机器之间传输文件，最快的方式就是 send file，众所周知，在 Java 中，该技术对应的则是 FileChannel 类的 transferTo 和 transferFrom 方法。 在平时使用服务器的时候，比如 nginx ，tomcat ，都有 send file 的选项，利用此技术，可大大提高文件传输效能。 另外，可能也有人谈论 send fil">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何编写一个 SendFile 服务器和客户端">
+<meta property="og:url" content="http://thinkinjava.cn/2019/10/29/2019/1029-SF/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="前言之前讨论零拷贝的时候，我们知道，两台机器之间传输文件，最快的方式就是 send file，众所周知，在 Java 中，该技术对应的则是 FileChannel 类的 transferTo 和 transferFrom 方法。 在平时使用服务器的时候，比如 nginx ，tomcat ，都有 send file 的选项，利用此技术，可大大提高文件传输效能。 另外，可能也有人谈论 send fil">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/1029-SF/img.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/1029-SF/img_1.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/1029-SF/img_2.png">
+<meta property="article:published_time" content="2019-10-28T18:01:02.000Z">
+<meta property="article:modified_time" content="2023-10-14T05:30:07.304Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://thinkinjava.cn/img/2019/1029-SF/img.png">
+  
+  
+  
+  <title>如何编写一个 SendFile 服务器和客户端 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.5","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="如何编写一个 SendFile 服务器和客户端"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2019-10-29 02:01" pubdate>
+          2019年10月29日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          24 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">如何编写一个 SendFile 服务器和客户端</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>之前讨论零拷贝的时候，我们知道，两台机器之间传输文件，最快的方式就是 send file，众所周知，在 Java 中，该技术对应的则是 FileChannel 类的 transferTo 和 transferFrom 方法。</p>
+<p>在平时使用服务器的时候，比如 nginx ，tomcat ，都有 send file 的选项，利用此技术，可大大提高文件传输效能。</p>
+<p>另外，可能也有人谈论 send file 的缺点，例如不能利用 gzip 压缩，不能加密。这里本文不做探讨。</p>
+<p>纸上得来终觉浅，绝知此事要躬行。</p>
+<p>那么，如何使用这两个 api 实现一个 send file 服务器和客户端呢？</p>
+<p>想象一下，你写的 send file 服务器利用 send file 技术，利用万兆网卡，从各个 client 端 copy 海量文件，瞬间打爆你那 1TB 的磁盘和 48核的 CPU。并且，注意：只需很小的 JVM  内存就可以实现这样一台强悍的服务器。为什么？如果你知道 send file 的原理，就会知道，使用 send file 技术时， 在用户态中，是不需要多少内存的，数据都在内核态。</p>
+<p>是不是很有成就感？什么？没有？那打扰了 🤣。</p>
+<p>另外，关于 send file，我们都知道，由于是直接从内核缓冲区进入到网卡驱动，我们几乎可以称之为 “零拷贝”，他的性能十分强劲。</p>
+<p>但是。</p>
+<p>除了这个，还有其他的吗？答案是有的，send file 利用 DMA 的方式 copy 数据，而不是利用 CPU。注意，不利用 CPU 意味着什么？意味着数据不会进入“缓存行”，进一步，不会进入缓存行，代表着缓存行不会因为这个被污染，再进一步，就是不需要维护缓存一致性。</p>
+<p>还记得我们因为这个特性搞的那些关于 “伪共享” 的各种黑科技吗？是不是又学到了一点呢？😎</p>
+<h1 id="理念"><a href="#理念" class="headerlink" title="理念"></a>理念</h1><p>作为一个纯粹的，高尚的，有趣的 sendFile 服务器或者客户端，使用场景是嵌入到某个服务中，或者某个中间件中，不需要搞成夸张的容器。我们可以借鉴一下，客户端可以做成 Jedis 那样的，如果你想搞个连接池也不是不可以，但 client 自身实例，还是单连接的。服务端可以做成 sun 的 httpServer 那种轻量的，随时启动，随时关闭。</p>
+<p>同时， 支持 oneway 的高性能发送，因为，只要机器不宕机，发送到网卡就意味着发送成功，这样能大幅提高发送速度，减少客户端阻塞时间。</p>
+<p>另外，也支持带有 ack 的稳定发送，即只有返回 ack 了，才能确认数据已经写到目标服务器磁盘了。</p>
+<p>server 端支持海量连接，必须得是  reactor 网络模型，但我们不想在这么小的组件里用 netty，太重了，还容易和使用方有 jar 冲突。所以，我们可以利用 Java 的 selector + nio 自己实现 Reactor 模型。</p>
+<h1 id="设计"><a href="#设计" class="headerlink" title="设计"></a>设计</h1><h3 id="IO-模型设计"><a href="#IO-模型设计" class="headerlink" title="IO 模型设计"></a>IO 模型设计</h3><p>设计图：</p>
+<p><img src="/img/2019/1029-SF/img.png" srcset="/img/loading.gif" lazyload alt="img.png"></p>
+<p>如上图，Server 端支持海量客户端连接。</p>
+<p>server 端含有 多个处理器，其中包括 accept 处理器，read 处理器 group， write 处理器 group。</p>
+<p>accept 处理器将 serverSocketChannel 作为 key 注册到一个单独的 selector 上。专门用于监听 accept 事件。类似 netty 的 boss 线程。</p>
+<p>当 accept 处理器成功连接了一个 socket 时，会随机将其交给一个 readProcessor（netty worker 线程？） 处理器，readProcessor 又会将其注册到 readSelector 上，当发生 read 事件时，readProcessor 将接受数据。</p>
+<p>可以看到，readProcessor 可以认为是一个多路复用的线程，利用 selector 的能力，他高效的管理着多个 socket。</p>
+<p>readProcessor 在读到数据后，会将其写入到磁盘中（DMA 的方式，性能炸裂）。</p>
+<p>然后，如果 client 在 RPC 协议中声明“需要回复（id 不为 -1）” 时，那就将结果发送到 Reply Queue 中，反之不必。</p>
+<p>当结果发送到  Reply Queue 后，writer 组中的 写线程，则会从 Queue 中拉取回复包，然后将结果按照 RPC 协议，写回到 client socket 中。</p>
+<p>client socket 也会监听着 read 事件，注意：client 是不需要 select 的，因为没必要，selector 只是性能优化的一种方式——即一个线程管理海量连接，如果没有 select， 应用层无法用较低的成本处理海量连接，注意，不是不能处理，只是不能高效处理。</p>
+<p>回过来，当 client socket  得到 server 的数据包，会进行解码反序列化，并唤醒阻塞在客户端的线程。从而完成一次调用。</p>
+<h3 id="线程模型"><a href="#线程模型" class="headerlink" title="线程模型"></a>线程模型</h3><p>设计图：</p>
+<p><img src="/img/2019/1029-SF/img_1.png" srcset="/img/loading.gif" lazyload alt="img_1.png"></p>
+<p>如上图所示。</p>
+<h4 id="在-client-端："><a href="#在-client-端：" class="headerlink" title="在 client 端："></a>在 client 端：</h4><p> 每个 Client 实例，维护一个 TCP 连接。该 Client 的写入方法是线程安全的。</p>
+<p>当用户并发写入时，可并发写的同时并发回复，因为写和回复是异步的（此时可能会出现，线程 A 先 send ，线程 B 后 send，但由于网络延迟，B 先返回）。</p>
+<h4 id="在-server-端："><a href="#在-server-端：" class="headerlink" title="在 server 端："></a>在 server 端：</h4><p>server 端维护着一个 ServerSocketChannel 实例，该实例的作用就是接收 accep 事件，且由一个线程维护这个 accept selector 。</p>
+<p>当有新的 client 连接事件时，accept selector 就将这个连接“交给“ read 线程（默认 server 有 4 个 read 线程）。</p>
+<h4 id="什么是“交给”？"><a href="#什么是“交给”？" class="headerlink" title="什么是“交给”？"></a>什么是“交给”？</h4><p>注意：每个 read 线程都维护着一个单独的 selector。 4 个 read 线程，就维护了 4 个 selector。</p>
+<p>当 accept 得到新的客户端连接时，先从 4 个read 线程组里 get 一个线程，然后将这个 客户端连接 作为 key 注册到这个线程所对应的 read selector 上。从而将这个 Socket “交给” read 线程。</p>
+<p>而这个 read 线程则使用这个 selector 轮询事件，如果 socket 可读，那么就进行读，读完之后，利用 DMA 写进磁盘。</p>
+<h1 id="RPC-协议"><a href="#RPC-协议" class="headerlink" title="RPC 协议"></a>RPC 协议</h1><h4 id="Server-RPC-回复包协议"><a href="#Server-RPC-回复包协议" class="headerlink" title="Server RPC 回复包协议"></a>Server RPC 回复包协议</h4><table>
+<thead>
+<tr>
+<th>字段名称</th>
+<th>字段长度(byte)</th>
+<th>字段作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>magic_num</td>
+<td>4</td>
+<td>魔数校验，fast fail</td>
+</tr>
+<tr>
+<td>version</td>
+<td>1</td>
+<td>rpc 协议版本</td>
+</tr>
+<tr>
+<td>id</td>
+<td>8</td>
+<td>Request id， TCP 多路复用 id</td>
+</tr>
+<tr>
+<td>length</td>
+<td>8</td>
+<td>rpc 实际消息内容的长度</td>
+</tr>
+<tr>
+<td>Content</td>
+<td>length</td>
+<td>rpc 实际消息内容(JSON 序列化协议)</td>
+</tr>
+</tbody></table>
+<h4 id="Client-RPC-发送包协议"><a href="#Client-RPC-发送包协议" class="headerlink" title="Client RPC 发送包协议"></a>Client RPC 发送包协议</h4><table>
+<thead>
+<tr>
+<th>字段名称</th>
+<th>字段长度(byte)</th>
+<th>字段作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>magic_num</td>
+<td>4</td>
+<td>魔数校验，fast fail</td>
+</tr>
+<tr>
+<td>id</td>
+<td>8</td>
+<td>Request id， TCP 多路复用 id, 默认 -1，表示不回复</td>
+</tr>
+<tr>
+<td>nameContent</td>
+<td>2</td>
+<td>Request id， TCP 多路复用 id</td>
+</tr>
+<tr>
+<td>bodyLength</td>
+<td>8</td>
+<td>rpc 实际消息内容的长度</td>
+</tr>
+<tr>
+<td>nameContent</td>
+<td>bodyLength</td>
+<td>文件名 UTF-8 数组</td>
+</tr>
+</tbody></table>
+<p>为什么 发送包和返回包协议不同？为了高效。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>注意：这是一个能用的，性能不错的，轻量的 SendFile 服务器实现，本地测试时， IO写盘达到  824MB/S，4c 4.2g inter i7 CPU 满载。</p>
+<p><img src="/img/2019/1029-SF/img_2.png" srcset="/img/loading.gif" lazyload alt="img_2.png"></p>
+<p>代码地址：<a target="_blank" rel="noopener" href="https://github.com/stateIs0/send_file">https://github.com/stateIs0/send_file</a></p>
+<p>同时，欢迎大家 star， pr，issue。我来改进。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" class="category-chain-item">Java 性能优化</a>
+  
+  
+
+      </span>
+    
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/my-open-source/" class="category-chain-item">my open source</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>如何编写一个 SendFile 服务器和客户端</div>
+      <div>http://thinkinjava.cn/2019/10/29/2019/1029-SF/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2019年10月29日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2019/10/30/2019/1030SFimpl/" title="Java sendFile 底层实现">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Java sendFile 底层实现</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2019/10/19/2019/1019-fuzadujisuan/" title="递归时间复杂度 递归树 推演计算">
+                        <span class="hidden-mobile">递归时间复杂度 递归树 推演计算</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
