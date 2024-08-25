@@ -1,0 +1,652 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="这篇文章是我们深入理解 Tomcat 的第十篇文章,也是总结文章, 学习就是这样,先是理论,再是实践,最后是总结, 楼主习惯了在每次学习之后总结, 让从脑海中过的知识能够再扎实一点. 我们的第一篇文章 &lt;&lt; 深入理解 Tomcat（一）源码环境搭建和 How Tomcat works 源码&gt;&gt; 中介绍了楼主下载的源码和 git 地址, 方便大家去 clone 源码,不然怎么">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解-Tomcat(十)-总结">
+<meta property="og:url" content="http://thinkinjava.cn/2017/11/29/2017/2017-11-29-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat(%E5%8D%81)-%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="这篇文章是我们深入理解 Tomcat 的第十篇文章,也是总结文章, 学习就是这样,先是理论,再是实践,最后是总结, 楼主习惯了在每次学习之后总结, 让从脑海中过的知识能够再扎实一点. 我们的第一篇文章 &lt;&lt; 深入理解 Tomcat（一）源码环境搭建和 How Tomcat works 源码&gt;&gt; 中介绍了楼主下载的源码和 git 地址, 方便大家去 clone 源码,不然怎么">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-11-28T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.524Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>深入理解-Tomcat(十)-总结 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="深入理解-Tomcat(十)-总结"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2017-11-29 02:11" pubdate>
+          2017年11月29日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          14 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">深入理解-Tomcat(十)-总结</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>这篇文章是我们深入理解 Tomcat 的第十篇文章,也是总结文章, 学习就是这样,先是理论,再是实践,最后是总结, 楼主习惯了在每次学习之后总结, 让从脑海中过的知识能够再扎实一点.</p>
+<p>我们的第一篇文章 <code>&lt;&lt; 深入理解 Tomcat（一）源码环境搭建和 How Tomcat works 源码&gt;&gt; </code>中介绍了楼主下载的源码和 git 地址, 方便大家去 clone 源码,不然怎么来依据理论去剖析源码实现呢? 楼主认为, 任何一门技术都要借助文档和源码一起去理解(可能是楼主比较菜).  而楼主也放了2个源码,一个是使用 maven 改过的 tomcat 7 源码,一个是名著 &lt;<How Tomcat Works>&gt; 的实例源码, 方便我们更深入的理解 tomcat.</p>
+<p>源码环境搭建好了,楼主从网上,从早上… 额,不, 从各个地方看文章, 想了解 tomcat 的结构设计和文档, 当然也搭配楼主从图书馆借来的 <code>&lt;&lt;How Tomcat Works&gt;&gt;</code> 书, 最终写了一篇 <code>&lt;&lt;深入理解 Tomcat (二) 从宏观上理解 Tomcat 组件及架构&gt;&gt;</code>, 我们讲了我们准备如何学习, 以及什么是 Tomcat ,  什么是 Servlet, tomcat 源码目录的解释, tomcat 整体框架的层次结构和架构图, 分析每个组件, 包括 Connector, Container,  Component, 也从接口和类的角度(UML 类图)看架构. 这让我们对 tomcat 整体也有了一个大致的了解, 为我们接下来的分析源码做了铺垫.</p>
+<p>我们在大致了解了 tomcat 的整体架构和设计后, 我们想了解一个最简单的 web 服务器是如何实现的, 我们写了一篇<code>&lt;&lt; 深入理解 Tomcat（三）Tomcat 底层实现原理&gt;&gt;</code>, 参照<code>&lt;&lt;How Tomcat Works&gt;&gt;</code>源码实现了一个简单的阻塞式的 Web 服务器, 虽然现在最新的 Tomcat 9 已经将阻塞 socket 去除了,全部使用 NIO 和 JNI 以提高速度, 但他仍是我们学习的一个很好的例子.</p>
+<p>在了解原理之后, 我们开始循序渐进, 我们的第一个研究的就是著名的 Tomcat 的类加载机制, 于是我们写了一篇 <code>&lt;&lt; 深入理解 Tomcat（四）Tomcat 类加载器之为何违背双亲委派模型&gt;&gt;,</code> 先从 java 的类加载器开始分析, 分析双亲委任模型的原理, 以及类加载机制的发展及变化,  最后讲 Tomcat 的类加载机制的设计, 讲 Tomcat 为何破坏双亲委派模型. 也讲了 Tomcat 中每个类加载器的功能. 从理论上了解了 Tomcat 类加载器的设计. 为我们从源码层面理解做了铺垫.</p>
+<p>在了解了 Tomcat 的类加载器理论后, 我们第一次开始 debug tomcat 的源码, 写了一篇<code>&lt;&lt;深入理解 Tomcat（五）源码剖析Tomcat 启动过程----类加载过程&gt;&gt;</code>, 从 BootStrap 开始, 我们一步步分析 Tomcat 是如何加载类,加载 jar 包, 是如何将公用的 jar 包使用 common 类加载器, 而私有的 jar 包及 web 应用使用<br> WebAppClassLoader 的. 并且知道了 WebAppClassLoader的加载时间和另外几个的时间不一致. 从源码层面知道了 Tomcat 的类加载设计和机制.</p>
+<p>我们继续深入 tomcat, 开始按照我们在第二篇文章中的计划去阅读源码, 我们写了 <code>&lt;&lt; 深入理解 Tomcat（六）源码剖析Tomcat 启动过程----生命周期和容器组件&gt;&gt;</code>,  深入源码去了解 tomcat 是如何设计容器,容器是如何初始化的, 又是如何交给 JMX 去管理对象的. tomcat 的众多容器又是如何通过观察者模式来管理他们的生命周期的. </p>
+<p>在了解了 tomcat 的生命周期组件和容器初始化过程后, 我们决定从整体上看看 tomcat 是如何启动的又是如何关闭的, 我们写了 <code>&lt;&lt;深入理解 Tomcat（七）源码剖析 Tomcat 完整启动过程&gt;&gt;</code>并且也见到 tomcat 传说中的钩子. tomcat 的关闭很有趣, 靠着启动一个 socket 去发送SHUTDOWN命令.</p>
+<p>之后我们决定去深入另一个很重要的组件—-连接器, 在 <code>&lt;&lt;深入理解 Tomcat（八）源码剖析之连接器&gt;&gt;</code>中, 我们深入源码,  理解了连接器 Connector 的构造过程, 连接器是如何初始化的, 又是如何启动, 启动之后如何监听 Http 请求端口的. 如何处理浏览器发送过来的 socket 请求的.这些实在是太有意思了.</p>
+<p>最后我们以一个最常见的请求为基础, 写了 <code>&lt;&lt;深入理解 Tomcat（九）源码剖析之请求过程&gt;&gt;</code>, 理解了一个 HTTP 请求是如何从 socket 到达我们编写的 Servlet 的, 并且了解了tomcat 是如何设计各个容器直接的通信—-使用管道和阀门. 也知道了 tomcat 是如何解析消息头, 如何设计过滤器. 让我们对 tomcat 的认识可以说更加的清晰.我们无意中也发现了 tomcat 7 中关于单例模式的一个潜在 bug(最新的 tomcat 已经修复).</p>
+<p>最后, 就到了我们这篇总结的文章, 总的来说, 我们完成了我们最初定制的任务, 剖析了最重要的几个组件, 包括类加载器, 容器, 生命周期管理, 连接器, 管道, 阀门, 从启动过程和请求过程这两条路线去分析源码, 让我们不会在浩瀚的源码世界迷路. 虽然还要一些源码没有阅读, 但我们相信, 我们已经体会到了 tomcat 最重要的东西, 我们也不可能将所有的源码全都阅读一遍, 楼主是万万做不到的.</p>
+<p>想想楼主最初阅读源码的目的, 就是好奇 tomcat 到底是如何实现的. 现在, 楼主认为楼主的疑问已经被解答, 接下来, 楼主就要研究另一个 Java 世界中有名的框架了, 楼主不要做个只知道 know how 不知道 know why 的人. </p>
+<p>加油!!! good luck !!!!</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Tomcat/" class="category-chain-item">Tomcat</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>深入理解-Tomcat(十)-总结</div>
+      <div>http://thinkinjava.cn/2017/11/29/2017/2017-11-29-深入理解-Tomcat(十)-总结/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2017年11月29日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2017/12/04/2017/2017-12-04-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Spring-%E4%B9%8B%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90IOC-/" title="深入理解-Spring-之源码剖析IOC-">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">深入理解-Spring-之源码剖析IOC-</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2017/11/27/2017/2017-11-27-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat%EF%BC%88%E4%B9%9D%EF%BC%89%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90%E4%B9%8B%E8%AF%B7%E6%B1%82%E8%BF%87%E7%A8%8B/" title="深入理解-Tomcat（九）源码剖析之请求过程">
+                        <span class="hidden-mobile">深入理解-Tomcat（九）源码剖析之请求过程</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

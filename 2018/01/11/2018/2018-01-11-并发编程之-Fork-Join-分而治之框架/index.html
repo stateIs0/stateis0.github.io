@@ -1,0 +1,660 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之-Fork-Join-分而治之框架">
+<meta property="og:url" content="http://thinkinjava.cn/2018/01/11/2018/2018-01-11-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-Fork-Join-%E5%88%86%E8%80%8C%E6%B2%BB%E4%B9%8B%E6%A1%86%E6%9E%B6/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-01-10T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.534Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>并发编程之-Fork-Join-分而治之框架 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="并发编程之-Fork-Join-分而治之框架"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-01-11 02:11" pubdate>
+          2018年1月11日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          12 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">并发编程之-Fork-Join-分而治之框架</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->“分而治之” 一直是一个有效的处理大量数据的方法。著名的 MapReduce 也是采取了分而治之的思想。简单来说，就是如果你要处理1000个数据，但是你并不具备处理1000个数据的能力，那么你可以只处理其中的10个，然后，分阶段处理100次，将100次的结果进行合成，那就是最终想要的对原始的1000个数据的处理结果。
+
+
+<h2 id="Fork-amp-Join-的具体含义"><a href="#Fork-amp-Join-的具体含义" class="headerlink" title="Fork &amp; Join 的具体含义"></a>Fork &amp; Join 的具体含义</h2><p>Fork 一词的原始含义是吃饭用的叉子，也有分叉的意思。在Linux 平台中，函数 fork（）用来创建子进程，使得系统进程可以多一个执行分支。在 Java 中也沿用了类似的命名方式。</p>
+<p>而 Join（） 的含义和 Thread 类的 join 类似，表示等待。也就是使用 fork（） 后系统多了一个执行分支（线程），所以需要等待这个执行分支执行完毕，才有可能得到最终的结果，因此 join 就是表示等待。</p>
+<p>在实际使用中，如果毫无顾忌的使用 fork 开启线程进行处理，那么很有可能导致系统开启过多的线程而严重影响性能。所以，在JDK中，给出一个 ForkJoinPool 线程池，对于 fork（） 方法并不急着开启线程，而是提交给 ForkJoiinPool 线程池进行处理，以节省系统资源。</p>
+<p>由于线程池的优化，提交的任务和线程数量并不是一对一的关系。在绝大多数情况下，一个物理线程实际上是需要处理多个逻辑任务的。因此，每个线程必然需要拥有一个任务队列。因此，在实际执行过程中，可能遇到这么一种情况：线程A已经把自己的任务都处理完了，而线程B还有一堆任务等着处理，此时，线程A就会“帮助” 线程B，从线程 B的任务队列中拿一个任务来处理，尽可能的达到平衡。值得注意的是：当线程试图帮助别人时，总是从任务队列的底部开始拿数据，而线程试图执行自己的任务时，则从相反的顶部开始拿。因此这种行为也十分有利于避免数据竞争。</p>
+<p>我们看看线程池 ForkJoinPool 的一个接口：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Submits a ForkJoinTask for execution.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> task the task to submit</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> &lt;T&gt; the type of the task&#x27;s result</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> the task</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> NullPointerException if the task is null</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> RejectedExecutionException if the task cannot be</span></span><br><span class="line"><span class="comment"> *         scheduled for execution</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> &lt;T&gt; ForkJoinTask&lt;T&gt; <span class="title function_">submit</span><span class="params">(ForkJoinTask&lt;T&gt; task)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (task == <span class="literal">null</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NullPointerException</span>();</span><br><span class="line">    externalPush(task);</span><br><span class="line">    <span class="keyword">return</span> task;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>你可以向 ForkJoinPool 线程池提交一个 ForkJoinTask 任务。所谓 ForkJoinTask 任务就是支持 fork （） 分解以及 join（）等待的任务。 ForkJoinTask 有两个重要的子类，RecursiveAction 和 RecursiveTask。他们粉笔表示没有返回值的任务和可以携带返回值的任务。有点像 Rannable 和 Callable。</p>
+<p>下面来要给简单的例子展示 Fork/Join 框架的使用。这里用来计算求和。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> *  Fork/Join 核心思想：分而治之</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 著名的 MapReduce 也是这个思想。将任务进行分解，然后合并所有的结果。</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CountTask</span> <span class="keyword">extends</span> <span class="title class_">RecursiveTask</span>&lt;Long&gt; &#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 阀值</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">THRESHOLD</span> <span class="operator">=</span> <span class="number">10000</span>;</span><br><span class="line">  <span class="type">long</span> start;</span><br><span class="line">  <span class="type">long</span> end;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="title function_">CountTask</span><span class="params">(<span class="type">long</span> start, <span class="type">long</span> end)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.start = start;</span><br><span class="line">    <span class="built_in">this</span>.end = end;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 有返回值的</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">protected</span> Long <span class="title function_">compute</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">long</span> <span class="variable">sum</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// 当阀值小于10000则不分解了</span></span><br><span class="line">    <span class="type">boolean</span> <span class="variable">canCompute</span> <span class="operator">=</span> (end - start) &lt; THRESHOLD;</span><br><span class="line">    <span class="keyword">if</span> (canCompute) &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="type">long</span> <span class="variable">i</span> <span class="operator">=</span> start; i &lt;= end; i++) &#123;</span><br><span class="line">        sum += i;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 2000</span></span><br><span class="line">      <span class="type">long</span> <span class="variable">step</span> <span class="operator">=</span> (start + end) / <span class="number">100</span>;</span><br><span class="line">      ArrayList&lt;CountTask&gt; subTasks = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">      <span class="type">long</span> <span class="variable">pos</span> <span class="operator">=</span> start;</span><br><span class="line">      <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">lastOne</span> <span class="operator">=</span> pos + step;</span><br><span class="line">        <span class="keyword">if</span> (lastOne &gt; end) &#123;</span><br><span class="line">          lastOne = end;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//0-2000 个计算任务 * 100</span></span><br><span class="line">        <span class="type">CountTask</span> <span class="variable">subTask</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CountTask</span>(pos, lastOne);</span><br><span class="line">        pos += step + <span class="number">1</span>;</span><br><span class="line">        subTasks.add(subTask);</span><br><span class="line">        subTask.fork();<span class="comment">// fork</span></span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">for</span> (CountTask t : subTasks) &#123;</span><br><span class="line">        sum += t.join();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> sum;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">ForkJoinPool</span> <span class="variable">forkJoinPool</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ForkJoinPool</span>();</span><br><span class="line">    <span class="type">CountTask</span> <span class="variable">task</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CountTask</span>(<span class="number">0</span>, <span class="number">200000L</span>);</span><br><span class="line">    <span class="comment">// 将一个大的任务提交到池中</span></span><br><span class="line">    ForkJoinTask&lt;Long&gt; result = forkJoinPool.submit(task);</span><br><span class="line">    <span class="type">long</span> <span class="variable">res</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="comment">// 等待运算结果</span></span><br><span class="line">      res = result.get();</span><br><span class="line">      System.out.println(<span class="string">&quot;sum = &quot;</span> + res);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (InterruptedException | ExecutionException e) &#123;</span><br><span class="line">      e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<p>由于计算求和必须需要返回值，因此我们选择了 RecursiveTask 作为任务的模型。首先我们构造了一个大任务，提交给线程池，线程池会返回一个携带结果的任务，通过 get 方法可以得到最终结果。如果执行 get 方法时任务没有结束，那么主线程就会在 get 方法等待。</p>
+<p>再看看 CountTask 的实现，首先 CountTask 继承自 RecursiveTask ，可以携带返回值，这里的返回值类型设置为 long，定义一个 THRESHOLD 设置了任务分解的规模，也就是如果需要求和的总数大于 THRESHOLD 个，那么任务就需要再次分解，否则就直接执行。 每次分解时，简单的将原有任务划分成100个规模相等的小任务，并使用 fork（） 提交子任务。之后，等待所有的子任务结束，并将结果再次求和。</p>
+<p>再使用 ForkJoin的时候注意：如果任务的划分层次很深，一直得不到返回，那么可能出现两种情况： 第一，系统内的线程数量越来越多，导致性能严重下降。第二，函数的调用层次变的很深，最终导致栈溢出。</p>
+<p>此外，ForkJoin 线程池使用一个无锁的栈来管理空闲线程，如果一个工作线程暂时取不到可用的任务，则可能会被挂起，挂起的线程将会被压入由线程池维护的栈中，待将来有任务可用时，再从栈中唤醒这些线程。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文来源自 《Java 高并发程序设计》，没有什么自己的见解。因为使用场景太少了。不过还是可以看看源码来涨涨姿势的。嘿嘿。</p>
+<p>good luck ！！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>并发编程之-Fork-Join-分而治之框架</div>
+      <div>http://thinkinjava.cn/2018/01/11/2018/2018-01-11-并发编程之-Fork-Join-分而治之框架/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年1月11日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/01/13/2018/2018-01-13-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-AQS-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" title="并发编程之-AQS-源码剖析">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">并发编程之-AQS-源码剖析</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/01/10/2018/2018-01-10-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-CopyOnWriteArrayList-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" title="并发编程之-CopyOnWriteArrayList-源码剖析">
+                        <span class="hidden-mobile">并发编程之-CopyOnWriteArrayList-源码剖析</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

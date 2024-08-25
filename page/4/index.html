@@ -1,0 +1,995 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="website">
+<meta property="og:title" content="莫那·鲁道的技术博客">
+<meta property="og:url" content="http://thinkinjava.cn/page/4/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="莫那鲁道的技术博客"></span>
+          
+        </div>
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      <div class="container nopadding-x-md">
+        <div id="board"
+          >
+          
+          <div class="container">
+            <div class="row">
+              <div class="col-12 col-md-10 m-auto">
+                
+
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2019/04/13/2019/2019-04-13-architecture/" target="_self">
+          软件架构概念
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2019/04/13/2019/2019-04-13-architecture/" target="_self">
+        <div>
+          “你对架构这个词怎么理解？” emm ….. 实际上，软件架构分成 2 派。 1 软件架构的派别 组成派组成派的定义非常简洁。定义：软件系统的架构将系统描述为计算组件及组件之间的交互。  剖析定义：a. 该架构关注架构实践中的客体——软件，以软件本身为描述对象。b. 分析了软件的组成，即软件由承担不同任务的组件组成，这些组件通过相关交互，完成更高层次的计算。  决策派决策派的定义相对于组成派的定义
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2019-04-13 03:01" pubdate>
+              2019-04-13
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java-%E8%AE%BE%E8%AE%A1/" class="category-chain-item">Java 设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2019/03/16/2019/2019-03-16-mysql/" target="_self">
+          MySql 三大知识点——索引、锁、事务
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2019/03/16/2019/2019-03-16-mysql/" target="_self">
+        <div>
+          1. 索引索引，类似书籍的目录，可以根据目录的某个页码立即找到对应的内容。 索引的优点：1. 天生排序。2. 快速查找。索引的缺点：1. 占用空间。2. 降低更新表的速度。 注意点：小表使用全表扫描更快，中大表才使用索引。超级大表索引基本无效。 索引从实现上说，分成 2 种：聚集索引和辅助索引（也叫二级索引或者非聚集索引） 从功能上说，分为 6 种：普通索引，唯一索引，主键索引，复合索引，外键索引
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2019-03-16 03:01" pubdate>
+              2019-03-16
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2019/02/25/2019/2019-02-26-canal-read/" target="_self">
+          Canal 源码走读
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2019/02/25/2019/2019-02-26-canal-read/" target="_self">
+        <div>
+          Canal 源码走读canal 是什么？ 引用一下官方回答：  阿里巴巴mysql数据库binlog的增量订阅&amp;消费组件  canal 能做什么？ 基于日志增量订阅&amp;消费支持的业务：  数据库镜像 数据库实时备份 多级索引 (卖家和买家各自分库索引) search build 业务cache刷新 价格变化等重要业务消息  比如 LZ 目前就使用 canal 实现数据实时复制，搜索引
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2019-02-25 17:01" pubdate>
+              2019-02-25
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java-%E4%B8%AD%E9%97%B4%E4%BB%B6/" class="category-chain-item">Java 中间件</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2019/02/18/2019/2019-02-19-ycgzpcgc/" target="_self">
+          一次故障排查过程
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2019/02/18/2019/2019-02-19-ycgzpcgc/" target="_self">
+        <div>
+          上周晚上，某环境 ES 出现阻塞， 运行缓慢。于是开始排查问题的过程。 开始思路：现象是阻塞，通常是 CPU 彪高，导致业务线程分配不到 CPU 时间片，或者内存吃紧，频繁 GC 导致的 STW。登录到目标服务器，由于 ES 的用户不是 LZ，因此找运维要了 root 权限，登录到服务器。sudo -i 切到 root，使用 ps -ef | grep Elasticsearch 找到该用户，然后
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2019-02-18 17:01" pubdate>
+              2019-02-18
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" class="category-chain-item">故障排查</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2019/02/15/2019/2019-02-16-yddh/" target="_self">
+          最易懂的数据库异地多活方案
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2019/02/15/2019/2019-02-16-yddh/" target="_self">
+        <div>
+          随着业务发展越来越快，数据量越来越多，用户也越来越多，业务出现故障的几率也越来越大，而可用性是衡量一个系统的关键指标，application 由于是无状态的，可用性很好保证，当一个应用挂掉，直接切到另一个即可，最关键的是数据库的高可用，则是最复杂的。 今天我们将尝试探讨数据库的异地多活高可用。注意，我们讨论的都是超大数据量（50TB 级别）的数据库。 第一种直接上分布式数据库，目前市面上常见的有
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2019-02-15 17:01" pubdate>
+              2019-02-15
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2019/01/15/2019/2019-01-16-fkfb/" target="_self">
+          扎心一问：分库分表就能无限扩容吗
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2019/01/15/2019/2019-01-16-fkfb/" target="_self">
+        <div>
+          像我这样的菜鸟，总会有各种疑问，刚开始是对 JDK API 的疑问，对 NIO 的疑问，对 JVM 的疑问，当工作几年后，对服务的可用性，可扩展性也有了新的疑问，什么疑问呢？其实是老生常谈的话题：服务的扩容问题。 正常情况下的服务演化之路让我们从最初开始。  单体应用每个创业公司基本都是从类似  SSM 和 SSH 这种架构起来的，没什么好讲的，基本每个程序员都经历过。 RPC 应用当业务越来越大
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2019-01-15 17:01" pubdate>
+              2019-01-15
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2019/01/12/2019/2019-01-12-lu-raft-kv/" target="_self">
+          编写你的第一个 Java 版 Raft 分布式 KV 存储
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2019/01/12/2019/2019-01-12-lu-raft-kv/" target="_self">
+        <div>
+          本文旨在讲述如何使用 Java 语言实现基于 Raft 算法的，分布式的，KV 结构的存储项目。该项目的背景是为了深入理解 Raft 算法，从而深刻理解分布式环境下数据强一致性该如何实现；该项目的目标是：在复杂的分布式环境中，多个存储节点能够保证数据强一致性。 项目地址：https://github.com/stateIs0/lu-raft-kv 欢迎 star ：） 什么是 Java 版 Raf
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2019-01-12 03:01" pubdate>
+              2019-01-12
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/my-open-source/" class="category-chain-item">my open source</a>
+  
+  
+
+      </span>
+    
+  
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2019/01/01/2019/2019-01-02-%E7%94%9F%E6%B4%BB%E7%9A%84%E5%8A%A0%E6%B3%95%E5%92%8C%E5%87%8F%E6%B3%95/" target="_self">
+          生活的加法和减法
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2019/01/01/2019/2019-01-02-%E7%94%9F%E6%B4%BB%E7%9A%84%E5%8A%A0%E6%B3%95%E5%92%8C%E5%87%8F%E6%B3%95/" target="_self">
+        <div>
+          Preface每隔一段时间，我们总要对生活做一些加法和减法，就像写代码一样，隔断时间总要重构一下，因为有了新的思考从而引入新的设计，但重构不会修改原有的功能，只会进行优化，使速度更快，消耗的资源更少，更加易读，易扩展，易维护。 对生活一样，我们虽然是程序员，但无法完全脱离人类生活（如果可以，我愿意进入计算机的主板里，完全脱离人类生活），因此，我们总要对生活进行重构。使生活的流程更好，更”合理”。
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2019-01-01 16:01" pubdate>
+              2019-01-01
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%89%AF%E6%B7%A1/" class="category-chain-item">扯淡</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2019/01/01/2019/2019-01-02-2018%20%E5%B9%B4%E7%BB%88%E6%80%BB%E7%BB%93/" target="_self">
+          2018 年终总结
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2019/01/01/2019/2019-01-02-2018%20%E5%B9%B4%E7%BB%88%E6%80%BB%E7%BB%93/" target="_self">
+        <div>
+          前言从来没有写年终总结的习惯，但是今年想尝试写一点年终总结。算是一点点仪式感吧。 今天主要问自己下面几个问题  2018 规划了什么？  2018 实际做了什么？  2018 哪些做的不好？哪些做的好？  2019 的规划   2018 规划了什么？先回顾下 2018 年的目标：  这是我 17 年最后一天立的 flag。 那么实现的怎么样了呢？ 2018 实际做了什么？先看 flag 有没有实现
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2019-01-01 16:01" pubdate>
+              2019-01-01
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%89%AF%E6%B7%A1/" class="category-chain-item">扯淡</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2018/12/31/2019/2019-01-01-%E9%87%8D%E5%BA%86%E8%B7%A8%E5%B9%B4/" target="_self">
+          重庆跨年
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2018/12/31/2019/2019-01-01-%E9%87%8D%E5%BA%86%E8%B7%A8%E5%B9%B4/" target="_self">
+        <div>
+          2018 即将过去，去了一趟重庆 “了结” 了 2018. 迎战 2019. 行程规划2018-12.29 早上7点飞机从杭州出发，中午 10 点到重庆。 2019-1.1 晚上 8点 45 从重庆出发，23 点半到杭州萧山机场。 很明显，跨了个年。 第一天 12-29早上4点半就起床，坐昨天晚上预约的出租车到了萧山机场，花了150，相比回来做机场大巴才65，有点肉疼。 10 点多到了重庆，用高德
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2018-12-31 16:01" pubdate>
+              2018-12-31
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%89%AF%E6%B7%A1/" class="category-chain-item">扯淡</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2018/10/26/2018/2018-10-26-Raft%20%E9%85%8D%E7%BD%AE%E5%8F%98%E6%9B%B4%20Configuration%20changes%20%E6%8B%BE%E9%81%97/" target="_self">
+          Raft 配置变更 Configuration Changes 拾遗
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2018/10/26/2018/2018-10-26-Raft%20%E9%85%8D%E7%BD%AE%E5%8F%98%E6%9B%B4%20Configuration%20changes%20%E6%8B%BE%E9%81%97/" target="_self">
+        <div>
+          
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2018-10-26 05:01" pubdate>
+              2018-10-26
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2018/10/26/2018/2018-10-26-Raft%20%E6%8B%BE%E9%81%97/" target="_self">
+          Raft 拾遗
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2018/10/26/2018/2018-10-26-Raft%20%E6%8B%BE%E9%81%97/" target="_self">
+        <div>
+          
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2018-10-26 04:01" pubdate>
+              2018-10-26
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+
+
+  <nav aria-label="navigation">
+    <span class="pagination" id="pagination">
+      <a class="extend prev" rel="prev" href="/page/3/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/#board">2</a><a class="page-number" href="/page/3/#board">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/#board">5</a><a class="page-number" href="/page/6/#board">6</a><span class="space">&hellip;</span><a class="page-number" href="/page/22/#board">22</a><a class="extend next" rel="next" href="/page/5/#board"><i class="iconfont icon-arrowright"></i></a>
+    </span>
+  </nav>
+
+
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,963 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Netty-启动过程源码分析-（本文超长慎读）(基于4-1-23)">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/09/2018/2018-03-09-Netty-%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%EF%BC%88%E6%9C%AC%E6%96%87%E8%B6%85%E9%95%BF%E6%85%8E%E8%AF%BB%EF%BC%89(%E5%9F%BA%E4%BA%8E4-1-23)/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-80ed1a2ac7a3ea8c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-5fa7323513fe5a24.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-37f1334e2f65e804.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-51b56aa96988bd7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-c9333eb0f82228bb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-389283876db4d980.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-cf92f68233afe3f1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-008aa29b53fb29b6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-0d8cb4229b958ab9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-24bbfcd282522368.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-da7adf8da0d59572.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-1ad8fdc0b0870fe0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-486fae2e5149f7da.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-ac23abfffa0b5fda.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-1092cbc530504623.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-56e8f5f3baf1d2af.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-3f7527b105d7227c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-c2205d4605c895a7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-0524efa6c477411e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-f8c9ee94943d1553.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-2712e75382d548c8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-244dc0d13669a540.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-e97f90a7b2083a77.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-c669666e9451e70d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-f9e69e5e2e1388b0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-2c8e1fc7963f5d6b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-6de03df6e10b9d3e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-d2ed4effe6e88044.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-7dd4c6c6bd5805b5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-088df32989c8d9e8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-d86242075d69083d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-6068aa6ca9c01543.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-c6d168e9a15c533a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-d9959cd0165f33ae.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-14378a519e3df79b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-7fda109c2e66315d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-3fabdb8f514a1d6b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-3141f3625c521229.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-9fdf901fd49c9e2d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-ecfc151be241141b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-bc4d8be313f717ae.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-6bbd5ce1c432f885.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-9547e717094eb1c1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-22ba90511c9dc504.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-158b30bceb4c644d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-f38baef839f2b336.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-48cc91e5f914827c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-3492dd70b89fd724.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-6f36a307ea3ec2d2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-14739afb72000570.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-35a66ee3f293f2eb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-c901532a12a4ccad.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-69a4301031f57789.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-63011ac6f24eff82.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-b3a03dc9abd67dc4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-9efee2e7739f6efe.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-437c4931681389b2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-a2ed754240dc3ffc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-9789719ec851e091.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-6732abda22cb329f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-8b09900bd1eea687.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-123ab889fa97c537.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-7b66ba06c58d84c0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-d25bb33097590534.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-a1eb91fc8daabbdd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-231d546e2634d337.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-b5667da705a5be63.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-03-08T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.536Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-80ed1a2ac7a3ea8c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>Netty-启动过程源码分析-（本文超长慎读）(基于4-1-23) - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Netty-启动过程源码分析-（本文超长慎读）(基于4-1-23)"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-03-09 02:11" pubdate>
+          2018年3月9日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          6.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          52 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Netty-启动过程源码分析-（本文超长慎读）(基于4-1-23)</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 前言
+
+<p>作为一个 Java 程序员，必须知道Java社区最强网络框架——-Netty，且必须看过源码，才能说是了解这个框架，否则都是无稽之谈。今天楼主不会讲什么理论和概念，而是使用debug 的方式，走一遍 Netty （服务器）的启动过程。</p>
+<h2 id="1-demo-源码"><a href="#1-demo-源码" class="headerlink" title="1. demo 源码"></a>1. demo 源码</h2><p>楼主 clone 的 netty 的源码，值得一提的是，netty 提供了大量的 demo 供用户使用和测试。今天我们就通过netty的例子，来逐步 debug。ok ，开始吧。</p>
+<p><strong>启动类源码</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">EchoServer</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">boolean</span> <span class="variable">SSL</span> <span class="operator">=</span> System.getProperty(<span class="string">&quot;ssl&quot;</span>) != <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">PORT</span> <span class="operator">=</span> Integer.parseInt(System.getProperty(<span class="string">&quot;port&quot;</span>, <span class="string">&quot;8007&quot;</span>));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@see</span> io.netty.channel.nio.NioEventLoop</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// Configure SSL.</span></span><br><span class="line">        <span class="keyword">final</span> SslContext sslCtx;</span><br><span class="line">        <span class="keyword">if</span> (SSL) &#123;</span><br><span class="line">            <span class="type">SelfSignedCertificate</span> <span class="variable">ssc</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SelfSignedCertificate</span>();</span><br><span class="line">            sslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            sslCtx = <span class="literal">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Configure the server.</span></span><br><span class="line">        <span class="type">EventLoopGroup</span> <span class="variable">bossGroup</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">NioEventLoopGroup</span>(<span class="number">8</span>);</span><br><span class="line">        <span class="type">EventLoopGroup</span> <span class="variable">workerGroup</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">NioEventLoopGroup</span>(<span class="number">16</span>);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">ServerBootstrap</span> <span class="variable">b</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ServerBootstrap</span>();</span><br><span class="line">            b.group(bossGroup, workerGroup)</span><br><span class="line">             .channel(NioServerSocketChannel.class)<span class="comment">//new ReflectiveChannelFactory&lt;C&gt;(channelClass)</span></span><br><span class="line">             .option(ChannelOption.SO_BACKLOG, <span class="number">100</span>)</span><br><span class="line">             .handler(<span class="keyword">new</span> <span class="title class_">LoggingHandler</span>(LogLevel.INFO))<span class="comment">// ServerSocketChannel 专属</span></span><br><span class="line">             .childHandler(<span class="keyword">new</span> <span class="title class_">ChannelInitializer</span>&lt;SocketChannel&gt;() &#123;</span><br><span class="line">                 <span class="meta">@Override</span></span><br><span class="line">                 <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">initChannel</span><span class="params">(SocketChannel ch)</span> <span class="keyword">throws</span> Exception &#123; <span class="comment">// SocketChannel 专属</span></span><br><span class="line">                     <span class="type">ChannelPipeline</span> <span class="variable">p</span> <span class="operator">=</span> ch.pipeline();</span><br><span class="line">                     <span class="keyword">if</span> (sslCtx != <span class="literal">null</span>) &#123;</span><br><span class="line">                         p.addLast(sslCtx.newHandler(ch.alloc()));</span><br><span class="line">                     &#125;</span><br><span class="line">                     <span class="comment">//p.addLast(new LoggingHandler(LogLevel.INFO));</span></span><br><span class="line">                     p.addLast(<span class="keyword">new</span> <span class="title class_">EchoServerHandler</span>());</span><br><span class="line">                 &#125;</span><br><span class="line">             &#125;);</span><br><span class="line">           <span class="comment">// Start the server.</span></span><br><span class="line">            <span class="type">ChannelFuture</span> <span class="variable">f</span> <span class="operator">=</span> b.bind(PORT).sync();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Wait until the server socket is closed.</span></span><br><span class="line">            f.channel().closeFuture().sync();</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="comment">// Shut down all event loops to terminate all threads.</span></span><br><span class="line">            bossGroup.shutdownGracefully();</span><br><span class="line">            workerGroup.shutdownGracefully();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+<p><strong>处理器源码</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Sharable</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">EchoServerHandler</span> <span class="keyword">extends</span> <span class="title class_">ChannelInboundHandlerAdapter</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">channelRead</span><span class="params">(ChannelHandlerContext ctx, Object msg)</span></span><br><span class="line">        <span class="keyword">throws</span> UnsupportedEncodingException &#123;</span><br><span class="line">      <span class="type">ByteBuf</span> <span class="variable">buf</span> <span class="operator">=</span> (ByteBuf)msg;</span><br><span class="line">      <span class="type">byte</span>[] req = <span class="keyword">new</span> <span class="title class_">byte</span>[buf.readableBytes()];</span><br><span class="line">      buf.readBytes(req);</span><br><span class="line">      <span class="type">String</span> <span class="variable">body</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">String</span>(req,<span class="string">&quot;UTF-8&quot;</span>);</span><br><span class="line"></span><br><span class="line">      System.err.println(body);</span><br><span class="line"></span><br><span class="line">      <span class="type">String</span> <span class="variable">reqString</span> <span class="operator">=</span> <span class="string">&quot;Hello I am Server&quot;</span>;</span><br><span class="line">      <span class="type">ByteBuf</span> <span class="variable">resp</span> <span class="operator">=</span> Unpooled.copiedBuffer(reqString.getBytes());</span><br><span class="line">      ctx.writeAndFlush(resp);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">channelReadComplete</span><span class="params">(ChannelHandlerContext ctx)</span> &#123;</span><br><span class="line">        ctx.flush();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">exceptionCaught</span><span class="params">(ChannelHandlerContext ctx, Throwable cause)</span> &#123;</span><br><span class="line">        <span class="comment">// Close the connection when an exception is raised.</span></span><br><span class="line">        cause.printStackTrace();</span><br><span class="line">        ctx.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这两个源码都在 io.netty.example.echo 包下，大家可以自行下载。</p>
+<h2 id="2-demo-分析"><a href="#2-demo-分析" class="headerlink" title="2. demo 分析"></a>2. demo 分析</h2><p>我们先分析一下我们的 demo 源码，知道他们有哪些作用。</p>
+<p><strong>先看启动类</strong>：</p>
+<p>main 方法中，首先创建了关于SSL 的配置类，这个不是我们今天的重点。略过。</p>
+<p>重点来了，创建了两个EventLoopGroup 对象：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Configure the server.</span></span><br><span class="line">  <span class="type">EventLoopGroup</span> <span class="variable">bossGroup</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">NioEventLoopGroup</span>(<span class="number">8</span>);</span><br><span class="line">  <span class="type">EventLoopGroup</span> <span class="variable">workerGroup</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">NioEventLoopGroup</span>(<span class="number">16</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这两个对象是整个 Netty 的核心对象，可以说，整个 Netty 的运作都依赖于他们。bossGroup 用于接受 Tcp 请求，他会将请求交给 workerGroup ，workerGroup 会获取到真正的连接，然后和连接进行通信，比如读写解码编码等操作。</p>
+<p>try 块中创建了一个 ServerBootstrap 对象，他是一个引导类，用于启动服务器和引导整个程序的初始化。<br>随后，变量 b 调用了 group 方法将两个 group 放入了自己的字段中，用于后期引导使用。<br>然后添加了一个 channel，其中参数一个Class对象，引导类将通过这个 Class 对象反射创建 Channel。<br>然后添加了一些TCP的参数。<br>再添加了一个服务器专属的日志处理器 handler。<br>再添加一个 SocketChannel（不是 ServerSocketChannel）的 handler。<br>然后绑定端口并阻塞至连接成功。<br>最后main线程阻塞等待关闭。<br>finally 块中的代码将在服务器关闭时优雅关闭所有资源。</p>
+<p><strong>再看 EchoServerHandler 类</strong></p>
+<p>这是一个普通的处理器类，用于处理客户端发送来的消息，在我们这里，我们简单的解析出客户端传过来的内容，然后打印，最后发送字符串给客户端。</p>
+<p>好，我们已经大致讲解了我们的 demo 源码的作用。当然，这里讲的很简单，我们将在后面的debug 的时候详细介绍他们的作用。</p>
+<h2 id="3-首先看创建-EventLoopGroup-的过程："><a href="#3-首先看创建-EventLoopGroup-的过程：" class="headerlink" title="3. 首先看创建 EventLoopGroup 的过程："></a>3. 首先看创建 EventLoopGroup 的过程：</h2><p><img src="http://upload-images.jianshu.io/upload_images/4236553-80ed1a2ac7a3ea8c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-5fa7323513fe5a24.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-37f1334e2f65e804.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-51b56aa96988bd7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-c9333eb0f82228bb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-389283876db4d980.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-cf92f68233afe3f1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>上面的这些都是一些重载的构造方法，并加入了一些默认值，比如为null 的 executor，还有熟悉的 NIO 的 SelectorProvider.provider()，也有一个单例的选择策略工厂，还有一个默认的线程池拒绝策略，最后还有一个线程的默认数量：CPU 核心数 * 2。最后还有一个默认的线程选择策略工厂。</p>
+<p>最后，才是 NioEventLoopGroup 真正的构造方法，在抽象父类MultithreadEventExecutorGroup中，这里我们看到了模板模式，代码如下 ：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1.默认0，2executor 默认null， 3.nio provider，4.new DefaultSelectStrategyFactory() 是个单例，5.默认拒绝策略：抛出异常</span></span><br><span class="line"><span class="comment">// args : 3-5, 线程数默认: NettyRuntime.availableProcessors() * 2，也就是 CPU core * 2</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 1.默认 core *2， 2.null， 3. 单例new DefaultEventExecutorChooserFactory()， 4， 3-5</span></span><br><span class="line"><span class="keyword">protected</span> <span class="title function_">MultithreadEventExecutorGroup</span><span class="params">(<span class="type">int</span> nThreads, Executor executor,</span></span><br><span class="line"><span class="params">                                        EventExecutorChooserFactory chooserFactory, Object... args)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (nThreads &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(String.format(<span class="string">&quot;nThreads: %d (expected: &gt; 0)&quot;</span>, nThreads));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (executor == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 类名为名称的线程工厂</span></span><br><span class="line">        <span class="comment">// 该线程池没有任何队列，提交任务后，创建任何线程类型都是 FastThreadLocalRunnable, 并且立即start。</span></span><br><span class="line">        executor = <span class="keyword">new</span> <span class="title class_">ThreadPerTaskExecutor</span>(newDefaultThreadFactory());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 创建一个事件执行组</span></span><br><span class="line">    children = <span class="keyword">new</span> <span class="title class_">EventExecutor</span>[nThreads];</span><br><span class="line">    <span class="comment">// 初始化线程数组</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; nThreads; i ++) &#123;</span><br><span class="line">        <span class="type">boolean</span> <span class="variable">success</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 创建 new NioEventLoop</span></span><br><span class="line">            children[i] = newChild(executor, args);</span><br><span class="line">            success = <span class="literal">true</span>;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="comment">// <span class="doctag">TODO:</span> Think about if this is a good exception type</span></span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">&quot;failed to create a child event loop&quot;</span>, e);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="comment">// 如果创建失败，优雅关闭</span></span><br><span class="line">            <span class="keyword">if</span> (!success) &#123;</span><br><span class="line">                <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">j</span> <span class="operator">=</span> <span class="number">0</span>; j &lt; i; j ++) &#123;</span><br><span class="line">                    children[j].shutdownGracefully();</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">j</span> <span class="operator">=</span> <span class="number">0</span>; j &lt; i; j ++) &#123;</span><br><span class="line">                    <span class="type">EventExecutor</span> <span class="variable">e</span> <span class="operator">=</span> children[j];</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        <span class="keyword">while</span> (!e.isTerminated()) &#123;</span><br><span class="line">                            e.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (InterruptedException interrupted) &#123;</span><br><span class="line">                        <span class="comment">// Let the caller handle the interruption.</span></span><br><span class="line">                        Thread.currentThread().interrupt();</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    chooser = chooserFactory.newChooser(children);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> FutureListener&lt;Object&gt; terminationListener = <span class="keyword">new</span> <span class="title class_">FutureListener</span>&lt;Object&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">operationComplete</span><span class="params">(Future&lt;Object&gt; future)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">            <span class="keyword">if</span> (terminatedChildren.incrementAndGet() == children.length) &#123;</span><br><span class="line">                terminationFuture.setSuccess(<span class="literal">null</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (EventExecutor e: children) &#123;</span><br><span class="line">        e.terminationFuture().addListener(terminationListener);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Set&lt;EventExecutor&gt; childrenSet = <span class="keyword">new</span> <span class="title class_">LinkedHashSet</span>&lt;EventExecutor&gt;(children.length);</span><br><span class="line">    Collections.addAll(childrenSet, children);</span><br><span class="line">    readonlyChildren = Collections.unmodifiableSet(childrenSet);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>虽然代码很长，实际上就那么几件事情，我们拆分来看：</p>
+<ol>
+<li>如果 executor 是null，创建一个默认的 ThreadPerTaskExecutor，使用 Netty 默认的线程工厂。</li>
+<li>根据传入的线程数（CPU*2）创建一个线程池（单例线程池）数组。</li>
+<li>循环填充数组中的元素。如果异常，则关闭所有的单例线程池。</li>
+<li>根据线程选择工厂创建一个 <code>线程选择器</code>，默认是对2取余（位运算），也可以顺序获取。</li>
+<li>为每一个单例线程池添加一个关闭监听器。</li>
+<li>将所有的单例线程池添加到一个 HashSet 中。</li>
+</ol>
+<p>本篇先于篇幅，不会再继续拆解这些步骤，后面我们找机会继续拆解。</p>
+<h2 id="4-再看-ServerBootstrap-创建和构造过程"><a href="#4-再看-ServerBootstrap-创建和构造过程" class="headerlink" title="4. 再看 ServerBootstrap 创建和构造过程"></a>4. 再看 ServerBootstrap 创建和构造过程</h2><p>ServerBootstrap 是个空构造，什么都没有，但注意，有默认的变量：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-008aa29b53fb29b6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>注意其中的 ServerBootstrapConfig 对象，这个对象将会在后面起很大作用。</p>
+<p>再看后面的链式调用：group 方法，将 boss 和 worker 传入，boss 赋值给 group 属性，worker 赋值给 childGroup 属性。</p>
+<p>channel 方法传入 NioServerSocketChannel class 对象。会根据这个 class 创建 channel 对象。</p>
+<p>option 方法传入 TCP 参数，放在一个LinkedHashMap 中。</p>
+<p>handler 方法传入一个 handler 中，这个hanlder 只专属于 ServerSocketChannel 而不是 SocketChannel。</p>
+<p>childHandler 传入一个 hanlder ，这个handler 将会在每个客户端连接的时候调用。供 SocketChannel 使用。</p>
+<h2 id="5-再看-bind-方法"><a href="#5-再看-bind-方法" class="headerlink" title="5. 再看 bind 方法"></a>5. 再看 bind 方法</h2><p><strong>注意，整个服务器就是在这个方法里启动完成的，从这里开始，将会是一段跳来跳去的过程（因为是异步的），我们将使用强大的 IDEA 编辑器进行调试。</strong></p>
+<p>开始吧!</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-0d8cb4229b958ab9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-24bbfcd282522368.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>上面很简单，创建了一个端口对象，并做了一些空判断，就不讲了，最重要的是下面的 doBind 方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> ChannelFuture <span class="title function_">doBind</span><span class="params">(<span class="keyword">final</span> SocketAddress localAddress)</span> &#123;</span><br><span class="line">       <span class="keyword">final</span> <span class="type">ChannelFuture</span> <span class="variable">regFuture</span> <span class="operator">=</span> initAndRegister();</span><br><span class="line">       <span class="keyword">final</span> <span class="type">Channel</span> <span class="variable">channel</span> <span class="operator">=</span> regFuture.channel();</span><br><span class="line">       <span class="keyword">if</span> (regFuture.cause() != <span class="literal">null</span>) &#123;</span><br><span class="line">           <span class="keyword">return</span> regFuture;</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">if</span> (regFuture.isDone()) &#123;</span><br><span class="line">           <span class="comment">// At this point we know that the registration was complete and successful.</span></span><br><span class="line">           <span class="type">ChannelPromise</span> <span class="variable">promise</span> <span class="operator">=</span> ((NioServerSocketChannel)channel).newPromise();</span><br><span class="line">           doBind0(regFuture, channel, localAddress, promise);</span><br><span class="line">           <span class="keyword">return</span> promise;</span><br><span class="line">       &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">           <span class="comment">// Registration future is almost always fulfilled already, but just in case it&#x27;s not.</span></span><br><span class="line">           <span class="keyword">final</span> <span class="type">PendingRegistrationPromise</span> <span class="variable">promise</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PendingRegistrationPromise</span>(channel);</span><br><span class="line">           regFuture.addListener(<span class="keyword">new</span> <span class="title class_">ChannelFutureListener</span>() &#123;</span><br><span class="line">               <span class="meta">@Override</span></span><br><span class="line">               <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">operationComplete</span><span class="params">(ChannelFuture future)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">                   <span class="type">Throwable</span> <span class="variable">cause</span> <span class="operator">=</span> future.cause();</span><br><span class="line">                   <span class="keyword">if</span> (cause != <span class="literal">null</span>) &#123;</span><br><span class="line">                       <span class="comment">// Registration on the EventLoop failed so fail the ChannelPromise directly to not cause an</span></span><br><span class="line">                       <span class="comment">// IllegalStateException once we try to access the EventLoop of the Channel.</span></span><br><span class="line">                       promise.setFailure(cause);</span><br><span class="line">                   &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                       <span class="comment">// Registration was successful, so set the correct executor to use.</span></span><br><span class="line">                       <span class="comment">// See https://github.com/netty/netty/issues/2586</span></span><br><span class="line">                       promise.registered();</span><br><span class="line"></span><br><span class="line">                       doBind0(regFuture, channel, localAddress, promise);</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;);</span><br><span class="line">           <span class="keyword">return</span> promise;</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+
+<p> ServerBootstrap 的这个方法不长也不短，但经过我们的拆解，可以分为以下  2  部分：</p>
+<ol>
+<li>initAndRegister 初始化 NioServerSocketChannel 通道并注册各个 handler，返回一个 future。</li>
+<li>执行 doBind0 方法，完成对端口的绑定。</li>
+</ol>
+<p>看着很简单，就两个步骤。</p>
+<p>但实际上，这两个步骤蜿蜒曲折，各种异步跳转，请做好准备。</p>
+<h2 id="6-initAndRegister-方法"><a href="#6-initAndRegister-方法" class="headerlink" title="6. initAndRegister 方法"></a>6. initAndRegister 方法</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> ChannelFuture <span class="title function_">initAndRegister</span><span class="params">()</span> &#123;</span><br><span class="line">       <span class="type">Channel</span> <span class="variable">channel</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">       <span class="keyword">try</span> &#123;</span><br><span class="line">           channel = channelFactory.newChannel();<span class="comment">//NioServerSocketChannel</span></span><br><span class="line">           init(channel);</span><br><span class="line">       &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">           <span class="keyword">if</span> (channel != <span class="literal">null</span>) &#123;</span><br><span class="line">               channel.unsafe().closeForcibly();</span><br><span class="line">               <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DefaultChannelPromise</span>(channel, GlobalEventExecutor.INSTANCE).setFailure(t);</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DefaultChannelPromise</span>(<span class="keyword">new</span> <span class="title class_">FailedChannel</span>(), GlobalEventExecutor.INSTANCE).setFailure(t);</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="type">ChannelFuture</span> <span class="variable">regFuture</span> <span class="operator">=</span> config().group().register(channel);</span><br><span class="line">       <span class="keyword">if</span> (regFuture.cause() != <span class="literal">null</span>) &#123;</span><br><span class="line">           <span class="keyword">if</span> (channel.isRegistered()) &#123;</span><br><span class="line">               channel.close();</span><br><span class="line">           &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">               channel.unsafe().closeForcibly();</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">return</span> regFuture;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<p>同样的，先进行拆解：</p>
+<ol>
+<li>通过 ServerBootstrap 的通道工厂反射创建一个 NioServerSocketChannel。</li>
+<li>init 初始化这个 NioServerSocketChannel。</li>
+<li>config().group().register(channel)  通过 ServerBootstrap 的 bossGroup 注册 NioServerSocketChannel。</li>
+<li>最后，返回这个异步执行的占位符。</li>
+</ol>
+<p>4个步骤，调用层次极深，非战斗人员请注意安全。</p>
+<p>第 1 个步骤，反射创建。</p>
+<h4 id="channelFactory-newChannel-方法"><a href="#channelFactory-newChannel-方法" class="headerlink" title="channelFactory.newChannel() 方法"></a>channelFactory.newChannel() 方法</h4><p><img src="http://upload-images.jianshu.io/upload_images/4236553-da7adf8da0d59572.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="反射创建。"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-1ad8fdc0b0870fe0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="传入一个 NIO 的 provider 实例并调用 newSocket 方法"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-486fae2e5149f7da.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="可以看到这个静态变量且是 final 的"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-ac23abfffa0b5fda.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="熟悉的 NIO，创建了一个 ServerSocketChannel 实例"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-1092cbc530504623.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="调用父类的构造器，并传入 ACCEPT，并创建了一个 config 对象用于展示自己"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-56e8f5f3baf1d2af.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="继续调用父类"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-3f7527b105d7227c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="这里也很熟悉了，调用父类，设置非阻塞，设置感兴趣的事件，设置 Channel 属性，也就是 JDK 的 ServerSocketChannelImpl ，Netty 的 NioServerSocketChannel 代理了 JDK 的 Socket。"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-c2205d4605c895a7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="这里继续给父类赋值， 通过 debug 看到，parent 是 null， id 是通过算法生成唯一ID， 并创建了一个 unsafe和 pipeline "></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-0524efa6c477411e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="一个工厂"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-f8c9ee94943d1553.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="创建 channelID "></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-2712e75382d548c8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="回到创建 unsafe 的过程，NIO 的 message 的操作类，是 Netty 的核心组件"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-244dc0d13669a540.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-e97f90a7b2083a77.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="回到创建 pipeline 的方法，一个默认的 pipeline ，参数是 this ，即 NioServerSocketChannel "></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-c669666e9451e70d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="DefaultChannelPipeline 的构造方法，是一个双向链表，并将 NioServerSocketChannel 设置为自己的属性"></p>
+<p>回到 NioServerSocketChannel 的构造方法，还有 config 的构造方法没看。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-f9e69e5e2e1388b0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-2c8e1fc7963f5d6b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="这里返回的是我们各个设置的 JDK 的 ServerSocketChannel "></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-6de03df6e10b9d3e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-d2ed4effe6e88044.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="继续调用父类，但是，限于篇幅，我们不再深入，我们只需知道，这个 config 对象用于配置这个 NioServerSocketChannel ，用于外部获取参数和配置"></p>
+<p>到此为止，我们看到了整个 NioServerSocketChannel  的构造过程，可谓非常的复杂，尽管我们贴了很多图，但仍然没有到底。但这不妨碍我们这次的主体内容。我们总结一下构造过程：</p>
+<ol>
+<li>通过 NIO 的SelectorProvider 的 openServerSocketChannel 方法得到JDK 的 channel。目的是让 Netty 包装 JDK 的 channel。同时设置刚兴趣的事件为 ACCEPT和非阻塞</li>
+<li> 创建了一个唯一的 ChannelId，创建了一个 NioMessageUnsafe，用于操作消息，创建了一个 DefaultChannelPipeline 管道，是个双向链表结构，用于过滤所有的进出的消息。</li>
+<li>创建了一个 NioServerSocketChannelConfig 对象，用于对外展示一些配置。</li>
+</ol>
+<p>好，NioServerSocketChannel 对象创建完了， 现在进入到第二个步骤，init 方法，这是个抽象方法，由 ServerBootstrap 自己实现。</p>
+<h4 id="init-方法"><a href="#init-方法" class="headerlink" title="init 方法"></a>init 方法</h4><p>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">   <span class="keyword">void</span> <span class="title function_">init</span><span class="params">(Channel channel)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">       <span class="keyword">final</span> Map&lt;ChannelOption&lt;?&gt;, Object&gt; options = options0();</span><br><span class="line">       <span class="keyword">synchronized</span> (options) &#123;</span><br><span class="line">           setChannelOptions(channel, options, logger);</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">final</span> Map&lt;AttributeKey&lt;?&gt;, Object&gt; attrs = attrs0();</span><br><span class="line">       <span class="keyword">synchronized</span> (attrs) &#123;</span><br><span class="line">           <span class="keyword">for</span> (Entry&lt;AttributeKey&lt;?&gt;, Object&gt; e: attrs.entrySet()) &#123;</span><br><span class="line">               <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">               AttributeKey&lt;Object&gt; key = (AttributeKey&lt;Object&gt;) e.getKey();</span><br><span class="line">               channel.attr(key).set(e.getValue());</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="type">ChannelPipeline</span> <span class="variable">p</span> <span class="operator">=</span> ((NioServerSocketChannel)channel).pipeline();<span class="comment">//NioServerSocketChannel</span></span><br><span class="line"></span><br><span class="line">       <span class="keyword">final</span> <span class="type">EventLoopGroup</span> <span class="variable">currentChildGroup</span> <span class="operator">=</span> childGroup;</span><br><span class="line">       <span class="keyword">final</span> <span class="type">ChannelHandler</span> <span class="variable">currentChildHandler</span> <span class="operator">=</span> childHandler;</span><br><span class="line">       <span class="keyword">final</span> Entry&lt;ChannelOption&lt;?&gt;, Object&gt;[] currentChildOptions;</span><br><span class="line">       <span class="keyword">final</span> Entry&lt;AttributeKey&lt;?&gt;, Object&gt;[] currentChildAttrs;</span><br><span class="line">       <span class="keyword">synchronized</span> (childOptions) &#123;</span><br><span class="line">           currentChildOptions = childOptions.entrySet().toArray(newOptionArray(childOptions.size()));</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">synchronized</span> (childAttrs) &#123;</span><br><span class="line">           currentChildAttrs = childAttrs.entrySet().toArray(newAttrArray(childAttrs.size()));</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       (p).addLast(<span class="keyword">new</span> <span class="title class_">ChannelInitializer</span>&lt;Channel&gt;() &#123;</span><br><span class="line">           <span class="meta">@Override</span></span><br><span class="line">           <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">initChannel</span><span class="params">(<span class="keyword">final</span> Channel ch)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">               <span class="keyword">final</span> <span class="type">ChannelPipeline</span> <span class="variable">pipeline</span> <span class="operator">=</span> ch.pipeline();</span><br><span class="line">               <span class="type">ChannelHandler</span> <span class="variable">handler</span> <span class="operator">=</span> config.handler();<span class="comment">// ServerBootstrapConfig</span></span><br><span class="line">               <span class="keyword">if</span> (handler != <span class="literal">null</span>) &#123;</span><br><span class="line">                   pipeline.addLast(handler);</span><br><span class="line">               &#125;</span><br><span class="line">               ch.eventLoop().execute(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">                   <span class="meta">@Override</span></span><br><span class="line">                   <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                       pipeline.addLast(<span class="keyword">new</span> <span class="title class_">ServerBootstrapAcceptor</span>(</span><br><span class="line">                               ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125;);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>同样的，该方法不长也不短，继续拆解，不能陷入细节中：</p>
+<ol>
+<li>设置 NioServerSocketChannel 的 TCP 属性。</li>
+<li>由于 LinkedHashMap 是非线程安全的，使用同步进行处理。</li>
+<li>对 NioServerSocketChannel 的 ChannelPipeline 添加 ChannelInitializer 处理器。</li>
+</ol>
+<p>从上面的步骤可以看出， init 的方法的精华在和 ChannelPipeline 相关。</p>
+<p>从 NioServerSocketChannel  的初始化过程中，我们知道，pipeline 是一个双向链表，并且，他本身就初始化了 head 和 tail，这里调用了他的 addLast 方法，也就是将整个 handler 插入到 tail 的前面，因为 tail 永远会在后面，需要做一些系统的固定工作。</p>
+<p>我们进入到 addLast 方法内查看：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-7dd4c6c6bd5805b5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-088df32989c8d9e8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="循环添加 "></p>
+<p>addLast（EventExecutorGroup group, String name, ChannelHandler handler） 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">   <span class="keyword">public</span> <span class="keyword">final</span> ChannelPipeline <span class="title function_">addLast</span><span class="params">(EventExecutorGroup group, String name, ChannelHandler handler)</span> &#123;</span><br><span class="line">       <span class="keyword">final</span> AbstractChannelHandlerContext newCtx;</span><br><span class="line">       <span class="keyword">synchronized</span> (<span class="built_in">this</span>) &#123;</span><br><span class="line">           checkMultiplicity(handler);</span><br><span class="line">           newCtx = newContext(group, filterName(name, handler), handler);</span><br><span class="line">           addLast0(newCtx);</span><br><span class="line">           <span class="keyword">if</span> (!registered) &#123;</span><br><span class="line">               newCtx.setAddPending();</span><br><span class="line">               callHandlerCallbackLater(newCtx, <span class="literal">true</span>);</span><br><span class="line">               <span class="keyword">return</span> <span class="built_in">this</span>;</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="type">EventExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> newCtx.executor();</span><br><span class="line">           <span class="keyword">if</span> (!executor.inEventLoop()) &#123;</span><br><span class="line">               newCtx.setAddPending();</span><br><span class="line">               executor.execute(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">                   <span class="meta">@Override</span></span><br><span class="line">                   <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                       callHandlerAdded0(newCtx);</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125;);</span><br><span class="line">               <span class="keyword">return</span> <span class="built_in">this</span>;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line">       callHandlerAdded0(newCtx);</span><br><span class="line">       <span class="keyword">return</span> <span class="built_in">this</span>;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这里就是 pipeline 方法的精髓了，拆解如下：</p>
+<ol>
+<li>检查该 handler 是否符合标准，如果没有 Sharable 注解且已经被使用过了，就抛出异常。</li>
+<li>创建一个 AbstractChannelHandlerContext 对象，这里说一下，ChannelHandlerContext 对象是 ChannelHandler 和 ChannelPipeline 之间的关联，每当有 ChannelHandler 添加到 Pipeline 中时，都会创建 Context。Context 的主要功能是管理他所关联的 Handler 和同一个 Pipeline 中的其他 Handler 之间的交互。</li>
+<li>然后将 Context 添加到链表中。也就是追加到 tail 节点的前面。</li>
+<li>最后，同步或者异步或者晚点异步的调用 callHandlerAdded0 方法，在该方法中，调用之前的 handler 的 handlerAdded 方法，而该方法内部调用了之前的 ChannelInitializer 匿名类的  initChannel 方法，并且参数就是 context 的 channel（通过 pipeline 获取），也就是 NioServerSocketChannel。这个 Context 的标准实现就是 DefaultChannelHandlerContext。这个 Context 内部会包含一些重要的属性，比如 pipeline，handler，属于出站类型还是入站类型等。</li>
+</ol>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-d86242075d69083d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="最终调用 initChannel 方法"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-6068aa6ca9c01543.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="传入NioServerSocketChannel "></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-c6d168e9a15c533a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="获取 pipeline 的 NioServerSocketChannel"></p>
+<p>从上面的分析我们可以看出，pipeline 的 addLast 方法，实际上创建一个 Context 对象包装了 pipeline 和 handler，然后通过同步或者异步的方式，间接执行 handler 的 自定义方法——-initChannel 方法。而这个 context 也加入到了 pipeline 的链表节点中。</p>
+<p>好了，针对 addLast 方法，我们暂且就分析到这里。</p>
+<h4 id="config-group-register-channel-方法"><a href="#config-group-register-channel-方法" class="headerlink" title="config().group().register(channel)  方法"></a>config().group().register(channel)  方法</h4><p>回到 initAndRegister 方法中，继续看 config().group().register(channel) 这行代码，config 方法返回了 ServerBootstrapConfig，这个 ServerBootstrapConfig 调用了 group 方法，实际上就是 bossGroup。bossGroup 调用了 register 方法。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-d9959cd0165f33ae.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>这个 next 方法调用的是 EventExecutorChooser 的 next 方法，我们看看该方法的实现：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-14378a519e3df79b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>注意，这里是著名的 Netty 对性能压榨的一个例子，Netty 对于选取数组中的线程有着2套策略。</p>
+<ol>
+<li>如果数组是偶数，则使用位运算获取下一个EventLoop（单例线程池）（效率高）。</li>
+<li>如果是奇数，使用取余（效率低）。</li>
+</ol>
+<p>所以，如果是自定义数组长度的话，最好是偶数，默认的就是CPU 核心的2倍，即偶数。</p>
+<p>并且，在判断数组是否是偶数的算法中，也没有使用取余，而是位运算。如下：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-7fda109c2e66315d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="isPowerTwo 方法"></p>
+<p>回到正题。拿到下一个单例线程池后，调用他的 register 方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-3fabdb8f514a1d6b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>this 就是 EventLoop（单例线程池），这里多次提到单例线程池，为什么使用单例线程池呢？一个线程还使用线程池有什么意义呢？答：需要任务队列，有很多任务需要进行调度，所以需要线程池的特性。但为了多线程的切换导致的性能损耗和为了消除同步，所以使用单个线程。</p>
+<p>继续，这里创建了一个 DefaultChannelPromise ，这里需要说一下 Promise 的作用，其实类似 Future，事实上也继承了 JDK 的 Future，但增加了很多功能，比如 JDK 的 Future 虽然是异步的，但仍需要 get 方法 阻塞获取结果才能坐之后的事情，而 Promise 可以通过设置监听器的方式，在方法执行成功或者失败的情况下无需等待，就能执行监听器中的任务，效率币 Future 高很多。从某种程度上说，Future 是非阻塞，而Promise 才是正在的异步。</p>
+<p>他的构造方法也很简单：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">DefaultChannelPromise</span><span class="params">(Channel channel, EventExecutor executor)</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>(executor);</span><br><span class="line">    <span class="built_in">this</span>.channel = checkNotNull(channel, <span class="string">&quot;channel&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line">   </span><br><span class="line"><span class="comment">// 父构造</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">DefaultPromise</span><span class="params">(EventExecutor executor)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.executor = checkNotNull(executor, <span class="string">&quot;executor&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+<p>好了，回到 register 方法，有了刚刚创建的 Promise，EventLoop 继续调用自己的 register 方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-3141f3625c521229.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="register"></p>
+<p>通过调用 promise 的 channel 方法获取了 NioServerSocketChannel ，然后再调用 NioServerSocketChannel 的 unsafe方法获取创建NioServerSocketChannel对象时同时创建的 NioMessageUnsafe 对象，最后调用 NioMessageUnsafe  的 register 方法，参数时 promise 和 NioEventLoop。最后返回了这个 promise 方法。</p>
+<p>我们可以先思考一下，之所以使用 promise ，register 内部肯定时异步执行了某个方法，让 promise 立刻返回。执行完毕后再执行设置的监听器的方法。</p>
+<p>我们去看个究竟：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">register</span><span class="params">(EventLoop eventLoop, <span class="keyword">final</span> ChannelPromise promise)</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (isRegistered()) &#123;</span><br><span class="line">          promise.setFailure(<span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">&quot;registered to an event loop already&quot;</span>));</span><br><span class="line">          <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (!isCompatible(eventLoop)) &#123;</span><br><span class="line">          promise.setFailure(</span><br><span class="line">                  <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">&quot;incompatible event loop type: &quot;</span> + eventLoop.getClass().getName()));</span><br><span class="line">          <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      AbstractChannel.<span class="built_in">this</span>.eventLoop = eventLoop;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (eventLoop.inEventLoop()) &#123;</span><br><span class="line">          register0(promise);</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              eventLoop.execute(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;<span class="comment">// 开始真正的异步，boss 线程开始启动</span></span><br><span class="line">                  <span class="meta">@Override</span></span><br><span class="line">                  <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                      register0(promise);</span><br><span class="line">                  &#125;</span><br><span class="line">              &#125;);</span><br><span class="line">          &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">              logger.warn(</span><br><span class="line">                      <span class="string">&quot;Force-closing a channel whose registration task was not accepted by an event loop: &#123;&#125;&quot;</span>,</span><br><span class="line">                      AbstractChannel.<span class="built_in">this</span>, t);</span><br><span class="line">              closeForcibly();</span><br><span class="line">              closeFuture.setClosed();</span><br><span class="line">              safeSetFailure(promise, t);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+<p>该方法不长也不短，我们拆解一下：</p>
+<ol>
+<li>先是一系列的判断。</li>
+<li>判断当前线程是否是给定的 eventLoop 线程。注意：这点很重要，Netty 线程模型的高性能取决于对于当前执行的Thread 的身份的确定。如果不在当前线程，那么就需要很多同步措施（比如加锁），上下文切换等耗费性能的操作。</li>
+<li>异步（因为我们这里直到现在还是 main 线程在执行，不属于当前线程）的执行 register0 方法。</li>
+</ol>
+<p>实际上，聪明如你，一定知道 register0（promise） 才是最重要的方法。我们来看看该方法逻辑：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">register0</span><span class="params">(ChannelPromise promise)</span> &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (!promise.setUncancellable() || !ensureOpen(promise)) &#123;</span><br><span class="line">                    <span class="keyword">return</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="type">boolean</span> <span class="variable">firstRegistration</span> <span class="operator">=</span> neverRegistered;</span><br><span class="line">                doRegister();</span><br><span class="line">                neverRegistered = <span class="literal">false</span>;</span><br><span class="line">                registered = <span class="literal">true</span>;</span><br><span class="line">                pipeline.invokeHandlerAddedIfNeeded();</span><br><span class="line">                safeSetSuccess(promise);</span><br><span class="line">                pipeline.fireChannelRegistered();</span><br><span class="line">                <span class="keyword">if</span> (isActive()) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (firstRegistration) &#123;</span><br><span class="line">                        pipeline.fireChannelActive();</span><br><span class="line">                    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (config().isAutoRead()) &#123;</span><br><span class="line">                        beginRead();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">                closeForcibly();</span><br><span class="line">                closeFuture.setClosed();</span><br><span class="line">                safeSetFailure(promise, t);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+
+<p>继续拆解：</p>
+<ol>
+<li>首先状态判断。</li>
+<li>执行 doRegister 方法。</li>
+<li>执行 pipeline.invokeHandlerAddedIfNeeded() 方法。</li>
+<li>执行 pipeline.fireChannelRegistered() 方法。</li>
+</ol>
+<p>可以看到 doRegister 应该就是真正的执行方法，而后面的就是管道开始调用 handller 的一些注册成功之后的回调方法。先看doRegister 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">doRegister</span><span class="params">()</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="type">boolean</span> <span class="variable">selected</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), <span class="number">0</span>, <span class="built_in">this</span>);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (CancelledKeyException e) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!selected) &#123;</span><br><span class="line">                <span class="comment">// Force the Selector to select now as the &quot;canceled&quot; SelectionKey may still be</span></span><br><span class="line">                <span class="comment">// cached and not removed because no Select.select(..) operation was called yet.</span></span><br><span class="line">                eventLoop().selectNow();</span><br><span class="line">                selected = <span class="literal">true</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// We forced a select operation on the selector before but the SelectionKey is still cached</span></span><br><span class="line">                <span class="comment">// for whatever reason. JDK bug ?</span></span><br><span class="line">                <span class="keyword">throw</span> e;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+<p>是不是很熟悉？该方法在一个死循环中向 JDK 中注册感兴趣的事件。如果成功，则直接结束，如果失败，则 调用 EventLoop 内部的 JDK 的 select 的 selectNow 方法立即返回，然后尝试第二次注册，如果还是报错，则抛出异常。注意，这里同时还把自己（NioServerSocketChannel）作为attach 绑定了该 selectKey 上。大家可能奇怪，为什么注册的是0，而不是16 Accpet 事件呢？楼主也不知道。但是最后还是会删除这个读事件，重新注册 accpet 事件的。netty 不知道是怎么想的。</p>
+<p>好了，回到 register0 方法，还有2个步骤，分别是执行 pipeline 的 invokeHandlerAddedIfNeeded 方法和 fireChannelRegistered 方法，同时设置 promise 为成功，这个时候，promise就会执行监听器的方法。</p>
+<p>invokeHandlerAddedIfNeeded  方法是做什么的呢？还记得我们之前在 pipeline 的 addLast 方法中，添加了一个 handler 吗？我们说该方法可能会晚点执行，因为这个方法被包装成了 task，这里就会执行该方法。这个方法的意思就是，如果管道中有需要执行的任务，就去执行。我们回忆一下那个方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-9fdf901fd49c9e2d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="addLast 方法，added 属性为true "></p>
+<p>callHandlerCallbackLater 方法会根据 added 属性包装成一个 task（add 任务或 removed 任务），成为任务链表上的一个节点。</p>
+<p>而 add 任务和 removed 任务的不同在于，add 任务是pipeline 初始化之后调用的任务（通过 Channel 的handlerAdded 方法），removed 是pipeline 结束后执行（通过 Handler 的 handlerRemoved 方法）。</p>
+<p>回到 register0 方法，在执行完 invokeHandlerAddedIfNeeded 方法后，也就是我们刚开始的init 方法里的 ChannelInitializer 匿名类的 initChannel 方法。</p>
+<p>safeSetSuccess(promise) 方法就是通知 promise 已经成功了，你可以执行监听器的方法了，而这里的监听器则是我们的 dobind 方法中设置的：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-ecfc151be241141b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="doBind方法"></p>
+<p>至于内部执行，我们稍后再说，先回到我们的 register0 方法中，在 safeSetSuccess 方法执行后，执行  pipeline.fireChannelRegistered() 方法。看名字是执行 handler 的注册成功之后的回调方法。我们跟进去看看：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-bc4d8be313f717ae.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="Pipeline 中的 静态方法，并传入了 head Context"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-6bbd5ce1c432f885.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="获取 head 的 执行器EventLoop，用于判断是否在当前线程，如果在当前线程，则立即执行 invokeChannelRegistered 方法，否则异步执行，我们这里当然是在当前线程。所以同步执行"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-9547e717094eb1c1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="在这里执行 Context 对应的 handler 的 channelRegistered 方法，"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-22ba90511c9dc504.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="和之前一样，会检查通道中是否有需要延迟执行的任务，如果有，就执行，然后调用 Context 的 fireChannelRegistered 方法，而不是 pipeline  的 fireChannelRegistered 方法"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-158b30bceb4c644d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="该方法调用的是 head Context 的 invokeChannelRegistered 静态方法，注意，这里的参数很重要，我们进入 findContextInbound 方法内部查看"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-f38baef839f2b336.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="注意，我们说 pipeline 是一个双向链表，这里链表起作用了，通过找到当前节点的下一个节点，并返回，但这判断的是：必须是入站类型的 "></p>
+<p>回到  fireChannelRegistered 方法，看看 invokeChannelRegistered 是如何调用的？</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-48cc91e5f914827c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>注意到了吗，next 节点就是我设置的 LoggingHandler 对应的 Context，获取对应的 EventLoop。从这里我们总结一下 netty 的 Handler 设计：<strong>Netty 初始了一个 pipeline，pipeline 内部维护着一个 ChannelContextContext 双向链表，Context 是对 Handler 的封装，是 pipeline 和 Handler 沟通的关键，每次信息入站，从 head 节点开始，执行 context 的 handler 的对应方法，执行结束通过 findContextInbound() 方法找到下一个节点，继续执行</strong>。</p>
+<p>tail 节点的 channelRegistered 什么都不做。</p>
+<p>好，终于可以回到我们 ServerBootStrap 的 initAndRegister 方法中了。</p>
+<p>还没有完。我们上面对于第三个步骤 <code>对 NioServerSocketChannel 的 ChannelPipeline 添加 ChannelInitializer 处理器。</code> 只是一笔带过。也就是说，我们从NioServerSocketChannel  的pipeline 的的addLast 方法中一直分析到现在。我们再回头看看该方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-3492dd70b89fd724.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="ServerBootStrap init 方法"></p>
+<p>我们分析了 addLast 方法，但下面还有一个回调方法，什么呢？想 NioServerSocketChannel 的 EventLoop 提交了一个任务，也就是 pipeline 的 addLast 方法。是一个 ServerBootstrapAcceptor 对象，而这个 ServerBootstrapAcceptor 也是一个 handler，你可以想到了吧，从该 handler 名字就可以看出来，该 handler 是用于处理 accept 事件的。我们看看他的构造方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-6f36a307ea3ec2d2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>上面没有上面好说的，下面有一个 task，任务内容是 设置 该 channel 的autoread 属性为 true，这里我们记一下。还要注意一点，有一个 childHandler 属性，是什么呢？就是我们 main 方法中的 ChannelInitializer 匿名内部类，聪明的你应该想到了，既然该 handler 是接受 accept 事件的，那么，肯定需要初始化管道等操作，不然我们怎么在管道中操作我们的逻辑呢？所以就需要这个 ChannelInitializer 通道初始化对象了。</p>
+<p>好了，到这里，我们的 initAndRegister 方法终于算是结束了。</p>
+<p>回到我们的 doBind 方法。</p>
+<h2 id="7-回到-doBind-方法"><a href="#7-回到-doBind-方法" class="headerlink" title="7. 回到 doBind 方法"></a>7. 回到 doBind 方法</h2><p><img src="http://upload-images.jianshu.io/upload_images/4236553-14739afb72000570.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="doBind 方法"></p>
+<p>终于回来了，继续分析，我们上面说完了 dobind 方法有2个重要的步骤，initAndRegister 说完了，接下来看 doBind0 方法，该方法的参数为 initAndRegister  的 future，NioServerSocketChannel，端口地址，NioServerSocketChannel 的 promise。我们进入看看：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">doBind0</span><span class="params">(</span></span><br><span class="line"><span class="params">        <span class="keyword">final</span> ChannelFuture regFuture, <span class="keyword">final</span> Channel channel,</span></span><br><span class="line"><span class="params">        <span class="keyword">final</span> SocketAddress localAddress, <span class="keyword">final</span> ChannelPromise promise)</span> &#123;</span><br><span class="line">    channel.eventLoop().execute(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (regFuture.isSuccess()) &#123;</span><br><span class="line">                channel.bind(localAddress, promise).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                promise.setFailure(regFuture.cause());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>该方法想 NioServerSocketChannel 的 eventLoop 提交了一个任务，当 future(其实就是 promise) 成功后执行<br>NioServerSocketChannel 的 bind 方法，并添加一个关闭监听器。我们主要关注 bind 方法。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-35a66ee3f293f2eb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-c901532a12a4ccad.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-69a4301031f57789.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>层层调用来到了 NioServerSocketChannel 的 pipeline 的 tail 节点的 bind 方法，该方法首先找到出站节点，然后执行出站节点的 invokeBind 方法。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-63011ac6f24eff82.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="寻找 tail 节点的上一个节点，且必须是出站类型的，根据我们的设置，tail 的上一个节点应该是 LoggingHandler 因为他既是是出站类型也是入站类型"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-b3a03dc9abd67dc4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="根据 UML 可知 LoggingHandler 类型 "></p>
+<p>接下来，将调用 LoggingHandler  的 invokeBind 方法。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-9efee2e7739f6efe.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt=" context 调用 handler 的 bind 方法"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-437c4931681389b2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="当然就是打印日志而已"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-a2ed754240dc3ffc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="继续循环，ctx 的 bind 方法就是先寻找下一个节点或者下一个节点，然后调用节点的 invokeBind 方法，然后调用 handler 的 bind 方法"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-9789719ec851e091.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="来到了head 节点的bind方法，这里调用了 unsafe 的 bind方法"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-6732abda22cb329f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="这里的 unsafe 来自 NioServerSocketChannel 的 unsafe "></p>
+<p>我们看看 unsafe 的 bind 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"> <span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">bind</span><span class="params">(<span class="keyword">final</span> SocketAddress localAddress, <span class="keyword">final</span> ChannelPromise promise)</span> &#123;</span><br><span class="line">     assertEventLoop();</span><br><span class="line">     <span class="keyword">if</span> (!promise.setUncancellable() || !ensureOpen(promise)) &#123;</span><br><span class="line">         <span class="keyword">return</span>;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">if</span> (Boolean.TRUE.equals(config().getOption(ChannelOption.SO_BROADCAST)) &amp;&amp;</span><br><span class="line">         localAddress <span class="keyword">instanceof</span> InetSocketAddress &amp;&amp;</span><br><span class="line">         !((InetSocketAddress) localAddress).getAddress().isAnyLocalAddress() &amp;&amp;</span><br><span class="line">         !PlatformDependent.isWindows() &amp;&amp; !PlatformDependent.maybeSuperUser()) &#123;</span><br><span class="line">  </span><br><span class="line">         logger.warn(</span><br><span class="line">                 <span class="string">&quot;A non-root user can&#x27;t receive a broadcast packet if the socket &quot;</span> +</span><br><span class="line">                 <span class="string">&quot;is not bound to a wildcard address; binding to a non-wildcard &quot;</span> +</span><br><span class="line">                 <span class="string">&quot;address (&quot;</span> + localAddress + <span class="string">&quot;) anyway as requested.&quot;</span>);</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="type">boolean</span> <span class="variable">wasActive</span> <span class="operator">=</span> isActive();</span><br><span class="line">     <span class="keyword">try</span> &#123;</span><br><span class="line">         doBind(localAddress);</span><br><span class="line">     &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">         safeSetFailure(promise, t);</span><br><span class="line">         closeIfClosed();</span><br><span class="line">         <span class="keyword">return</span>;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">if</span> (!wasActive &amp;&amp; isActive()) &#123;</span><br><span class="line">         invokeLater(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">             <span class="meta">@Override</span></span><br><span class="line">             <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                 pipeline.fireChannelActive();</span><br><span class="line">             &#125;</span><br><span class="line">         &#125;);</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">     safeSetSuccess(promise);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，这里最终的方法就是 doBind 方法，执行成功后，执行通道的 fireChannelActive 方法，告诉所有的 handler，已经成功绑定。那我们就进入 doBind 方法查看：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-8b09900bd1eea687.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>很熟悉，获取 JDK 的channel 进行绑定。</p>
+<p>回到 bind 方法，然后调用 invokeLater 方法，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">invokeLater</span><span class="params">(Runnable task)</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        eventLoop().execute(task);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (RejectedExecutionException e) &#123;</span><br><span class="line">        logger.warn(<span class="string">&quot;Can&#x27;t invoke task later as EventLoop rejected it&quot;</span>, e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>将这个任务提交。而这个 fireChannelActive 和之前 pipeline 的所有方法都类似，遍历所有节点，执行 ChannelActive 方法。</p>
+<p>回到 bind 方法，最后一步：safeSetSuccess(promise)，告诉 promise 任务成功了。其可以执行监听器的方法了。虽然这个 promise 没有任何监听方法。</p>
+<p>如果到这里，楼主告诉你，整个启动过程已经结束了，你肯定和诧异，什么？服务器不应该是监听 Accept 事件吗，我们分析了这么多，只发现在 doRegister 方法中注册了 0 （read） 事件，竟然没有监听 Accept 事件，和我们平时写的 Nio 代码不同啊？</p>
+<p>是的，如果你想到了这里，说明你思考了。</p>
+<p>一切就在上面的 fireChannelActive  方法中。该方法回先调用 head 节点的 channelActive 方法，而 head 节点的 channelActive 代码如下：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-123ab889fa97c537.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>readIfIsAutoRead 默认返回 true。然后像之前的 pipeline 一样，继续在链表中调用。最后，来到了一个关键的地方：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-7b66ba06c58d84c0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="Head 节点 的read 方法"></p>
+<p>调用的是 NioServerSocketChannel 的 unsafe 的 beginRead 方法。继续查看：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-d25bb33097590534.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload><br><img src="http://upload-images.jianshu.io/upload_images/4236553-a1eb91fc8daabbdd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload><br><img src="http://upload-images.jianshu.io/upload_images/4236553-231d546e2634d337.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="最后来到了这里"></p>
+<p>我们看看 NioServerSocketChannel  的 doBeginRead 方法。<br>拿到 selectionKey ，如果 key 的监听事件是0 的话，就改为 readInterestOp ，也就是我们初始化NioServerSocketChannel 时设置的值：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-b5667da705a5be63.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>好了，到这里，整个服务器就完整的启动了，可谓艰难。但整体而言，Netty 的结构设计还是很紧凑的。虽然调用层次很深，但这是所有源码的特点。</p>
+<h2 id="8-总结启动过程"><a href="#8-总结启动过程" class="headerlink" title="8. 总结启动过程"></a>8. 总结启动过程</h2><p>好了，从源码层面已经分析完了，我们来总结一下启动的过程。</p>
+<ol>
+<li>首先创建2个 EventLoopGroup 线程池数组。数组默认大小CPU*2，方便chooser选择线程池时提高性能。</li>
+<li>BootStrap 将 boss 设置为 group属性，将 worker 设置为 childer 属性。</li>
+<li>通过 bind 方法启动，内部重要方法为  initAndRegister 和 dobind 方法。</li>
+<li>initAndRegister 方法会反射创建 NioServerSocketChannel  及其相关的 NIO 的对象， pipeline ， unsafe，同时也为 pipeline 初始了 head 节点和 tail 节点。同时也含有 NioServerSocketChannelConfig 对象。然后向 pipeline 添加自定义的处理器和 ServerBootstrapAcceptor 处理器。这个处理器用于分配接受的 请求给 worker 线程池。每次添加处理器都会创建一个相对应的 Context 作为 pipeline 的节点并包装 handler 对象。注册过程中会调用  NioServerSocketChannel   的 doRegister 方法注册读事件。</li>
+<li>在register0  方法成功以后调用在 dobind 方法中调用 doBind0 方法，该方法会 调用 NioServerSocketChannel 的 doBind 方法对 JDK 的 channel 和端口进行绑定，之后在调用 pipeline 的fireChannelActive 最后会调用 NioServerSocketChannel 的 doBeginRead 方法，将感兴趣的事件设置为Accept，完成 Netty 服务器的所有启动，并开始监听连接事件。</li>
+</ol>
+<p>好了，时间不早了，good luck！ 请期待后续关于 Netty 源码分析的文章！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Netty/" class="category-chain-item">Netty</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Netty-启动过程源码分析-（本文超长慎读）(基于4-1-23)</div>
+      <div>http://thinkinjava.cn/2018/03/09/2018/2018-03-09-Netty-启动过程源码分析-（本文超长慎读）(基于4-1-23)/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年3月9日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/03/10/2018/2018-03-10-Netty-%E6%8E%A5%E5%8F%97%E8%AF%B7%E6%B1%82%E8%BF%87%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-(%E5%9F%BA%E4%BA%8E4-1-23)/" title="Netty-接受请求过程源码分析-(基于4-1-23)">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Netty-接受请求过程源码分析-(基于4-1-23)</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/02/25/2018/2018-02-25-%E6%8E%A2%E7%A7%98-Java--%E7%83%AD%E9%83%A8%E7%BD%B2%E4%BA%8C%EF%BC%88Java-agent-premain%EF%BC%89/" title="探秘-Java--热部署二（Java-Agent-Premain）">
+                        <span class="hidden-mobile">探秘-Java--热部署二（Java-Agent-Premain）</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

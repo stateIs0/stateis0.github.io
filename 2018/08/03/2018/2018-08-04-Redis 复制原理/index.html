@@ -1,0 +1,748 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Redis 复制原理">
+<meta property="og:url" content="http://thinkinjava.cn/2018/08/03/2018/2018-08-04-Redis%20%E5%A4%8D%E5%88%B6%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-6e738a8f879eae66.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-5181b4e3d9d3e5aa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-fe63eaaf080e9e78.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-f153b591eab605a4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-bccc6dd3a0d79441.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-bed1c5c1b0f3e43c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-08-03T07:01:01.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.547Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-6e738a8f879eae66.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>Redis 复制原理 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Redis 复制原理"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-08-03 15:01" pubdate>
+          2018年8月3日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          21 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Redis 复制原理</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       目录：
+1. 复制过程
+2. 数据间的同步
+3. 全量复制
+4. 部分复制
+5. 心跳
+6. 异步复制
+
+<h2 id="复制原理"><a href="#复制原理" class="headerlink" title="复制原理"></a>复制原理</h2><h5 id="1-复制过程"><a href="#1-复制过程" class="headerlink" title="1. 复制过程"></a>1. 复制过程</h5><p>复制的过程步骤如下：</p>
+<ol>
+<li>从节点执行 slaveof 命令</li>
+<li>从节点只是保存了 slaveof 命令中主节点的信息，并没有立即发起复制</li>
+<li>从节点内部的定时任务发现有主节点的信息，开始使用 socket 连接主节点</li>
+<li>连接建立成功后，发送 ping 命令，希望得到 pong 命令响应，否则会进行重连</li>
+<li>如果主节点设置了权限，那么就需要进行权限验证；如果验证失败，复制终止。</li>
+<li>权限验证通过后，进行数据同步，<strong>这是耗时最长的操作</strong>，主节点将把所有的数据全部发送给从节点。</li>
+<li>当主节点把当前的数据同步给从节点后，便完成了复制的建立流程。接下来，<strong>主节点就会持续的把写命令发送给从节点，保证主从数据一致性</strong>。</li>
+</ol>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-6e738a8f879eae66.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<hr>
+<h5 id="2-数据间的同步"><a href="#2-数据间的同步" class="headerlink" title="2. 数据间的同步"></a>2. 数据间的同步</h5><p>上面说的复制过程，其中有一个步骤是“同步数据集”，这个就是现在讲的‘数据间的同步’。</p>
+<p>redis 同步有 2 个命令：sync 和 psync，前者是 redis 2.8 之前的同步命令，后者是 redis 2.8 为了优化 sync 新设计的命令。我们会重点关注 2.8 的 psync 命令。</p>
+<p>psync 命令需要 3 个组件支持：<br>1.主从节点各自复制偏移量<br>2.主节点复制积压缓冲区<br>3.主节点运行 ID</p>
+<p><strong>主从节点各自复制偏移量</strong></p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">参与复制的主从节点都会维护自身的复制偏移量。</span><br><span class="line"></span><br><span class="line">主节点在处理完写入命令后，会把命令的字节长度做累加记录，统计信息在 <span class="keyword">info</span> <span class="keyword">replication</span> </span><br><span class="line">中的 master_repl_offset 指标中。</span><br><span class="line"></span><br><span class="line">从节点每秒钟上报自身的的复制偏移量给主节点，因此主节点也会保存从节点的复制偏移量。</span><br><span class="line"></span><br><span class="line">从节点在接收到主节点发送的命令后，也会累加自身的偏移量，统计信息在 <span class="keyword">info</span> <span class="keyword">replication</span> 中。</span><br><span class="line"></span><br><span class="line">通过对比主从节点的复制偏移量，可以判断主从节点数据是否一致。</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>主节点复制积压缓冲区</strong></p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">复制积压缓冲区是一个保存在主节点的一个固定长度的先进先出的队列。默认大小 <span class="number">1</span>MB。</span><br><span class="line"></span><br><span class="line">这个队列在 slave 连接是创建。这时主节点响应写命令时，不但会把命令发送给从节点，也会写入复制缓冲区。</span><br><span class="line"></span><br><span class="line">他的作用就是用于部分复制和复制命令丢失的数据补救。</span><br><span class="line"></span><br><span class="line">通过 <span class="keyword">info</span> <span class="keyword">replication</span> 可以看到相关信息。</span><br></pre></td></tr></table></figure>
+
+
+<p><strong>主节点运行 ID</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">每个 redis 启动的时候，都会生成一个 40 位的运行 ID。</span><br><span class="line"></span><br><span class="line">运行 ID 的主要作用是用来识别 Redis 节点。如果使用 ip+port 的方式，那么如果主节点重启修改</span><br><span class="line">了 RDB/AOF 数据，从节点再基于偏移量进行复制将是不安全的。所以，当运行 id 变化后，从节点将</span><br><span class="line">进行全量复制。也就是说，redis 重启后，默认从节点会进行全量复制。</span><br><span class="line"></span><br><span class="line">如果在重启时不改变运行 ID 呢？</span><br><span class="line">可以通过 <span class="built_in">debug</span> reload 命令重新加载 RDB 并保持运行 ID 不变。从而有效的避免不必要的全量复制。</span><br><span class="line">他的缺点则是：<span class="built_in">debug</span> reload 命令会阻塞当前 Redis 节点主线程，因此对于大数据量的主节点或者</span><br><span class="line">无法容忍阻塞的节点，需要谨慎使用。</span><br><span class="line"></span><br><span class="line">一般通过故障转移机制可以解决这个问题。</span><br></pre></td></tr></table></figure>
+
+<p><strong>psync 命令的使用方式</strong></p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">命令格式为 `psync &#123;runId&#125; &#123;<span class="built_in">offset</span>&#125;`</span><br><span class="line"></span><br><span class="line">runId : 从节点所复制主节点的运行 <span class="built_in">id</span></span><br><span class="line"><span class="built_in">offset</span>：当前从节点已复制的数据偏移量</span><br></pre></td></tr></table></figure>
+<p>psync 执行流程：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-5181b4e3d9d3e5aa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>流程说明：从节点发送 psync 命令给主节点，runId 就是目标主节点的 ID，如果没有默认为 -1，offset 是从节点保存的复制偏移量，如果是第一次复制则为 -1.</p>
+<p>主节点会根据 runid 和 offset 决定返回结果：</p>
+<ul>
+<li>如果回复 +FULLRESYNC {runId} {offset} ，那么从节点将触发全量复制流程。</li>
+<li>如果回复 +CONTINUE，从节点将触发部分复制。</li>
+<li>如果回复 +ERR，说明主节点不支持 2.8 的 psync  命令，将使用 sync 执行全量复制。</li>
+</ul>
+<p>到这里，数据之间的同步就讲的差不多了，篇幅还是比较长的。主要是针对 psync 命令相关之间的介绍。</p>
+<hr>
+<h5 id="3-全量复制"><a href="#3-全量复制" class="headerlink" title="3. 全量复制"></a>3. 全量复制</h5><p>全量复制是  Redis 最早支持的复制方式，也是主从第一次建立复制时必须经历的的阶段。触发全量复制的命令是 sync 和 psync。之前说过，这两个命令的分水岭版本是 2.8，redis 2.8 之前使用 sync 只能执行全量不同，2.8 之后同时支持全量同步和部分同步。</p>
+<p>流程如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-fe63eaaf080e9e78.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>介绍一下上图步骤：</p>
+<ol>
+<li>发送 psync 命令（spync ？ -1）</li>
+<li>主节点根据命令返回  FULLRESYNC</li>
+<li>从节点记录主节点 ID 和 offset</li>
+<li><strong>主节点 bgsave 并保存 RDB 到本地</strong></li>
+<li><strong>主节点发送 RBD 文件到从节点</strong></li>
+<li><strong>从节点收到 RDB 文件并加载到内存中</strong></li>
+<li>主节点在从节点接受数据的期间，将新数据保存到“复制客户端缓冲区”，当从节点加载 RDB 完毕，再发送过去。（如果从节点花费时间过长，将导致缓冲区溢出，最后全量同步失败）</li>
+<li><strong>从节点清空数据后加载 RDB 文件，如果 RDB 文件很大，这一步操作仍然耗时，如果此时客户端访问，将导致数据不一致，可以使用配置slave-server-stale-data 关闭</strong>.</li>
+<li><strong>从节点成功加载完 RBD 后，如果开启了 AOF，会立刻做 bgrewriteaof</strong>。</li>
+</ol>
+<p><strong>以上加粗的部分是整个全量同步耗时的地方。</strong></p>
+<p>注意：</p>
+<ol>
+<li>如过 RDB 文件大于 6GB，并且是千兆网卡，Redis 的默认超时机制（60 秒），会导致全量复制失败。<strong>可以通过调大 repl-timeout 参数来解决此问题</strong>。</li>
+<li>Redis 虽然支持无盘复制，即直接通过网络发送给从节点，但功能不是很完善，生产环境慎用。</li>
+</ol>
+<hr>
+<h5 id="4-部分复制"><a href="#4-部分复制" class="headerlink" title="4. 部分复制"></a>4. 部分复制</h5><p>当从节点正在复制主节点时，如果出现网络闪断和其他异常，从节点会让主节点补发丢失的命令数据，主节点只需要将复制缓冲区的数据发送到从节点就能够保证数据的一致性，相比较全量复制，成本小很多。</p>
+<p>步骤如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-f153b591eab605a4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<ol>
+<li>当从节点出现网络中断，超过了 repl-timeout 时间，主节点就会中断复制连接。</li>
+<li>主节点会将请求的数据写入到“复制积压缓冲区”，默认 1MB。</li>
+<li>当从节点恢复，重新连接上主节点，从节点会将 offset 和主节点 id 发送到主节点</li>
+<li>主节点校验后，如果偏移量的数后的数据在缓冲区中，就发送 cuntinue 响应 —— 表示可以进行部分复制</li>
+<li>主节点将缓冲区的数据发送到从节点，保证主从复制进行正常状态。</li>
+</ol>
+<hr>
+<h5 id="5-心跳"><a href="#5-心跳" class="headerlink" title="5. 心跳"></a>5. 心跳</h5><p>主从节点在建立复制后，他们之间维护着长连接并彼此发送心跳命令。</p>
+<p>心跳的关键机制如下：</p>
+<ol>
+<li>中从都有心跳检测机制，各自模拟成对方的客户端进行通信，通过 client list 命令查看复制相关客户端信息，主节点的连接状态为 flags = M，从节点的连接状态是 flags = S。</li>
+<li>主节点默认每隔  10 秒对从节点发送  ping 命令，可修改配置 repl-ping-slave-period 控制发送频率。</li>
+<li>从节点在主线程每隔一秒发送 replconf ack{offset} 命令，给主节点上报自身当前的复制偏移量。</li>
+<li>主节点收到 replconf 信息后，判断从节点超时时间，如果超过 repl-timeout 60 秒，则判断节点下线。</li>
+</ol>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-bccc6dd3a0d79441.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>注意：为了降低主从延迟，一般把 redis 主从节点部署在相同的机房/同城机房，避免网络延迟带来的网络分区造成的心跳中断等情况。</p>
+<hr>
+<h5 id="6-异步复制"><a href="#6-异步复制" class="headerlink" title="6. 异步复制"></a>6. 异步复制</h5><p>主节点不但负责数据读写，还负责把写命令同步给从节点，写命令的发送过程是异步完成，也就是说主节点处理完写命令后立即返回客户度，并不等待从节点复制完成。</p>
+<p>异步复制的步骤很简单，如下：</p>
+<ol>
+<li>主节点接受处理命令</li>
+<li>主节点处理完后返回响应结果</li>
+<li>对于修改命令，异步发送给从节点，从节点在主线程中执行复制的命令。</li>
+</ol>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-bed1c5c1b0f3e43c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文主要分析了 Redis 的复制原理，包括复制过程，数据之间的同步，全量复制的流程，部分复制的流程，心跳设计，异步复制流程。</p>
+<p>其中，可以看出，RDB  数据之间的同步非常耗时。所以，Redis 在 2.8 版本退出了类似增量复制的 psync 命令，当 Redis 主从直接发生了网络中断，不会进行全量复制，而是将数据放到缓冲区（默认 1MB）里，在通过主从之间各自维护复制 offset 来判断缓存区的数据是否溢出，如果没有溢出，只需要发送缓冲区数据即可，成本很小，反之，则要进行全量复制，因此，控制缓冲区大小非常的重要。</p>
+<h2 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h2><p>《Redis 开发与运维》</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Redis/" class="category-chain-item">Redis</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Redis 复制原理</div>
+      <div>http://thinkinjava.cn/2018/08/03/2018/2018-08-04-Redis 复制原理/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年8月3日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/08/04/2018/2018-08-06-Jedis%20%E5%A6%82%E4%BD%95%E6%94%AF%E6%8C%81%20Sentinel/" title="Jedis 如何支持 Sentinel">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Jedis 如何支持 Sentinel</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/08/02/2018/2018-08-03-Redis%20%E5%A4%8D%E5%88%B6%E5%88%9D%E4%BD%93%E9%AA%8C/" title="Redis 复制初体验">
+                        <span class="hidden-mobile">Redis 复制初体验</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

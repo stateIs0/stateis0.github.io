@@ -1,0 +1,730 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之-锁的优化有哪些">
+<meta property="og:url" content="http://thinkinjava.cn/2018/01/07/2018/2018-01-07-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-%E9%94%81%E7%9A%84%E4%BC%98%E5%8C%96%E6%9C%89%E5%93%AA%E4%BA%9B/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-01-06T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.533Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>并发编程之-锁的优化有哪些 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="并发编程之-锁的优化有哪些"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-01-07 02:11" pubdate>
+          2018年1月7日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          24 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">并发编程之-锁的优化有哪些</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       在 JDK 1.6 之前，synchronized 性能令人担忧，但是 1.6 之后，JVM 团队针对 synchronized 做了很多的优化，让 synchroized 在性能层面相比较 ReentrantLock 不相上下。那么，JVM 团队做了哪些优化呢？
+
+
+<p>首先说，怎么才能优化？我们知道，“锁” 其实是互斥同步的具体实现，而互斥同步对性能最大的影响是阻塞的实现，挂起线程和恢复线程的操作都需要用户态转到内核态来完成。这些操作给系统的并发性能带来了很大的压力。</p>
+<p>所以，优化的方向就是减少线程的阻塞，因为挂起线程和恢复线程需要切换到操作系统的内核状态。</p>
+<p>Java 1.6 为了减少获得锁和释放锁带来的性能损耗，引入了 “偏向锁“ 和 ”轻量级锁“ ，在 Java SE 1.6 中，锁一共有4个状态，从低到高依次是：无锁状态，偏向锁状态，轻量级锁状态，重量级锁状态。这几个状态会随着竞争情况逐渐升级（即膨胀）。注意：锁升级之后不能降级（具体原因后面讲）。</p>
+<ol>
+<li>偏向锁</li>
+<li>轻量级锁</li>
+<li>重量级锁</li>
+<li>锁消除</li>
+<li>锁粗化</li>
+<li>除了虚拟机，程序员自己如何优化锁</li>
+</ol>
+<h2 id="1-偏向锁"><a href="#1-偏向锁" class="headerlink" title="1. 偏向锁"></a><strong>1. 偏向锁</strong></h2><p>虚拟机的团队根据经验发现，大多数情况下，锁不仅不存在多线程竞争，而且总是有同一线程多次获得，为了让线程获得锁的代价更低而引入了偏向锁。</p>
+<p>当一个线程访问同步块并获取锁时，会在对象头和栈帧中的锁记录里存储锁偏向的线程ID，以后该线程在进入和退出同步块时不需要进行CAS操作来加锁和解锁，只需简单的测试一下对象头的 “Mark Word” 里是否存储着指向当前线程的偏向锁。</p>
+<p>如果测试成功，表示线程已经获得了锁。如果测试失败，则需要再测试一下 Mark Word 中偏向锁的标识是否设置了1（表示当前还是偏向锁）：如果没有设置，则使用CAS 竞争锁；如果设置了，则尝试使用CAS 将对象头的偏向锁指向当前线程。</p>
+<p>可以说，偏向锁的 “偏”，就是偏心的 “偏”，他的意思就是这个锁会偏向于第一个获得他的线程，如果在接下来的执行过程中，该锁没有被其他的线程获取，则持有偏向锁的线程将<strong>永远不需要同步</strong>。</p>
+<p>当有另外要给线程去尝试获取这个锁时，偏向模式宣告结束，后续的操作将升级为轻量级锁。</p>
+<p>注意：偏向锁可以提高有同步但无竞争的程序性能，他同样有缺陷：如果程序中大多数的锁总是被多个不同的线程访问，那偏向模式就是多余的。1.6之后的虚拟机默认启用偏向锁，可以使用JVM参数来关闭：-XX：-UseBiasedLocking=false；程序将默认进入轻量级锁状态。</p>
+<p>可以看到，Mark Word 是实现偏向锁的关键。而后面的轻量级锁也是通过这个实现的。</p>
+<h2 id="2-轻量级锁"><a href="#2-轻量级锁" class="headerlink" title="2. 轻量级锁"></a><strong>2. 轻量级锁</strong></h2><p>什么是轻量级锁呢？ “轻量级” 是相对于使用操作系统互斥量来实现的传统锁而言的，因此传统的锁机制称为 “重量级” 锁。 首先需要强调一点，轻量级锁并不是用来代替重量级锁的，他的本意是在没有多线程竞争的前提下，减少传统的重量级锁使用操作系统互斥量产生的性能损耗。</p>
+<p>线程在执行同步块之前，JVM 会先在当前线程的栈帧中创建用于存储锁记录的空间，并将对象头的 Mark Word 复制到锁记录中，官方称为 Displaced Mark Word. 然后线程尝试使用CAS 将对象头中的 Mark Word 替换为指向锁记录的指针。</p>
+<p>如果成功，当前线程获得锁，如果失败，表示其他线程竞争锁，当前线程便会尝试使用自旋来获取锁，注意：这里线程并没有挂起自己，而是通过一定次数的自旋（默认10次，可以使用 -XX：PreBlockSpin 修改），防止切换到内核态导致的开销。</p>
+<p>如果有2个以上的线程争用同一把锁，那么轻量级锁将会失效，升级到重量级锁。</p>
+<p>那么为什么升级到重量级锁之后不能降级呢？假设一下：如果锁升级到重量级之后，拿到锁的某个线程被阻塞了，等待了很久，那么轻量级线程将会一直自旋等待，消耗CPU性能。所以，在升级到重量级锁后，就不能降级了，防止轻量级锁自旋消耗CPU。</p>
+<p>可以看到偏向锁和轻量级锁的差别，偏向锁在第一个线程拿到锁之后，将把线程ID 存储在对象头中，后面的所有操作都不是同步的，相当于无锁。而轻量级锁，每次获取锁的时候还是需要使用CAS来修改对象头的记录，在没有线程竞争的情况下，这个操作是很轻量的，不需要使用操作系统的互斥机制。</p>
+<h2 id="3-重量级锁"><a href="#3-重量级锁" class="headerlink" title="3. 重量级锁"></a><strong>3. 重量级锁</strong></h2><p>相比较轻量级锁是通过自旋来获取锁的，重量级锁则是通过操作系统将线程切换到内核态并阻塞来实现的。代价十分高昂。</p>
+<p>下面看看各个锁的优缺点对比：</p>
+<table>
+<thead>
+<tr>
+<th>锁</th>
+<th>优点</th>
+<th>缺点</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>偏向锁</td>
+<td>加锁和解锁不需要额外的消耗，和执行非同步方法相比仅存在纳秒级的差距</td>
+<td>如果线程间存在锁竞争，会带来额外的锁撤销的消耗</td>
+<td>适用于只有一个线程访问同步块场景</td>
+</tr>
+<tr>
+<td>轻量级锁</td>
+<td>竞争的线程不会阻塞，提高了程序的响应速度</td>
+<td>如果始终得不到锁竞争的线程，使用自旋会消耗CPU</td>
+<td>追求响应时间，同步块执行速度非常快</td>
+</tr>
+<tr>
+<td>重量级锁</td>
+<td>线程竞争不使用自旋，不会消耗CPU</td>
+<td>线程阻塞，响应时间缓慢</td>
+<td>追求吞吐量，同步块执行时间较长</td>
+</tr>
+</tbody></table>
+<p>什么时候使用什么锁，大家可以看看。</p>
+<h2 id="4-锁消除"><a href="#4-锁消除" class="headerlink" title="4. 锁消除"></a><strong>4. 锁消除</strong></h2><p>什么是锁消除呢？指的是 JIT 编译器在运行时，对一些没有必要同步的代码却同步了的锁进行消除。可以说时一种彻底的锁优化。通过锁消除，可以节省毫无意义的请求锁时间。</p>
+<p>那么你们一定会问，谁会这么傻，不需要同步还去同步啊？</p>
+<p>请看下面的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> String[] createStrings(String[] args) &#123;</span><br><span class="line">  Vector&lt;String&gt; v = <span class="keyword">new</span> <span class="title class_">Vector</span>&lt;&gt;();</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) &#123;</span><br><span class="line">    v.add(Integer.toString(i));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> v.toArray(<span class="keyword">new</span> <span class="title class_">String</span>[]&#123;&#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>注意：v 变量只在这一个方法中使用，只是一个单纯的局部变量，分配在栈中，也就没有线程安全的说法，任何同步都是没有必要的，而Vector 的add 操作都是同步的。所以虚拟机检测到这个情况，会将锁去除。</p>
+<p>锁消除涉及一个技术：逃逸分析。所谓逃逸分析就是观察某一个变量十分会逃出某一个作用域。在本例中，变量v没有逃出函数外，如果函数返回的不是 string 数组，而是 v 本身，那么就任务 v 逃逸出了当前函数。也就是说 v 可能被其他线程访问。如果是这样，虚拟机就不能消除 v 的锁操作。</p>
+<h2 id="5-锁粗化"><a href="#5-锁粗化" class="headerlink" title="5. 锁粗化"></a><strong>5. 锁粗化</strong></h2><p>原则上，我们在编写代码的时候，总是推荐将同步块尽可能的小。这样是为了使得需要同步的操作数量小，如果存在锁竞争，那等待锁的线程也能尽快拿到锁。</p>
+<p>大部分情况下，这个原则是正确的。如果如果一系列连续操作都对同一个对象反复加锁和解锁，甚至加锁操作是出现在循环体中的，那即使没有线程竞争，频繁的同步操作也会导致不必要的性能损耗。</p>
+<p>如果虚拟机探测到很多零碎的操作都对同一个对象加锁，将会把加锁同步的范围扩展（粗化）到整个操作序列的外部。即加大了同步块。</p>
+<h2 id="6-除了虚拟机，程序员自己如何优化锁"><a href="#6-除了虚拟机，程序员自己如何优化锁" class="headerlink" title="6. 除了虚拟机，程序员自己如何优化锁"></a><strong>6. 除了虚拟机，程序员自己如何优化锁</strong></h2><ol>
+<li>减小锁的持有时间。</li>
+<li>减小锁的粒度。</li>
+<li>使用读写锁替换独占锁</li>
+<li>锁分离</li>
+</ol>
+<ol>
+<li>减小锁的持有时间。</li>
+</ol>
+<p>其实这个很简单，你的锁持有的时间长，后面的线程等待的时间就长，一个线程等待1秒，10000个线程就多等待了10000秒，因此，只在必要时进行同步，这样就能明显减少线程持有锁的时间。提高系统的吞吐量。</p>
+<ol start="2">
+<li>减小锁的粒度。</li>
+</ol>
+<p>这个和我们上面说的虚拟机帮助我们粗化时反的。但是，我们说，大部分情况下，减小锁的粒度也削弱多线程竞争的有效手段，比如 ConcurrentHashMap，他只锁住了 Hash 桶中的某一个桶，不像HashTable 一样锁住整个对象。</p>
+<ol start="3">
+<li>使用读写锁替换独占锁</li>
+</ol>
+<p>我们之前在说 Java 世界的三把锁的时候说哪三把锁，内置锁，重入锁，读写锁，就是我们现在说的读写锁 ReadWriteLock，使用读写锁来替代独占锁是减小锁粒度的一种特殊情况，在读多写少的场合，读写锁对系统性能是有好处的。可以有效提高系统的并发能力。因为读操作不会影响数据的完整性和一致性，就像 ConcurrentHashMap 的 get 方法一样，根本不需要加锁，这个时候又要说说 HashTable ，该容器连 get 方法都加锁。你可以想象一下。</p>
+<ol start="4">
+<li>锁分离</li>
+</ol>
+<p>如果将读写锁进一步延伸，就是锁分离，读写锁根据读写操作功能的不同，进行了有效的分离。而 JDK 的 LinkedBlockingQueue 则是锁分离的最佳实践。在进行 take 操作和 put 操作使用了两把不同的锁。因为他们之间根本没有竞争关系，或者说，使用队列的数据结构，将原本耦合的业务分离了。</p>
+<h2 id="7-总结"><a href="#7-总结" class="headerlink" title="7. 总结"></a><strong>7. 总结</strong></h2><p>今天我们总结了一些锁的优化，有虚拟机的优化，比如偏向锁，轻量级锁，自旋锁，锁粗化，锁消除， 也有我们自己的优化策略，需要平时写代码的时候注意，比如减少锁的持有时间，减小锁的粒度，在读多写少的场合使用读写锁，尽量通过合理的设计分离锁。</p>
+<p>总之，并发是门艺术。如何提高并发的性能是每个高级程序员的追求。</p>
+<p>good luck ！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>并发编程之-锁的优化有哪些</div>
+      <div>http://thinkinjava.cn/2018/01/07/2018/2018-01-07-并发编程之-锁的优化有哪些/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年1月7日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/01/07/2018/2018-01-07-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-ConcurrentHashMap%EF%BC%88JDK-1-8%EF%BC%89-putVal-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" title="并发编程之-ConcurrentHashMap（JDK-1-8）-putVal-源码分析">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">并发编程之-ConcurrentHashMap（JDK-1-8）-putVal-源码分析</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/01/05/2018/2018-01-05-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-%E7%BA%BF%E7%A8%8B%E6%B1%A0-%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/" title="并发编程之-源码剖析-线程池-实现原理">
+                        <span class="hidden-mobile">并发编程之-源码剖析-线程池-实现原理</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

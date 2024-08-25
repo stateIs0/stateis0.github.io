@@ -1,0 +1,722 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Apollo 10 — adminService 全量发布">
+<meta property="og:url" content="http://thinkinjava.cn/2018/07/18/2018/2018-07-20-Apollo%2010%20%E2%80%94%20adminService%20%E5%85%A8%E9%87%8F%E5%8F%91%E5%B8%83/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-c928a28afb3b6f24.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-f965473b05543d8a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-11704e0d594f7c79.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-bd30447caecf0a76.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-44ee282e64da1d29.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-3aef348a7726dacb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-07-18T07:01:01.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.547Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-c928a28afb3b6f24.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>Apollo 10 — adminService 全量发布 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Apollo 10 — adminService 全量发布"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-07-18 15:01" pubdate>
+          2018年7月18日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          19 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Apollo 10 — adminService 全量发布</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 目录
+
+<ol>
+<li>UI 界面</li>
+<li>Portal 服务</li>
+<li>admin 服务</li>
+<li>总结</li>
+</ol>
+<h2 id="1-UI-界面"><a href="#1-UI-界面" class="headerlink" title="1. UI 界面"></a>1. UI 界面</h2><p><img src="https://upload-images.jianshu.io/upload_images/4236553-c928a28afb3b6f24.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="1"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-f965473b05543d8a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="2"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-11704e0d594f7c79.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="3"></p>
+<h2 id="2-Portal-服务"><a href="#2-Portal-服务" class="headerlink" title="2. Portal 服务"></a>2. Portal 服务</h2><p>当我们点击上面的发布按钮的时候，调用的当然是 portal 的接口。具体代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 全量发布</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> appId SampleApp</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> env DEV</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> clusterName default</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> namespaceName  application</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> branchName 分支/灰度名称</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> deleteBranch true</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> model &#123;&quot;releaseTitle&quot;:&quot;20180716220550-gray-release-merge-to-master&quot;,&quot;releaseComment&quot;:&quot;&quot;,&quot;isEmergencyPublish&quot;:false&#125;</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@PreAuthorize(value = &quot;@permissionValidator.hasReleaseNamespacePermission(#appId, #namespaceName)&quot;)</span></span><br><span class="line"><span class="meta">@RequestMapping(value = &quot;/apps/&#123;appId&#125;/envs/&#123;env&#125;/clusters/&#123;clusterName&#125;/namespaces/&#123;namespaceName&#125;/branches/&#123;branchName&#125;/merge&quot;, method = RequestMethod.POST)</span></span><br><span class="line"><span class="keyword">public</span> ReleaseDTO <span class="title function_">merge</span><span class="params">(<span class="meta">@PathVariable</span> String appId, <span class="meta">@PathVariable</span> String env,</span></span><br><span class="line"><span class="params">                        <span class="meta">@PathVariable</span> String clusterName, <span class="meta">@PathVariable</span> String namespaceName,</span></span><br><span class="line"><span class="params">                        <span class="meta">@PathVariable</span> String branchName, <span class="meta">@RequestParam(value = &quot;deleteBranch&quot;, defaultValue = &quot;true&quot;)</span> <span class="type">boolean</span> deleteBranch,</span></span><br><span class="line"><span class="params">                        <span class="meta">@RequestBody</span> NamespaceReleaseModel model)</span> &#123;</span><br><span class="line">  <span class="comment">// 如果是紧急发布,但该环境不允许紧急发布,抛出异常</span></span><br><span class="line">  <span class="keyword">if</span> (model.isEmergencyPublish() &amp;&amp; !portalConfig.isEmergencyPublishAllowed(Env.fromString(env))) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">BadRequestException</span>(String.format(<span class="string">&quot;Env: %s is not supported emergency publish now&quot;</span>, env));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 合并主版本和灰度版本, 得到一个发布 dto</span></span><br><span class="line">  <span class="type">ReleaseDTO</span> <span class="variable">createdRelease</span> <span class="operator">=</span> namespaceBranchService.merge(appId, Env.valueOf(env), clusterName, namespaceName, branchName,</span><br><span class="line">                                                           model.getReleaseTitle(), model.getReleaseComment(),</span><br><span class="line">                                                           model.isEmergencyPublish(), deleteBranch);</span><br><span class="line"></span><br><span class="line">  <span class="type">ConfigPublishEvent</span> <span class="variable">event</span> <span class="operator">=</span> ConfigPublishEvent.instance();</span><br><span class="line">  event.withAppId(appId)</span><br><span class="line">      .withCluster(clusterName)</span><br><span class="line">      .withNamespace(namespaceName)</span><br><span class="line">      .withReleaseId(createdRelease.getId())</span><br><span class="line">      .setMergeEvent(<span class="literal">true</span>)</span><br><span class="line">      .setEnv(Env.valueOf(env));</span><br><span class="line"></span><br><span class="line">  publisher.publishEvent(event);<span class="comment">// 发送邮件</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> createdRelease;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接口职责不多：是否符合紧急发布的数据校验，调用 Service， 发布“配置发布”事件（发送邮件）。</p>
+<p>看看调用 Service 的过程，该方法称为 merge ，实际上就是合并灰度和主版本的配置。代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> ReleaseDTO <span class="title function_">merge</span><span class="params">(String appId, Env env, String clusterName, String namespaceName,</span></span><br><span class="line"><span class="params">                        String branchName, String title, String comment,</span></span><br><span class="line"><span class="params">                        <span class="type">boolean</span> isEmergencyPublish, <span class="type">boolean</span> deleteBranch)</span> &#123;</span><br><span class="line">  <span class="comment">// 计算 changeSets</span></span><br><span class="line">  <span class="type">ItemChangeSets</span> <span class="variable">changeSets</span> <span class="operator">=</span> calculateBranchChangeSet(appId, env, clusterName, namespaceName, branchName);</span><br><span class="line">  <span class="comment">// 调用 admin 服务</span></span><br><span class="line">  <span class="type">ReleaseDTO</span> <span class="variable">mergedResult</span> <span class="operator">=</span></span><br><span class="line">      releaseService.updateAndPublish(appId, env, clusterName, namespaceName, title, comment,</span><br><span class="line">                                      branchName, isEmergencyPublish, deleteBranch, changeSets);</span><br><span class="line"></span><br><span class="line">  Tracer.logEvent(TracerEventType.MERGE_GRAY_RELEASE,</span><br><span class="line">               String.format(<span class="string">&quot;%s+%s+%s+%s&quot;</span>, appId, env, clusterName, namespaceName));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> mergedResult;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>做了 2 件事情： 计算 change 集合，调用 admin 服务。很明显，计算 change 对于 protal 非常重要。</p>
+<p>calculateBranchChangeSet 方法主要将灰度配置和主版本配置合并。</p>
+<p>代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> ItemChangeSets <span class="title function_">calculateBranchChangeSet</span><span class="params">(String appId, Env env, String clusterName, String namespaceName,</span></span><br><span class="line"><span class="params">                                                String branchName)</span> &#123;</span><br><span class="line">  <span class="type">NamespaceBO</span> <span class="variable">parentNamespace</span> <span class="operator">=</span> namespaceService.loadNamespaceBO(appId, env, clusterName, namespaceName);<span class="comment">// 父版本 namespace</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (parentNamespace == <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">BadRequestException</span>(<span class="string">&quot;base namespace not existed&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (parentNamespace.getItemModifiedCnt() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">BadRequestException</span>(<span class="string">&quot;Merge operation failed. Because master has modified items&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  List&lt;ItemDTO&gt; masterItems = itemService.findItems(appId, env, clusterName, namespaceName);<span class="comment">// 主版本 items </span></span><br><span class="line"></span><br><span class="line">  List&lt;ItemDTO&gt; branchItems = itemService.findItems(appId, env, branchName, namespaceName);<span class="comment">// 子版本 items </span></span><br><span class="line"></span><br><span class="line">  <span class="type">ItemChangeSets</span> <span class="variable">changeSets</span> <span class="operator">=</span> itemsComparator.compareIgnoreBlankAndCommentItem(parentNamespace.getBaseInfo().getId(),</span><br><span class="line">                                                                               masterItems, branchItems);<span class="comment">// 得到 changeSet</span></span><br><span class="line">  changeSets.setDeleteItems(Collections.emptyList());<span class="comment">// 防止误删除，emm，灰度的内容并不是全量的，因此上面的计算有些问题，并且目前没有删除功能。所以这里可以置空。</span></span><br><span class="line">  changeSets.setDataChangeLastModifiedBy(userInfoHolder.getUser().getUserId());</span><br><span class="line">  <span class="keyword">return</span> changeSets;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>步骤：</p>
+<ol>
+<li>获取主版本的 namespace 详细信息，用于数据检验，id 赋值。</li>
+<li>获取主版本的所有 item 配置，再获取灰度版本的所有 item 配置，注意，灰度版本的 item 只有其自身新增的和修改的配置，不是全量的（这将导致后面一个奇怪的现象）。</li>
+<li>比较两者差异，得到 change 集合。</li>
+<li>设置 deleteList 为空 —— 奇怪现象（<code>灰度的内容并不是全量的，因此上面的计算有些问题，并且目前没有删除功能。所以这里可以置空, 并且防止误删除</code>）。</li>
+<li>设置修改人。</li>
+</ol>
+<p>这里需要注意的是计算差异到底是怎么计算的，为什么后面有置空 deleteItem 的操作。</p>
+<p>我就不贴全部的方法了，贴一下对删除操作有影响的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** 比较,忽略空格,返回一个改变的 items */</span></span><br><span class="line"><span class="keyword">public</span> ItemChangeSets <span class="title function_">compareIgnoreBlankAndCommentItem</span><span class="params">(<span class="type">long</span> baseNamespaceId, List&lt;ItemDTO&gt; baseItems, List&lt;ItemDTO&gt; targetItems)</span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 忽略新增/修改 item 代码......</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 处理删除,但这个逻辑似乎不对. 不过此类不知道数据来源,工具类没有问题.</span></span><br><span class="line">  <span class="keyword">for</span> (ItemDTO item: baseItems)&#123;<span class="comment">// 主版本</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> item.getKey();</span><br><span class="line"></span><br><span class="line">    <span class="type">ItemDTO</span> <span class="variable">targetItem</span> <span class="operator">=</span> targetItemMap.get(key);</span><br><span class="line">    <span class="keyword">if</span>(targetItem == <span class="literal">null</span>)&#123;<span class="comment">//delete// 如果灰度版本里没有,说明删除了.</span></span><br><span class="line">      changeSets.addDeleteItem(item);<span class="comment">// 添加进删除集合</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> changeSets;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，这段代码里，循环主版本，逐个对比灰度版本，如果灰度版本里没有，就添加进 delete 集合，而我们知道，灰度版本的 item 只有修改的和新增的，这时，将导致误删除。</p>
+<p><strong>但这个工具类的计算是没有问题的，有问题的是外层数据的完整性。</strong></p>
+<p>因此需要在外面打个补丁：<code>changeSets.setDeleteItems(Collections.emptyList());</code></p>
+<p>好，计算完 changeSet，就要调用 admin 服务了，并且把 changeSet 传递过去，然后返回一个 release 对象，表示发布成功，并发布事件。</p>
+<p>在分析 admin 之前，总结一下 protal 的流程：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-bd30447caecf0a76.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<h2 id="3-admin-服务"><a href="#3-admin-服务" class="headerlink" title="3. admin 服务"></a>3. admin 服务</h2><p>从 portal 的代码中，可以看到，调用的是 admin 的 updateAndPublish 方法接口，看看这个接口：<br>位置 ： <code>com.ctrip.framework.apollo.adminservice.controller.ReleaseController.java</code><br>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Transactional</span></span><br><span class="line"><span class="meta">@RequestMapping(path = &quot;/apps/&#123;appId&#125;/clusters/&#123;clusterName&#125;/namespaces/&#123;namespaceName&#125;/updateAndPublish&quot;, method = RequestMethod.POST)</span></span><br><span class="line"><span class="keyword">public</span> ReleaseDTO <span class="title function_">updateAndPublish</span><span class="params">(<span class="meta">@PathVariable(&quot;appId&quot;)</span> String appId,// 应用名称</span></span><br><span class="line"><span class="params">                                   <span class="meta">@PathVariable(&quot;clusterName&quot;)</span> String clusterName,//集群</span></span><br><span class="line"><span class="params">                                   <span class="meta">@PathVariable(&quot;namespaceName&quot;)</span> String namespaceName,// 主版本名称</span></span><br><span class="line"><span class="params">                                   <span class="meta">@RequestParam(&quot;releaseName&quot;)</span> String releaseName, // 发布名称</span></span><br><span class="line"><span class="params">                                   <span class="meta">@RequestParam(&quot;branchName&quot;)</span> String branchName,// 灰度名称 cluster</span></span><br><span class="line"><span class="params">                                   <span class="meta">@RequestParam(value = &quot;deleteBranch&quot;, defaultValue = &quot;true&quot;)</span> <span class="type">boolean</span> deleteBranch,// 是否删除灰度</span></span><br><span class="line"><span class="params">                                   <span class="meta">@RequestParam(name = &quot;releaseComment&quot;, required = false)</span> String releaseComment,// 评论</span></span><br><span class="line"><span class="params">                                   <span class="meta">@RequestParam(name = &quot;isEmergencyPublish&quot;, defaultValue = &quot;false&quot;)</span> <span class="type">boolean</span> isEmergencyPublish,// 是否紧急发布</span></span><br><span class="line"><span class="params">                                   <span class="meta">@RequestBody</span> ItemChangeSets changeSets)</span> &#123;<span class="comment">// 这个是 portal 发来的</span></span><br><span class="line">  <span class="type">Namespace</span> <span class="variable">namespace</span> <span class="operator">=</span> namespaceService.findOne(appId, clusterName, namespaceName);<span class="comment">// 找到分支</span></span><br><span class="line">  <span class="keyword">if</span> (namespace == <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NotFoundException</span>(String.format(<span class="string">&quot;Could not find namespace for %s %s %s&quot;</span>, appId,</span><br><span class="line">                                              clusterName, namespaceName));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 合并改变 并且发布</span></span><br><span class="line">  <span class="type">Release</span> <span class="variable">release</span> <span class="operator">=</span> releaseService.mergeBranchChangeSetsAndRelease(namespace, branchName, releaseName,</span><br><span class="line">                                                                   releaseComment, isEmergencyPublish, changeSets);</span><br><span class="line">  <span class="comment">// 是否删除分支</span></span><br><span class="line">  <span class="keyword">if</span> (deleteBranch) &#123;</span><br><span class="line">    namespaceBranchService.deleteBranch(appId, clusterName, namespaceName, branchName,</span><br><span class="line">                                        NamespaceBranchStatus.MERGED, changeSets.getDataChangeLastModifiedBy());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 保存发布消息到数据库</span></span><br><span class="line">  messageSender.sendMessage(ReleaseMessageKeyGenerator.generate(appId, clusterName, namespaceName),</span><br><span class="line">                            Topics.APOLLO_RELEASE_TOPIC);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> BeanUtils.transfrom(ReleaseDTO.class, release);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个接口接受 portal 调用，比较有趣的点是，这里的 changeSet 是 portal 计算的，而不是 admin 自己计算的。</p>
+<p>然后，controller 层比较简单，数据校验，调用 Service，发送消息。</p>
+<p>当然主要看看 Service。</p>
+<p>主要是 releaseService 的 mergeBranchChangeSetsAndRelease 方法，看名字，任务很多：合并分支修改集合，并且发布。</p>
+<p>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Transactional</span></span><br><span class="line"><span class="keyword">public</span> Release <span class="title function_">mergeBranchChangeSetsAndRelease</span><span class="params">(Namespace namespace, String branchName, String releaseName,</span></span><br><span class="line"><span class="params">                                               String releaseComment, <span class="type">boolean</span> isEmergencyPublish,</span></span><br><span class="line"><span class="params">                                               ItemChangeSets changeSets)</span> &#123;</span><br><span class="line">  <span class="comment">// 检查锁</span></span><br><span class="line">  checkLock(namespace, isEmergencyPublish, changeSets.getDataChangeLastModifiedBy());</span><br><span class="line">  <span class="comment">/// 更新 item</span></span><br><span class="line">  itemSetService.updateSet(namespace, changeSets);</span><br><span class="line">  <span class="comment">// 找到最新发布的 release</span></span><br><span class="line">  <span class="type">Release</span> <span class="variable">branchRelease</span> <span class="operator">=</span> findLatestActiveRelease(namespace.getAppId(), branchName, namespace</span><br><span class="line">      .getNamespaceName());</span><br><span class="line">  <span class="comment">// release Id</span></span><br><span class="line">  <span class="type">long</span> <span class="variable">branchReleaseId</span> <span class="operator">=</span> branchRelease == <span class="literal">null</span> ? <span class="number">0</span> : branchRelease.getId();</span><br><span class="line">  <span class="comment">// 找到当前 namespace 的所有 Item(刚刚更新的)</span></span><br><span class="line">  Map&lt;String, String&gt; operateNamespaceItems = getNamespaceItems(namespace);</span><br><span class="line"></span><br><span class="line">  Map&lt;String, Object&gt; operationContext = Maps.newHashMap();</span><br><span class="line">  <span class="comment">// 构造操作上下文 sourceBranch=灰度名称 baseReleaseId=最新的releaseId isEmergencyPublish=是否紧急发布, 用于构建发布历史</span></span><br><span class="line">  operationContext.put(ReleaseOperationContext.SOURCE_BRANCH, branchName);</span><br><span class="line">  operationContext.put(ReleaseOperationContext.BASE_RELEASE_ID, branchReleaseId);</span><br><span class="line">  operationContext.put(ReleaseOperationContext.IS_EMERGENCY_PUBLISH, isEmergencyPublish);</span><br><span class="line">  <span class="comment">// ReleaseHistory Audit 主版本</span></span><br><span class="line">  <span class="keyword">return</span> masterRelease(namespace, releaseName, releaseComment, operateNamespaceItems,</span><br><span class="line">                       changeSets.getDataChangeLastModifiedBy(),</span><br><span class="line">                       <span class="comment">// 灰度合并回主分支发布</span></span><br><span class="line">                       ReleaseOperation.GRAY_RELEASE_MERGE_TO_MASTER, operationContext);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>代码很简单，步骤：</p>
+<ol>
+<li>检查锁，和普通发布一样，判断修改者和发布者是不是同一个人。</li>
+<li>根据 Portal 传递来的 changeSets 更新 item。</li>
+<li>找到最新发布的 release（构建发布历史的上下文）。</li>
+<li>发布主版本。</li>
+</ol>
+<p>其中，updateSet 方法比较重要，要看看他是怎么更新 item 的。</p>
+<p>方法很长，总之，就是将 changeSet 的内容保存到主版本的 namespace 下。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Transactional</span></span><br><span class="line"><span class="keyword">public</span> ItemChangeSets <span class="title function_">updateSet</span><span class="params">(String appId, String clusterName,</span></span><br><span class="line"><span class="params">                                String namespaceName, ItemChangeSets changeSet)</span> &#123;</span><br><span class="line">  <span class="comment">//  最后改变数据的人</span></span><br><span class="line">  <span class="type">String</span> <span class="variable">operator</span> <span class="operator">=</span> changeSet.getDataChangeLastModifiedBy();</span><br><span class="line">  <span class="comment">// 改变数据的详细信息</span></span><br><span class="line">  <span class="type">ConfigChangeContentBuilder</span> <span class="variable">configChangeContentBuilder</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ConfigChangeContentBuilder</span>();</span><br><span class="line">  <span class="comment">// 如果创建了新的</span></span><br><span class="line">  <span class="keyword">if</span> (!CollectionUtils.isEmpty(changeSet.getCreateItems())) &#123;</span><br><span class="line">    <span class="comment">// 循环</span></span><br><span class="line">    <span class="keyword">for</span> (ItemDTO item : changeSet.getCreateItems()) &#123;</span><br><span class="line">      <span class="comment">// 转换</span></span><br><span class="line">      <span class="type">Item</span> <span class="variable">entity</span> <span class="operator">=</span> BeanUtils.transfrom(Item.class, item);</span><br><span class="line">      entity.setDataChangeCreatedBy(operator);</span><br><span class="line">      entity.setDataChangeLastModifiedBy(operator);</span><br><span class="line">      <span class="comment">// 保存 item 到数据库</span></span><br><span class="line">      <span class="type">Item</span> <span class="variable">createdItem</span> <span class="operator">=</span> itemService.save(entity);</span><br><span class="line">      <span class="comment">// 保存到 builder createItems List 中</span></span><br><span class="line">      configChangeContentBuilder.createItem(createdItem);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 最后记录审核</span></span><br><span class="line">    auditService.audit(<span class="string">&quot;ItemSet&quot;</span>, <span class="literal">null</span>, Audit.OP.INSERT, operator);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 如果有修改的数据</span></span><br><span class="line">  <span class="keyword">if</span> (!CollectionUtils.isEmpty(changeSet.getUpdateItems())) &#123;</span><br><span class="line">    <span class="keyword">for</span> (ItemDTO item : changeSet.getUpdateItems()) &#123;</span><br><span class="line">      <span class="comment">// 转换并寻找</span></span><br><span class="line">      <span class="type">Item</span> <span class="variable">entity</span> <span class="operator">=</span> BeanUtils.transfrom(Item.class, item);</span><br><span class="line">      <span class="type">Item</span> <span class="variable">managedItem</span> <span class="operator">=</span> itemService.findOne(entity.getId());</span><br><span class="line">      <span class="comment">// 不存在抛出异常</span></span><br><span class="line">      <span class="keyword">if</span> (managedItem == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NotFoundException</span>(String.format(<span class="string">&quot;item not found.(key=%s)&quot;</span>, entity.getKey()));</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// 之前的数据</span></span><br><span class="line">      <span class="type">Item</span> <span class="variable">beforeUpdateItem</span> <span class="operator">=</span> BeanUtils.transfrom(Item.class, managedItem);</span><br><span class="line"></span><br><span class="line">      <span class="comment">//protect. only value,comment,lastModifiedBy,lineNum can be modified</span></span><br><span class="line">      <span class="comment">// 将之前数据内容更新</span></span><br><span class="line">      managedItem.setValue(entity.getValue());</span><br><span class="line">      managedItem.setComment(entity.getComment());</span><br><span class="line">      managedItem.setLineNum(entity.getLineNum());</span><br><span class="line">      managedItem.setDataChangeLastModifiedBy(operator);</span><br><span class="line">      <span class="comment">// 更新</span></span><br><span class="line">      <span class="type">Item</span> <span class="variable">updatedItem</span> <span class="operator">=</span> itemService.update(managedItem);</span><br><span class="line">      <span class="comment">// 更新 builder 中 value</span></span><br><span class="line">      configChangeContentBuilder.updateItem(beforeUpdateItem, updatedItem);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 最后审核 itemSet</span></span><br><span class="line">    auditService.audit(<span class="string">&quot;ItemSet&quot;</span>, <span class="literal">null</span>, Audit.OP.UPDATE, operator);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 如果有删除的</span></span><br><span class="line">  <span class="keyword">if</span> (!CollectionUtils.isEmpty(changeSet.getDeleteItems())) &#123;</span><br><span class="line">    <span class="keyword">for</span> (ItemDTO item : changeSet.getDeleteItems()) &#123;</span><br><span class="line">      <span class="comment">// 数据库删除</span></span><br><span class="line">      <span class="type">Item</span> <span class="variable">deletedItem</span> <span class="operator">=</span> itemService.delete(item.getId(), operator);</span><br><span class="line">      <span class="comment">// 添加到 builder 中</span></span><br><span class="line">      configChangeContentBuilder.deleteItem(deletedItem);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 审核</span></span><br><span class="line">    auditService.audit(<span class="string">&quot;ItemSet&quot;</span>, <span class="literal">null</span>, Audit.OP.DELETE, operator);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 如果 builder 中有内容</span></span><br><span class="line">  <span class="keyword">if</span> (configChangeContentBuilder.hasContent())&#123;</span><br><span class="line">    <span class="comment">// 创建提交记录</span></span><br><span class="line">    createCommit(appId, clusterName, namespaceName,</span><br><span class="line">        configChangeContentBuilder.build(), <span class="comment">// 将 build 变成 json 保存</span></span><br><span class="line">                 changeSet.getDataChangeLastModifiedBy());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> changeSet;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在成功更新 itme 之后，便可以进行最终的发布了，发布很简单，就不展开讲了。</p>
+<p>然后看看删除灰度，默认是要删除的。</p>
+<p>步骤：</p>
+<ol>
+<li>找到灰度发布的最新  release。</li>
+<li>更新灰度规则，置空灰度规则。</li>
+<li>删除灰度 cluster 和关联的 namespace。置于灰度为什么和 cluster 关联，而不是和 namespace 关联，这是因为最初的 apollo 没有设计灰度，后面加上灰度的时候，为了避免 namespace 大幅修改，就在 cluster 里加入父子逻辑了（咨询过作者）。</li>
+<li>记录发布历史。根据是否 merge 记录是放弃灰度还是合并后删除，方便审计。</li>
+</ol>
+<p>发布操作有很多类型，apollo 的常量如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">ReleaseOperation</span> &#123;</span><br><span class="line">  <span class="type">int</span> <span class="variable">NORMAL_RELEASE</span> <span class="operator">=</span> <span class="number">0</span>;<span class="comment">//普通发布</span></span><br><span class="line">  <span class="type">int</span> <span class="variable">ROLLBACK</span> <span class="operator">=</span> <span class="number">1</span>;<span class="comment">// 回滚</span></span><br><span class="line">  <span class="type">int</span> <span class="variable">GRAY_RELEASE</span> <span class="operator">=</span> <span class="number">2</span>;<span class="comment">// 灰度发布</span></span><br><span class="line">  <span class="type">int</span> <span class="variable">APPLY_GRAY_RULES</span> <span class="operator">=</span> <span class="number">3</span>;<span class="comment">// 灰度规则更新</span></span><br><span class="line">  <span class="type">int</span> <span class="variable">GRAY_RELEASE_MERGE_TO_MASTER</span> <span class="operator">=</span> <span class="number">4</span>;<span class="comment">// 灰度合并回主分支发布</span></span><br><span class="line">  <span class="type">int</span> <span class="variable">MASTER_NORMAL_RELEASE_MERGE_TO_GRAY</span> <span class="operator">=</span> <span class="number">5</span>;<span class="comment">// 主分支发布灰度自动发布</span></span><br><span class="line">  <span class="type">int</span> <span class="variable">MATER_ROLLBACK_MERGE_TO_GRAY</span> <span class="operator">=</span> <span class="number">6</span>;<span class="comment">// 主分支回滚灰度自动发布</span></span><br><span class="line">  <span class="type">int</span> <span class="variable">ABANDON_GRAY_RELEASE</span> <span class="operator">=</span> <span class="number">7</span>;<span class="comment">//放弃灰度</span></span><br><span class="line">  <span class="type">int</span> <span class="variable">GRAY_RELEASE_DELETED_AFTER_MERGE</span> <span class="operator">=</span> <span class="number">8</span>;<span class="comment">// 灰度版本合并后删除</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>总结一下 admin 的发布流程：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-44ee282e64da1d29.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<h2 id="4-总结"><a href="#4-总结" class="headerlink" title="4. 总结"></a>4. 总结</h2><p>将 portal 和 admin 组合起来看，下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-3aef348a7726dacb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Apollo/" class="category-chain-item">Apollo</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Apollo 10 — adminService 全量发布</div>
+      <div>http://thinkinjava.cn/2018/07/18/2018/2018-07-20-Apollo 10 — adminService 全量发布/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年7月18日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/07/18/2018/2018-07-19-Apollo%209%20%E2%80%94adminService%20%E4%B8%BB%20&amp;%20%E7%81%B0%E5%BA%A6%E7%89%88%E6%9C%AC%E5%8F%91%E5%B8%83/" title="Apollo 9 — adminService 主 &amp; 灰度版本发布">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Apollo 9 — adminService 主 &amp; 灰度版本发布</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/07/17/2018/2018-07-18-Apollo%208%20%E2%80%94%20ConfigService%20%E5%BC%82%E6%AD%A5%E8%BD%AE%E8%AF%A2%E6%8E%A5%E5%8F%A3%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="Apollo 8 — ConfigService 异步轮询接口的实现">
+                        <span class="hidden-mobile">Apollo 8 — ConfigService 异步轮询接口的实现</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

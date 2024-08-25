@@ -1,0 +1,755 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="进程进程是操作系统的核心 进程由以下三部分组成：  一个可执行的程序。 该程序所需的相关数据（变量，工作空间，缓冲区） 该程序的执行上下文（context）。  上下文是必不可少的。所有操作系统用来管理进程和处理器执行进程的信息都包括在执行上下文中。这个上下文包括寄存器的内容，进程的优先级以及进程是否等待I&#x2F;O事件的完成。 操作系统设计和层次结构   层名字 对象    13 外壳 用户程序设计环">
+<meta property="og:type" content="article">
+<meta property="og:title" content="进程">
+<meta property="og:url" content="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E8%BF%9B%E7%A8%8B/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="进程进程是操作系统的核心 进程由以下三部分组成：  一个可执行的程序。 该程序所需的相关数据（变量，工作空间，缓冲区） 该程序的执行上下文（context）。  上下文是必不可少的。所有操作系统用来管理进程和处理器执行进程的信息都包括在执行上下文中。这个上下文包括寄存器的内容，进程的优先级以及进程是否等待I&#x2F;O事件的完成。 操作系统设计和层次结构   层名字 对象    13 外壳 用户程序设计环">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-10-07T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.519Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>进程 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="进程"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2017-10-08 02:11" pubdate>
+          2017年10月8日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          15 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">进程</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h4 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h4><p><strong>进程是操作系统的核心</strong></p>
+<p>进程由以下三部分组成：</p>
+<ol>
+<li>一个可执行的程序。</li>
+<li>该程序所需的相关数据（变量，工作空间，缓冲区）</li>
+<li>该程序的执行上下文（context）。</li>
+</ol>
+<p>上下文是必不可少的。所有操作系统用来管理进程和处理器执行进程的信息都包括在执行上下文中。这个上下文包括寄存器的内容，进程的优先级以及进程是否等待I/O事件的完成。</p>
+<h5 id="操作系统设计和层次结构"><a href="#操作系统设计和层次结构" class="headerlink" title="操作系统设计和层次结构"></a>操作系统设计和层次结构</h5><table>
+<thead>
+<tr>
+<th>层名字</th>
+<th>对象</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>13 外壳</td>
+<td>用户程序设计环境</td>
+</tr>
+<tr>
+<td>12 用户进程</td>
+<td>用户进程</td>
+</tr>
+<tr>
+<td>11 目录</td>
+<td>目录</td>
+</tr>
+<tr>
+<td>10 设备</td>
+<td>外设，打印机，显示器等</td>
+</tr>
+<tr>
+<td>9 文件系统</td>
+<td>文件</td>
+</tr>
+<tr>
+<td>8 通信</td>
+<td>管道</td>
+</tr>
+<tr>
+<td>7 虚拟存储器</td>
+<td>段，页</td>
+</tr>
+<tr>
+<td>6 局部辅存</td>
+<td>数据块，设备通道</td>
+</tr>
+<tr>
+<td>5 进程原语</td>
+<td>进程原语，信号量，就绪队列</td>
+</tr>
+<tr>
+<td>4 中断</td>
+<td>中断处理程序</td>
+</tr>
+<tr>
+<td>3 过程</td>
+<td>过程，调用栈，显示</td>
+</tr>
+<tr>
+<td>2 指令集</td>
+<td>演算栈，微程序解释器</td>
+</tr>
+<tr>
+<td>1 电子线路</td>
+<td>寄存器，逻辑门，总线等</td>
+</tr>
+</tbody></table>
+<p>第一层：由电路组成，其中的对象是寄存器，村粗单元和逻辑门，对这些对象的操作是一些动作如清除寄存器或读取内存单元等。</p>
+<p>第二层：是处理器的指令集，这一层的操作是那些机器语言指令集所允许的一些指令，入ADD，SUBTRACT,LOAD,STORE等。</p>
+<p>第三层：这一层加入过程概念，包括调用返回操作。</p>
+<p>第四层：中断时处理器保存当前内容并调用中断处理程序。</p>
+<p>这四层并不是操作系统的一部分，但他们组成了处理器硬件，然而，操作系统中的一些元素，如中断处理程序，已在这一层出现。</p>
+<p>第五层：进程作为程序的执行在本层出现。w为了支持多进程，对操作系统而言基本的要求包括要有挂起和重新执行进程的能力。这就要求保存寄存器和值以便从一个进程切换到另一个进程。</p>
+<p>第六层：处理计算机的辅存，这一层的主要功能有读/写扇区，进行定位，以及传输数据块。第六层依靠第五层的调度操作。</p>
+<p>第七层：为进程创建逻辑空间。真一层将虚拟空间组织成块，并在主，辅存之间调度，当一个所需块不在主存中时，本层将逻辑地要求第六层传输。</p>
+<p>第八层：处理进程间的信息和消息通信。其最有利的工具之一就是管道（pipe）。管道是进程间数据流的一个逻辑通道，它也可用来将外部设备和文件同进程连起来。</p>
+<p>第九层：支持长期存储文件。</p>
+<p>第十层：利用标准接口，提供对外部设备的访问。</p>
+<p>第十一层：负责保存系统资源和对象的外部和内部定义间的联系。外部定义是应用程序和用户可以使用的名字。内部定义是能够被操作系统底层部分用来控制一个对象的地址或其他指示符。</p>
+<p>第十二层：这一层支持所有管理进程所必须的信息，这包括进程虚拟地址空间，与该进程由相互作用的进程和对象表列，创建该进程时传递的参数等。</p>
+<p>第十三层：在操作系统同用户间提供一个界面。他被成为“外壳（shell）”，这是因为他将用户和操作系统具体实现分开并使操作系统就像一个功能的集合。这个外壳接受用户命令，解释后根据需要创建并控制进程。</p>
+<h5 id="进程状态"><a href="#进程状态" class="headerlink" title="进程状态"></a>进程状态</h5><p>有2种进程状态模型：</p>
+<ol>
+<li>每个进程只有2种状态：运行，非运行。</li>
+<li>有一个进程队列，操作系统从这个对列中分派任务。</li>
+</ol>
+<h5 id="进程的产生和终止"><a href="#进程的产生和终止" class="headerlink" title="进程的产生和终止"></a>进程的产生和终止</h5><p>当有一个新进程要加入当钱进程队列时，操作系统产生一个控制进程的数据结构，并且为该进程分配地址空间，这样，新进程就产生了。</p>
+<p>通常有4种事件会导致产生新的进程：</p>
+<ol>
+<li>新批处理任务</li>
+<li>交互式登录</li>
+<li>OS产生以提供服务</li>
+<li>由已存在进程产生。</li>
+</ol>
+<p>进程的终止：</p>
+<ol>
+<li>正常结束</li>
+<li>超时限制</li>
+<li>内存不足</li>
+<li>超界（进程试图对不允许接近的区域进行操作）</li>
+<li>保护错误（例如对只读文件进行写操作）</li>
+<li>算术错误（例如除以零）</li>
+<li>超越时限（进程等待时间超过了某事件发生的制定时间）</li>
+<li>I/O失败</li>
+<li>非法指令</li>
+<li>特权指令（进程试图执行一个保留给OS使用的指令）</li>
+<li>错误使用数据(数据类型出错或数据为初始化)</li>
+<li>操作员或OS干预</li>
+<li>父进程终止</li>
+<li>父进程需要（父进程拥有终止所有子孙进程的权利）</li>
+</ol>
+<p>现代操作系统中最基本的组件就是进程。操作系统的重要功能就是创建，管理和终止进程。当进程处于活动状态时，操作系统必须保证每一进程都分到处理器执行时间，还要协调他们的活动，管理冲突请求，并分配系统资源给这些进程。要履行其进程管理职能，操作系统还必须维持对每一进程的描述。每个进程是由一个进程映像来表示的，它包括进程执行的地址空间和一个进程控制块。后者包含了操作系统管理该进程所需的全部信息，包括其目前的状态，分配给他的资源，优先级及其他有关数据。</p>
+<p>在进程生命周期中，他会在很多状态之间移动。这些状态中最重要的是就绪，运行和阻塞。就绪进程是指目前并未执行但一旦得到操作系统调度就准备运行的进程。运行进程是指当前正被处理器执行的进程。在多处理其系统中，可有不止一个进程处于该状态。阻塞进程是等待某件事完成（比如I/O操作）的进程。</p>
+<p>运行进程可能被中断或执行操作系统的访管而终止，所谓中断是指发生在进程之外并可被处理器所识别的事件。在这两种情况下，处理器都将执行切换操作，将控制转交给操作系统例程。在完成所需工作后，曹组系统可能恢复被终止的进程或切换到另一进程。</p>
+<p>一些操作系统区分了进程和线程的概念，前者与资源的拥有有关，而后者与程序的执行有关。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%9F%BA%E7%A1%80/" class="category-chain-item">基础</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>进程</div>
+      <div>http://thinkinjava.cn/2017/10/08/2017/2017-10-08-进程/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2017年10月8日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2017/10/08/2017/2017-10-08-%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E5%8E%9F%E7%90%86/" title="计算机组成原理">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">计算机组成原理</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2017/10/01/2017/2017-10-01-%E5%B0%86springboot%E9%83%A8%E7%BD%B2%E5%88%B0windows%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E5%81%9A%E6%88%90%E6%9C%8D%E5%8A%A1/" title="将Springboot部署到windows服务器上做成服务">
+                        <span class="hidden-mobile">将Springboot部署到windows服务器上做成服务</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

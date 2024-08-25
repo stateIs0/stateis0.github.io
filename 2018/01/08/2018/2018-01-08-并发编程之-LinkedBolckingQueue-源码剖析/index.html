@@ -1,0 +1,708 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之-LinkedBolckingQueue-源码剖析">
+<meta property="og:url" content="http://thinkinjava.cn/2018/01/08/2018/2018-01-08-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-LinkedBolckingQueue-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-01-07T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.533Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>并发编程之-LinkedBolckingQueue-源码剖析 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="并发编程之-LinkedBolckingQueue-源码剖析"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-01-08 02:11" pubdate>
+          2018年1月8日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          18 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">并发编程之-LinkedBolckingQueue-源码剖析</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       JDK 1.5 之后，Doug Lea 大神为我们写了很多的工具，整个 concurrent 包基本都是他写的。也为我们程序员写好了很多工具，包括我们之前说的线程池，重入锁，线程协作工具，ConcurrentHashMap 等等，今天我们要讲的是和 ConcurrentHashMap 类似的数据结构，LinkedBolckingQueue，阻塞队列。在生产者消费者模型中，该类可以帮助我们快速的实现业务功能。
+
+<ol>
+<li>如何使用？</li>
+<li>源码分析</li>
+</ol>
+<h2 id="1-如何使用？"><a href="#1-如何使用？" class="headerlink" title="1. 如何使用？"></a>1. 如何使用？</h2><p>我们在生产者消费者模型，生产者向一个数据共享通道存放数据，消费者从相同的数据共享通道获取数据，将生产和消费完全隔离，不仅是生产者消费者，现在流行的消息队列，比如各种MQ，kafka，和这个都差不多。废话不多说，直接来个demo ，看看怎么使用：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">  <span class="type">LinkedBlockingQueue</span> <span class="variable">linkedBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LinkedBlockingQueue</span>(<span class="number">1024</span>);</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">int</span> <span class="variable">num</span> <span class="operator">=</span> i;</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">j</span> <span class="operator">=</span> <span class="number">0</span>; ; j++) &#123;</span><br><span class="line">          linkedBlockingQueue.put(num + <span class="string">&quot;号线程的&quot;</span> + j + <span class="string">&quot;号商品&quot;</span>);</span><br><span class="line">          Thread.sleep(<span class="number">5000</span>);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;).start();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (; ; ) &#123;</span><br><span class="line">          System.out.println(<span class="string">&quot;消费了&quot;</span> + linkedBlockingQueue.take());</span><br><span class="line">          Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;).start();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">消费了0号线程的0号商品</span><br><span class="line">消费了3号线程的0号商品</span><br><span class="line">消费了2号线程的0号商品</span><br><span class="line">消费了1号线程的0号商品</span><br><span class="line">消费了4号线程的0号商品</span><br><span class="line">消费了2号线程的1号商品</span><br><span class="line">消费了1号线程的1号商品</span><br><span class="line">消费了0号线程的1号商品</span><br><span class="line">消费了3号线程的1号商品</span><br><span class="line">消费了4号线程的1号商品</span><br><span class="line">消费了1号线程的2号商品</span><br><span class="line">消费了0号线程的2号商品</span><br><span class="line">消费了2号线程的2号商品</span><br><span class="line">消费了3号线程的2号商品</span><br><span class="line">消费了4号线程的2号商品</span><br><span class="line">·········</span><br></pre></td></tr></table></figure>
+
+<p>从上面的代码中，我们使用了5条线程分别向队列中插入数据，也就是一个字符串，然后让5个线程从队列中取出数据并打印，可以看到，生产者插入的数据从消费者线程中被打印，没有漏掉一个。</p>
+<p>注意，这里的 put 方法和 take 方法都是阻塞的，不然就不是阻塞队列了，什么意思呢？如果队列满了，put 方法就会等待，直到队列有空为止，因此该方法使用时需要注意，如果业务即时性很高，那么最好使用带有超时选项的 offer （V，long，TimeUnit），方法，同样， take 方法也是如此，当队列中没有的时候，就会阻塞，直到队列中有数据为止。同样可以使用 poll（long, TimeUnit）方法超时退出。</p>
+<p>当然不止这几个方法，楼主将常用的方法总结一下：</p>
+<p>插入方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"> </span><br><span class="line"><span class="comment">// 如果满了，立即返回false</span></span><br><span class="line"><span class="type">boolean</span> <span class="variable">b</span> <span class="operator">=</span> linkedBlockingQueue.offer(<span class="string">&quot;&quot;</span>);</span><br><span class="line"><span class="comment">// 如果满了，则等待到给定的时间，如果还满，则返回false</span></span><br><span class="line"><span class="type">boolean</span> <span class="variable">b2</span> <span class="operator">=</span> linkedBlockingQueue.offer(<span class="string">&quot;&quot;</span>, <span class="number">1000</span>, TimeUnit.MILLISECONDS);</span><br><span class="line"><span class="comment">// 阻塞直到插入为止</span></span><br><span class="line">linkedBlockingQueue.put(<span class="string">&quot;&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>取出方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 如果队列为空，直接返回null</span></span><br><span class="line"><span class="type">Object</span> <span class="variable">o3</span> <span class="operator">=</span> linkedBlockingQueue.poll();</span><br><span class="line"><span class="comment">// 如果队列为空，一直阻塞到给定的时间</span></span><br><span class="line"><span class="type">Object</span> <span class="variable">o1</span> <span class="operator">=</span> linkedBlockingQueue.poll(<span class="number">1000</span>, TimeUnit.MILLISECONDS);</span><br><span class="line"><span class="comment">// 阻塞，直到取出数据</span></span><br><span class="line"><span class="type">Object</span> <span class="variable">o</span> <span class="operator">=</span> linkedBlockingQueue.take();</span><br><span class="line"><span class="comment">// 获取但不移除此队列的头；如果此队列为空，则返回 null。</span></span><br><span class="line"><span class="type">Object</span> <span class="variable">peek</span> <span class="operator">=</span> linkedBlockingQueue.peek();</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>那么这些方法内部是如何实现的呢？</p>
+<h2 id="2-源码分析"><a href="#2-源码分析" class="headerlink" title="2. 源码分析"></a>2. 源码分析</h2><p>阻塞队列，重点看 put 阻塞方法和 take 阻塞方法。</p>
+<h5 id="put-方法："><a href="#put-方法：" class="headerlink" title="put 方法："></a>put 方法：</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">put</span><span class="params">(E e)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    <span class="keyword">if</span> (e == <span class="literal">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NullPointerException</span>();</span><br><span class="line">    <span class="comment">// Note: convention in all put/take/etc is to preset local var</span></span><br><span class="line">    <span class="comment">// holding count negative to indicate failure unless set.</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">c</span> <span class="operator">=</span> -<span class="number">1</span>;</span><br><span class="line">    Node&lt;E&gt; node = <span class="keyword">new</span> <span class="title class_">Node</span>&lt;E&gt;(e);</span><br><span class="line">    <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">putLock</span> <span class="operator">=</span> <span class="built_in">this</span>.putLock;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">count</span> <span class="operator">=</span> <span class="built_in">this</span>.count;</span><br><span class="line">    putLock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * Note that count is used in wait guard even though it is</span></span><br><span class="line"><span class="comment">         * not protected by lock. This works because count can</span></span><br><span class="line"><span class="comment">         * only decrease at this point (all other puts are shut</span></span><br><span class="line"><span class="comment">         * out by lock), and we (or some other waiting put) are</span></span><br><span class="line"><span class="comment">         * signalled if it ever changes from capacity. Similarly</span></span><br><span class="line"><span class="comment">         * for all other uses of count in other wait guards.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">while</span> (count.get() == capacity) &#123;</span><br><span class="line">            notFull.await();</span><br><span class="line">        &#125;</span><br><span class="line">        enqueue(node);</span><br><span class="line">        c = count.getAndIncrement();</span><br><span class="line">        <span class="keyword">if</span> (c + <span class="number">1</span> &lt; capacity)</span><br><span class="line">            notFull.signal();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        putLock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (c == <span class="number">0</span>)</span><br><span class="line">        signalNotEmpty();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该方法步骤如下：</p>
+<ol>
+<li>根据给定的值创建一个 Node 对象，该对象有2个属性，一个是 item，一个是 Node 类型的 next，是链表结构的节点。</li>
+<li>获取 put 的锁，注意，这里，put 锁和 take 锁是分开的。也就是说，当你插入的时候和取出的时候用的不是一把锁，可以高效并发，但是如果两个线程同时插入就会阻塞。</li>
+<li>获取链表的长度。</li>
+<li>使用中断锁，如果调用了线程的中断方法，那么，处于阻塞中的线程就会抛出异常。</li>
+<li>判断如果当前链表长度达到了设置的长度，默认是 int 最大型，就调用 put 锁的伙伴 Condition 对象 notFull 让当前线程挂起等待。 直到 take 方法中会调用 notFull 对象的 signal 方法唤醒。</li>
+<li>调用 enqueue 方法，将刚刚创建的 Node 节点连接到链表上。</li>
+<li>将链表长度变量 count 加一。 判断如果加一后，链表长度还小于链表规定的容量，那么就唤醒其他等待在 notFull 对象上的线程，告诉他们可以取数据了。</li>
+<li>放开锁，让其他线程争夺锁（非公平锁）。</li>
+<li>如果c是0，表示队列已经有一个数据了，通知唤醒挂在 notEmpty 的线程，告诉他们可以取数据了。</li>
+</ol>
+<h5 id="take-方法如下："><a href="#take-方法如下：" class="headerlink" title="take 方法如下："></a>take 方法如下：</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> E <span class="title function_">take</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    E x;</span><br><span class="line">    <span class="type">int</span> <span class="variable">c</span> <span class="operator">=</span> -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">count</span> <span class="operator">=</span> <span class="built_in">this</span>.count;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">takeLock</span> <span class="operator">=</span> <span class="built_in">this</span>.takeLock;</span><br><span class="line">    takeLock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (count.get() == <span class="number">0</span>) &#123;</span><br><span class="line">            notEmpty.await();</span><br><span class="line">        &#125;</span><br><span class="line">        x = dequeue();</span><br><span class="line">        c = count.getAndDecrement();</span><br><span class="line">        <span class="keyword">if</span> (c &gt; <span class="number">1</span>)</span><br><span class="line">            notEmpty.signal();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        takeLock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (c == capacity)</span><br><span class="line">        signalNotFull();</span><br><span class="line">    <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>步骤如下：</p>
+<ol>
+<li>获取链长度，获取 take 锁。</li>
+<li>调用可中断的 lock 方法。开始锁住。</li>
+<li>如果队列是空，则挂起线程。开始等待。</li>
+<li>如果不为空，则调用 dequeue 方法，拿到头节点的数据，并将头节点更新。</li>
+<li>将队列长度减一。判断如果队列长度大于1，通知等待在 notEmpty 上的线程，可以拿数据了。</li>
+<li>解锁。</li>
+<li>如果变量 c 和 容量相同，而刚刚又消费了一个节点，说明队列不满了，则通知生产者可以添加数据了。</li>
+<li>返回数据。</li>
+</ol>
+<h5 id="boolean-offer-E-e-long-timeout-TimeUnit-unit-源码："><a href="#boolean-offer-E-e-long-timeout-TimeUnit-unit-源码：" class="headerlink" title="boolean offer(E e, long timeout, TimeUnit unit)  源码："></a>boolean offer(E e, long timeout, TimeUnit unit)  源码：</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">offer</span><span class="params">(E e, <span class="type">long</span> timeout, TimeUnit unit)</span></span><br><span class="line">    <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (e == <span class="literal">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NullPointerException</span>();</span><br><span class="line">    <span class="type">long</span> <span class="variable">nanos</span> <span class="operator">=</span> unit.toNanos(timeout);</span><br><span class="line">    <span class="type">int</span> <span class="variable">c</span> <span class="operator">=</span> -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">putLock</span> <span class="operator">=</span> <span class="built_in">this</span>.putLock;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">count</span> <span class="operator">=</span> <span class="built_in">this</span>.count;</span><br><span class="line">    putLock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (count.get() == capacity) &#123;</span><br><span class="line">            <span class="keyword">if</span> (nanos &lt;= <span class="number">0</span>)</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">            nanos = notFull.awaitNanos(nanos);</span><br><span class="line">        &#125;</span><br><span class="line">        enqueue(<span class="keyword">new</span> <span class="title class_">Node</span>&lt;E&gt;(e));</span><br><span class="line">        c = count.getAndIncrement();</span><br><span class="line">        <span class="keyword">if</span> (c + <span class="number">1</span> &lt; capacity)</span><br><span class="line">            notFull.signal();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        putLock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (c == <span class="number">0</span>)</span><br><span class="line">        signalNotEmpty();</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>该方法会阻塞给定的时间，如果时间到了，则返回false。<br>和 put 方法很相似，步骤如下：</p>
+<ol>
+<li>将时间转成纳秒。</li>
+<li>获取 put 锁。</li>
+<li>调用可中断锁方法。</li>
+<li>如果容量满了，并且设置的等待时间小于0，返回 false，表示插入失败，反之，调用 notFull 方法等待给定的时间，并返回一个负数，当第二次循环的时候，继续判断，如果还是满的并且小于0，返回false。</li>
+<li>如果容量没有满，或者等待过程被唤醒，则调用 enqueue 插入数据。</li>
+<li>获取当前链表长度。</li>
+<li>判断链表长度+1是否小于设置的容量。如果小于，则链表没有满，通知生产者可以添加数据了。</li>
+<li>释放锁。 如果 c 等于 0，表示之前没有数据，但是现在已经加入一个数据了，可以通知其他的消费者来消费了。</li>
+<li>返回 true。</li>
+</ol>
+<h5 id="E-poll-long-timeout-TimeUnit-unit-源码分析"><a href="#E-poll-long-timeout-TimeUnit-unit-源码分析" class="headerlink" title="E poll(long timeout, TimeUnit unit) 源码分析"></a>E poll(long timeout, TimeUnit unit) 源码分析</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> E <span class="title function_">poll</span><span class="params">(<span class="type">long</span> timeout, TimeUnit unit)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    <span class="type">E</span> <span class="variable">x</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="type">int</span> <span class="variable">c</span> <span class="operator">=</span> -<span class="number">1</span>;</span><br><span class="line">    <span class="type">long</span> <span class="variable">nanos</span> <span class="operator">=</span> unit.toNanos(timeout);</span><br><span class="line">    <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">count</span> <span class="operator">=</span> <span class="built_in">this</span>.count;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">takeLock</span> <span class="operator">=</span> <span class="built_in">this</span>.takeLock;</span><br><span class="line">    takeLock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (count.get() == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (nanos &lt;= <span class="number">0</span>)</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">            nanos = notEmpty.awaitNanos(nanos);</span><br><span class="line">        &#125;</span><br><span class="line">        x = dequeue();</span><br><span class="line">        c = count.getAndDecrement();</span><br><span class="line">        <span class="keyword">if</span> (c &gt; <span class="number">1</span>)</span><br><span class="line">            notEmpty.signal();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        takeLock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (c == capacity)</span><br><span class="line">        signalNotFull();</span><br><span class="line">    <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该方法会阻塞给定的时间，如果取不到数据，返回null。</p>
+<p>步骤其实和上面的差不多，楼主偷个懒，就不解释了。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>从源码分析中，我们可以看到，整个阻塞队列就是由重入锁和Condition 组合实现的，和我们之前用 synchronized  加上 wait 和 notify 实现很相似，只是楼主的那个例子没有使用队列，因此无法将锁分开，也就是我们之前说的锁分离的技术。那么，整体的性能当然不能和 Doug Lea 大神的比了。</p>
+<p>好了。今天的并发源码分析，就到这里。</p>
+<p>good luck！！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>并发编程之-LinkedBolckingQueue-源码剖析</div>
+      <div>http://thinkinjava.cn/2018/01/08/2018/2018-01-08-并发编程之-LinkedBolckingQueue-源码剖析/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年1月8日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/01/10/2018/2018-01-10-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-ThreadLocal-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" title="并发编程之-ThreadLocal-源码剖析">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">并发编程之-ThreadLocal-源码剖析</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/01/07/2018/2018-01-07-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-CAS-%E7%9A%84%E5%8E%9F%E7%90%86/" title="并发编程之-CAS-的原理">
+                        <span class="hidden-mobile">并发编程之-CAS-的原理</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,748 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="概述 Agent 功能介绍 + 整体结构 + 设计 插件机制详解 Trace Segment Span 详解 异步 Trace 详解 如何正确地编写插件并防止内存泄漏 扩展：如何基于 Skywalking 打造全链路压测 总结与参考  概述在 APM 和全链路监控领域，Skywalking 是非常有名的项目，我司使用的就是该方案来进行应用性能监控和分布式链路跟踪。而我本人最近的工作和 Skywa">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解 Skywalking Agent">
+<meta property="og:url" content="http://thinkinjava.cn/2022/04/04/2022/sky/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="概述 Agent 功能介绍 + 整体结构 + 设计 插件机制详解 Trace Segment Span 详解 异步 Trace 详解 如何正确地编写插件并防止内存泄漏 扩展：如何基于 Skywalking 打造全链路压测 总结与参考  概述在 APM 和全链路监控领域，Skywalking 是非常有名的项目，我司使用的就是该方案来进行应用性能监控和分布式链路跟踪。而我本人最近的工作和 Skywa">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://user-images.githubusercontent.com/24973360/202891315-99b88084-63a8-432c-be2d-6a58d910e675.png">
+<meta property="og:image" content="https://user-images.githubusercontent.com/24973360/202891331-448a9a41-126f-4f41-99d9-1e52e1e313ad.png">
+<meta property="og:image" content="https://user-images.githubusercontent.com/24973360/202891338-0b5c9dca-7680-48e4-a7b8-2f7de027f724.png">
+<meta property="og:image" content="https://user-images.githubusercontent.com/24973360/202891345-532ebbda-92c6-403d-b37b-28f74bb4dfa5.png">
+<meta property="og:image" content="https://user-images.githubusercontent.com/24973360/202891350-56eb65d6-d606-4eb7-affe-28147020b58e.png">
+<meta property="og:image" content="https://user-images.githubusercontent.com/24973360/202891356-04e13463-fed7-4c8d-9fce-fa697d3c534b.png">
+<meta property="og:image" content="https://user-images.githubusercontent.com/24973360/202891358-7f032360-e3f3-4084-9f8f-a597d80ae8f7.png">
+<meta property="og:image" content="https://user-images.githubusercontent.com/24973360/202891359-be1f237f-ae9a-4c33-baed-bd70cf03faee.png">
+<meta property="article:published_time" content="2022-04-04T03:01:02.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.555Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://user-images.githubusercontent.com/24973360/202891315-99b88084-63a8-432c-be2d-6a58d910e675.png">
+  
+  
+  
+  <title>深入理解 Skywalking Agent - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="深入理解 Skywalking Agent"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-04-04 11:01" pubdate>
+          2022年4月4日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          34 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">深入理解 Skywalking Agent</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <ol>
+<li>概述</li>
+<li>Agent 功能介绍 + 整体结构 + 设计</li>
+<li>插件机制详解</li>
+<li>Trace Segment Span 详解</li>
+<li>异步 Trace 详解</li>
+<li>如何正确地编写插件并防止内存泄漏</li>
+<li>扩展：如何基于 Skywalking 打造全链路压测</li>
+<li>总结与参考</li>
+</ol>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>在 APM 和全链路监控领域，Skywalking 是非常有名的项目，我司使用的就是该方案来进行应用性能监控和分布式链路跟踪。而我本人最近的工作和 Skywalking 也高度相关，因此，lz想以本文来作为这段时间，对关于 Skywalking 的知识点进行总结和分享，包括插件机制的原理，核心领域模型的分析，异步 trace 可能存在的问题，编写复杂插件时如何避免采坑，如何基于 Skywalking 打造全链路压测等等。如果不当，还请指出，不吝赐教。另外，本文只关注 Skywalking Java Agent，关于 Skywalking 其他的组件，不在本文探讨之列。</p>
+<h2 id="Agent-功能介绍-整体结构-设计"><a href="#Agent-功能介绍-整体结构-设计" class="headerlink" title="Agent 功能介绍 + 整体结构 + 设计"></a>Agent 功能介绍 + 整体结构 + 设计</h2><p>Skywalking Java Agen 使用 Java  premain 作为 Agent 的技术方案，关于 Java  Agent，其实有 2 种，一种是以 premain 作为挂载方式（启动时挂载），另外一种是以 agentmain 作为挂载方式，在程序运行期间随时挂载，例如著名的 arthas 就是使用的该方案；agentmain 会更加灵活，但局限会比 premain 多，例如不能增减父类，不能增加接口，新增的方法只能是  private static/final 的，不能修改字段，类访问符不能变化。而 premian 则没有这些限制。</p>
+<p>另外，agentmain 的挂载方式，对性能是有影响的，他的工作原理是启动一个新的进程，触发ClassFileLoadHook 事件，然后修改正在运行的字节码，那如果这个类正在运行怎么办呢？JVM 会在安全点暂停所有线程，然后触发我们编写的 Agent 钩子，并重新转换字节码。而在暂停所有现场的过程中，程序就会产生可能不可控的延迟。</p>
+<p>另外说一个题外话，关于 Redefine 和 Retransform 的区别，前者会覆盖掉被修改的内容，后者会保留被修改的内容。Redefine 是 Java 1.5 引入的，Retransform 是 Java 1.6 引入的。Redefine 有很多缺陷，例如 Redefine 后的类不能恢复，不能修改删除 field 和 method，包括方法参数，名称和返回值。Jdk 1.6 的 Retransform 则解决了这些问题。关于 Retransform 和 Redefine，可以参考 arthas 作者的一些文章介绍。</p>
+<p>回到 Skywalking 上面，Skywalking 是在 premian 方法中类加载时修改字节码的。使用 ByteBuddy 类库（基于 ASM）实现字节码插桩修改。入口类 <code>SkyWalkingAgent#premain</code> 。</p>
+<p>Skywalking Agent 整体结构基于微内核的方式，即插件化，apm-agent-core 是核心代码，负责启动，加载配置，加载插件，修改字节码，记录调用数据，发送到后端等等。而 apm-sdk-plugin 模块则是各个中间件的插装插件，比如 Jedis，Dubbo，RocketMQ，Kafka 等各种客户端。</p>
+<p>如果想要实现一个中间件的监控，只需要遵守 Skywalking 的插件规范，编写一个 Maven 模块就可以。Skywalking 内核会自动化的加载插件，并插桩字节码。</p>
+<p>Skywalking 的作者曾说：不管是 Linux，Istio 还是 SkyWalking ，都有一个很大的特点：当项目被「高度模块化」之后，贡献者就会开始急剧的提高。</p>
+<p>而模块化，插件化，也是一个软件不容易腐烂的重要特性。Skywalking 的就是遵循这个理念设计。</p>
+<h2 id="插件机制详解"><a href="#插件机制详解" class="headerlink" title="插件机制详解"></a>插件机制详解</h2><p>Skywalking 如何加载插件的呢？ Skywalking 的插件在 maven 打包完成后，会自动放在 plugins 目录下，Skywalking 在启动时，会使用自定义的 AgentClassLoader 进行插件加载，该 ClassLoader 重写了findclass 方法（并没有破坏双亲委派模型）。启动时，Skywalking 就会查找所有的 <code>skywalking-plugin.def</code> 文件，并使用默认的 AgentClassLoader 加载这些文件里定义的插件元数据类，来映射目标 class 和拦截 class 的关系（代码位置 <code>PluginBootstrap#loadPlugins</code> ）。此时真正的拦截插件并不会加载，这些映射规则，则是插件开发者自己定义的。</p>
+<p>在 Skywalking 中，每个业务 classLoader 实例，都会对应一个新的 AgentClassLoader。哪些是业务ClassLoader呢？比如 <code>sun.misc.Launcher$AppClassLoader</code>，<code>org.springframework.boot.loader.LaunchedURLClassLoader </code>,<code>sun.misc.Launcher$ExtClassLoader</code>, <code>sun.reflect.DelegatingClassLoader </code>，业务自己创建的 <code>ClassLoader</code> 等等。</p>
+<p>而 AgentClassLoader 的路径则是 plugins 和 activations 目录，AgentClassLoader 可以在这 2个路径下查找 Class。</p>
+<p>当加载一个类时，比如 Jedis，那么就会触发 javaAgent 的 Instrumentation 钩子，Instrumentation 内部则实现了一整套逻辑。Skywalking 会检查是否有 Jedis 的插件（这个规则是Jedis 插件里的 <code>skywalking-plugin.def</code> 定义，此文件在启动时就加载了），如果有，就使用一个新的 AgentClassLoader （parent 是目标类加载器）来加载拦截器，并将拦截器插入到调用方法的前面和后面（代码位置 <code>ClassEnhancePluginDefine#enhance</code>）。</p>
+<p>为什么要用一个新的 AgentClassLoader 呢？假设不用 AgentClassLoader，用默认的 AgentClassLoader，这个 AgentClassLoader 的 parent 是 JDK AppClassLoader，而如果 Jedis 是 一个自定义类加载器加载的，且插件里又访问 Jedis 这个类，因为 AgentClassLoader 是无法访问到 Jedis 这个类文件的，因此只能向上查找，向上查找到 AppClassLoader，肯定是查不到的，因为 Jedis 是自定义类加载器加载的。</p>
+<p>如下图：<br><img src="https://user-images.githubusercontent.com/24973360/202891315-99b88084-63a8-432c-be2d-6a58d910e675.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p>而如果我们使用一个新的 AgentClassLoader，并将其 parent 设置为 Jedis 的 ClassLoader，则可以解决这个问题，如下图：</p>
+<p><img src="https://user-images.githubusercontent.com/24973360/202891331-448a9a41-126f-4f41-99d9-1e52e1e313ad.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p>插件分为 3 种：构造器插件，静态方法插件，实例方法插件。分别是 InstanceConstructorInterceptor 接口，StaticMethodsAroundInterceptor 接口， InstanceMethodsAroundInterceptor 接口。</p>
+<p>我们随便点开一个插件，例如 HttpClient 插件：<br><img src="https://user-images.githubusercontent.com/24973360/202891338-0b5c9dca-7680-48e4-a7b8-2f7de027f724.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p>该插件在拦截器代码里访问 apache http 的类。我们可以在其执行execute方法时，拦截到请求参数，并进行解析。根据 Skywalking 的规范，设置各种标签和 Span。关于 Span ，下面会单独详解。</p>
+<h2 id="Trace-Segment-Span-详解"><a href="#Trace-Segment-Span-详解" class="headerlink" title="Trace Segment Span 详解"></a>Trace Segment Span 详解</h2><p>Skywalking 是全链路追踪和 APM 插件，我们这里先讨论全链路跟踪，暂时不讨论 APM。自从 google 2010 发布 Dapper 论文以来，各种全链路跟踪插件如雨后春笋般的出现。Skywalking是其中优秀的代表。</p>
+<p>全链路跟踪一般有几个概念 Trace，Span。Trace 代表了一次调用所产生的链路，并且会有一个全局唯一的 ID，在 google的论文中，他是一组 span 的集合，Span 表示一个组件的调用信息，是整个 Trace 中的一个节点，他的 ID 在 trace 中是唯一的。</p>
+<p>一般 Span 的结构是这样的 （伪代码）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Span</span> &#123;</span><br><span class="line">  <span class="type">int</span> id; <span class="comment">// 自身 Span 的 ID</span></span><br><span class="line">  <span class="type">int</span> parentId; <span class="comment">//  父 Span 的 ID</span></span><br><span class="line">  String name; <span class="comment">// Span 的名称</span></span><br><span class="line">  String traceId; <span class="comment">// 全局 traceID</span></span><br><span class="line">  Date startTime; <span class="comment">// span 的启动时间</span></span><br><span class="line">  Date endTime; <span class="comment">// span 的执行结束时间</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Segment 是 Skywalking 代码里的独有概念，他表示的是一个 JVM 里一个线程里的一次调用链路，通常会有多个 Span。SKywalking Agent 代码中是没有 Trace 实体的，Trace 其实就是多个 Segment 连接成的一个东西。</p>
+<p>一个 Segment 由多个 Span 组成，当一个线程一次调用运行结束了，那么这个 Segment 就结束了（非异步场景），SKywalking 就会把这个调用信息返回到后端统计服务 OAP 中，此时，就可以通过 web 页面进行搜索查看了。</p>
+<p>我们来看下代码是怎么写的，首先看 Segment，该类全称是 TraceSegment</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TraceSegment</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> String traceSegmentId;</span><br><span class="line">    <span class="keyword">private</span> List&lt;TraceSegmentRef&gt; refs;</span><br><span class="line">    <span class="keyword">private</span> List&lt;AbstractTracingSpan&gt; spans;</span><br><span class="line">    <span class="keyword">private</span> DistributedTraceIds relatedGlobalTraces;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">long</span> createTime;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">TraceSegment</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.traceSegmentId = GlobalIdGenerator.generate();</span><br><span class="line">        <span class="built_in">this</span>.spans = <span class="keyword">new</span> <span class="title class_">LinkedList</span>&lt;&gt;();</span><br><span class="line">        <span class="built_in">this</span>.relatedGlobalTraces = <span class="keyword">new</span> <span class="title class_">DistributedTraceIds</span>();</span><br><span class="line">        <span class="built_in">this</span>.relatedGlobalTraces.append(<span class="keyword">new</span> <span class="title class_">NewDistributedTraceId</span>());</span><br><span class="line">        <span class="built_in">this</span>.createTime = System.currentTimeMillis();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>traceSegmentId： 表示自身作为 Segment 的全局唯一 ID；<br>refs：每次有新的流量进入 JVM，都会创建一个新的 Segment，如果他的前面还是有一个 JVM 的话，那么就将前面这个 JVM 的 Segment 保存到 refs 链表中（新版本已经不是链表了，只是一个单对象，链表可能会导致内存泄漏），这样就将 Segment 串联起来了。<br>spans：在 JVM 中运行 Span 节点，都会保存到 spans 中。<br>relatedGlobalTraces：第一个节点生成的唯一 ID，也就是 TraceID；注意，虽然构造方法这里赋值了，但是后面会调用其 Set 方法，将其覆盖。</p>
+<p>Span 结构是怎么样的呢？Span 种类比较多，分为入口 Span（例如 Tomcat 入口，SpringMVC 入口），出口 Span（DB 客户端，Jedis 客户端，Http 客户端），本地方法 Span（本地函数）；</p>
+<p>SKywalking 抽象的 Span 代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">AbstractTracingSpan</span> <span class="keyword">implements</span> <span class="title class_">AbstractSpan</span> &#123;</span><br><span class="line"> 	<span class="keyword">protected</span> <span class="type">int</span> spanId; <span class="comment">// 自身 ID，从0开始</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="type">int</span> parentSpanId; <span class="comment">// 父 span ID</span></span><br><span class="line">    <span class="keyword">protected</span> List&lt;TagValuePair&gt; tags; <span class="comment">// 执行过程中，记录的数据</span></span><br><span class="line">    <span class="keyword">protected</span> String operationName; <span class="comment">// 名字</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">volatile</span> <span class="type">boolean</span> <span class="variable">isInAsyncMode</span> <span class="operator">=</span> <span class="literal">false</span>; <span class="comment">// 是否为异步模式</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="type">boolean</span> <span class="variable">isAsyncStopped</span> <span class="operator">=</span> <span class="literal">false</span>; <span class="comment">// 异步是否停止</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> TracingContext owner;  <span class="comment">// 持有该 Span 的上下文</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="type">long</span> startTime; <span class="comment">// 开始时间</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="type">long</span> endTime; <span class="comment">// 结束时间</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="type">boolean</span> <span class="variable">errorOccurred</span> <span class="operator">=</span> <span class="literal">false</span>; <span class="comment">// 是否发生了错误</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="type">int</span> <span class="variable">componentId</span> <span class="operator">=</span> <span class="number">0</span>; <span class="comment">// Span 组件 ID</span></span><br><span class="line">    <span class="keyword">protected</span> List&lt;LogDataEntity&gt; logs; <span class="comment">// 日志</span></span><br><span class="line">    <span class="keyword">protected</span> List&lt;TraceSegmentRef&gt; refs; <span class="comment">// 父 Segment</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，SKywalking 的 Span 设计和大部分设计是差不多的。我们注意到有个 TracingContext，这是一个关键对象，用来维护一次调用过程中，所有 Span 的生命周期。</p>
+<p>TracingContext 属性：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TracingContext</span> <span class="keyword">implements</span> <span class="title class_">AbstractTracerContext</span> &#123;</span><br><span class="line"> 	<span class="keyword">private</span> TraceSegment segment; <span class="comment">// 当前调用的 Segment</span></span><br><span class="line">    <span class="comment">// 当前调用的所有 Span，使用链表维护，模拟栈的进出</span></span><br><span class="line">    <span class="keyword">private</span> LinkedList&lt;AbstractSpan&gt; activeSpanStack = <span class="keyword">new</span> <span class="title class_">LinkedList</span>&lt;&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> spanIdGenerator; <span class="comment">// id 生成器</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="type">int</span> asyncSpanCounter; 异步计数器</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="type">boolean</span> isRunningInAsyncMode; 是否为异步模式</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> ReentrantLock asyncFinishLock; 异步执行锁</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="type">boolean</span> running; 是否结束</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">long</span> createTime; 创建时间</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此类的关键就是 activeSpanStack，其使用链表模拟了栈的进出，为什么使用栈的结构呢？使用栈结构能够更方便的管理 Span 的生命周期。在 SKywalking 中，一个 Span 创建成功，就是入栈操作，该 Span 执行结束，则是出栈操作。当这个栈空了，表示这个 Segment 执行结束了。</p>
+<p>具体如下图所示：<br><img src="https://user-images.githubusercontent.com/24973360/202891345-532ebbda-92c6-403d-b37b-28f74bb4dfa5.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p>上图中，显示了 SKywalking 中如何管理 Span 的生命周期：当第一个 Span 创建时，例如 Tomcat Span，则会放到栈底，当 Jedis Span 对外访问时（例如执行 get 命令），则放在栈顶。当 Jedis 操作执行结束时，则会出栈，当 ThreadSpan 执行 Run 方法结束时，也会出栈，当访问 Tomcat 的请求执行结束时，则也会出栈，直至栈为空。当栈为空，则会将这些 Span 发送到后端 OAP server 进行保存。</p>
+<p>然后我们总结下 trace Segment span 的关系：<br><img src="https://user-images.githubusercontent.com/24973360/202891350-56eb65d6-d606-4eb7-affe-28147020b58e.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p>大体上，就是这样的一个关系。</p>
+<h2 id="异步-Trace-详解"><a href="#异步-Trace-详解" class="headerlink" title="异步 Trace 详解"></a>异步 Trace 详解</h2><p>前面我们了解了 Span 和 Segment 的原理，其实还有一点，SKywalking Agent 用来存储 Span 的容器是 ThreadLocal，便于在单个线程中，随时取出 Span 对象。当栈为空时，则会删除 ThreadLocal 对象，防止内存泄漏。</p>
+<p>那如果是异步 Trace，该怎么办呢？SKywalking 提供了 capture 和 continued(snapshot)，前者表示将当前栈顶的 Span 复制并返回一个快照，continued 表示将快照恢复为当前栈顶 Span 的父 Span，以此来完成 Span 和 Span 之间的链接。</p>
+<p>例如，当我们使用异步线程执行任务时，SKywalking 在默认情况下，是无法链接当前线程的 Span 和异步线程的 Span 的，除非我们在 Runnable 实现类使用 TraceCrossThread 类似的注解，表示这个 Runnable 需要跨线程追踪，那么，SKywalking 就会做出 capture 和 continued(snapshot) 操作，将主线程的 Span+Segment 复制到 Runnable 中，并将这 2 个 Span 进行链接。如下图</p>
+<p><img src="https://user-images.githubusercontent.com/24973360/202891356-04e13463-fed7-4c8d-9fce-fa697d3c534b.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p>上图中，主线程复制当前线程 Segment 和 Span 的基本信息，包括 Segment ID，Span ID，Name 等信息。然后在子线程中，进行回放，回放的操作，就是将这个 快照 的信息，保存到 Span 的父 Span 中，标记子线程的父 Span 就是这个 Span。</p>
+<p>还有一种场景的异步 Span，比如在 A 线程开启，在 B 线程关闭，我们需要记录这个 Span 的耗时。比方说，异步 HttpClient，我们在主线程开启了访问，在异步线程得到结果，就复合刚刚我们说的场景。</p>
+<p>SKywalking 为我们提供了 <code>prepareForAsync</code> 和 <code>asyncFinish</code> 这两个方法，当我们在 A 线程创建了一个 <code>Span</code>，我们可以执行 <code>span.prepareForAsync</code> 方法，表示这个 span 开始了访问，即将进入异步线程。当在 B 线程得到结果后，执行 <code>span.asyncFinish</code> 则表示，这个 span 执行结束了，那么， A 线程就可以将整个 <code>Segment </code>标记结束，并返回到 OAP server 中进行统计。那么如何在 B 线程里得到这个 Span 的实例，然后调用 <code>asyncFinish</code> 方法呢？实际上，是需要插件开发者自己想办法传递的，比如在被拦截对象的参数里、构造函数里传递。</p>
+<p>那么这 2 种异步模式的区别是什么呢？说实话，我在刚刚看到这两个的时候，脑子也有点迷糊，经过总结，发现两者虽然看起来相似，当谁也代替不了谁。</p>
+<p>简单来说，prepareForAsync 和 asyncFinish 只是为了统计一个 Span 跨越 2 个线程的场景，例如上面的提到 HttpAsyncClient 场景。在 A 线程创建，在 B 线程结束，我们需要在 B 线程拿到返回值和耗时。</p>
+<p>而 capture 和 continued(snapshot) 的使用场景是为了连接 2 个线程的不同 Span。我们将主线程的最后一个 Span 和子线程的第一个 Span 相连接。</p>
+<p>而两者也是可以结合使用。如下图：<br><img src="https://user-images.githubusercontent.com/24973360/202891358-7f032360-e3f3-4084-9f8f-a597d80ae8f7.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p>以上，表示了一次 HttpAsyncClient 请求中，如何将 Span 进行跨线程连接，并记录返回值。</p>
+<p><img src="https://user-images.githubusercontent.com/24973360/202891359-be1f237f-ae9a-4c33-baed-bd70cf03faee.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p>最终的效果如上。</p>
+<h2 id="如何正确地编写插件防止内存泄漏"><a href="#如何正确地编写插件防止内存泄漏" class="headerlink" title="如何正确地编写插件防止内存泄漏"></a>如何正确地编写插件防止内存泄漏</h2><p>在使用 SKywalking 的过程中，我也写过一些公司内部的插件，如果是同步调用的话，就比较简单，例如，在 before 方法中创建一个 span（就是向栈中推入一个 Span），在 after 方法中，执行 stop span（就是从栈中弹出一个 Span）。</p>
+<p>当编写异步插件时，需要考虑的情况就比较复杂。有几个点需要注意：</p>
+<ol>
+<li><p> 当我们执行 <code>capture</code> 和 <code>continued</code> 时，栈顶一定要有 Span。这样才能将这两个 Span 进行链接。</p>
+</li>
+<li><p> 当我们执行 <code>prepareForAsync</code> 异步时，一定要在其他线程执行 <code>asyncFinish</code>，否则这个 Segment 就会断开，因为如果不执行 <code>asyncFinish</code>，这个 Segment 就不会 finish，也就不会发送到后端 OAP。另外，对一个 Span 执行完 <code>prepareForAsync</code> 后，一定不要忘记执行这个 span 的 stop 方法。</p>
+</li>
+<li><p> 一定要正确的调用 <code>ContextManager.stopSpan()</code>，否则，一定会出现内存泄漏。假设，Tomcat Span 是入口，在 Tomcat 插件的 after 方法里，执行了 <code>stopSpan</code>，但是栈却没有清空，那么 <code>ThreadLocal </code>里的对象就不会清除，当下次在这个线程里调用 <code>continued </code>时，<code>continued</code> 会将其他线程的对象继续添加到这个线程里的 Segment 列表里。导致内存无限增大（新版本限制了链表的大小，但没有从根本解决问题）。</p>
+</li>
+</ol>
+<h2 id="扩展：如何基于-Skywalking-打造全链路压测"><a href="#扩展：如何基于-Skywalking-打造全链路压测" class="headerlink" title="扩展：如何基于 Skywalking 打造全链路压测"></a>扩展：如何基于 Skywalking 打造全链路压测</h2><p>SKywalking 是基于 java agent 技术打造的，而 java agent 又非常的适合开发全链路压测产品，那么，是否可以借助 SKywalking 的现有能力开发出全链路压测呢？答案是可以的。</p>
+<p>全链路压测的核心问题是压测的过程中不能有脏数据，当影子流量进入容器，这些流量不能进入正式的数据库。通常的做法是，例如在执行 SQL 的时候，判断是否是影子流量，如果是，则更换 SQL 数据源，即不能在正式库中执行影子 SQL。</p>
+<p>基于 SKywalking 的目前的实现，我们只需要对一个类实现多个插件即可，并将这些插件进行包装，基于过滤器模式进行串联，实现对一个类的 压测增强 和 全链路Trace增强。</p>
+<h2 id="总结与参考"><a href="#总结与参考" class="headerlink" title="总结与参考"></a>总结与参考</h2><p>以上，就是本人这段时间，对 SKywalking（8.1.0） 学习和使用的总结。SKywalking 版本升级的很快，现在已经是 8.9.0 版本了，又有了很多功能的更新，大家可以参考的看看。</p>
+<p>参考：</p>
+<ol>
+<li><p> opentracing 规范 <a target="_blank" rel="noopener" href="https://github.com/opentracing/specification/blob/master/specification.md#the-opentracing-data-model">https://github.com/opentracing/specification/blob/master/specification.md#the-opentracing-data-model</a></p>
+</li>
+<li><p> Instrumentation API <a target="_blank" rel="noopener" href="https://www.matools.com/api/java8">https://www.matools.com/api/java8</a></p>
+</li>
+<li><p> Arthas源码分析–jad反编译原理 <a target="_blank" rel="noopener" href="https://hengyun.tech/arthas-jad/">https://hengyun.tech/arthas-jad/</a></p>
+</li>
+<li><p> Skywalking原理分析 <a target="_blank" rel="noopener" href="http://www.bewindoweb.com/306.html">http://www.bewindoweb.com/306.html</a></p>
+</li>
+<li><p> JVM 源码分析之 javaagent 原理完全解读 <a target="_blank" rel="noopener" href="https://www.infoq.cn/article/javaagent-illustrated/">https://www.infoq.cn/article/javaagent-illustrated/</a></p>
+</li>
+<li><p> SkyWalking源码分析<a target="_blank" rel="noopener" href="https://www.processon.com/view/link/611fc4c85653bb6788db4039#map">https://www.processon.com/view/link/611fc4c85653bb6788db4039#map</a></p>
+</li>
+<li><p> dapper 论文 <a target="_blank" rel="noopener" href="https://static.googleusercontent.com/media/research.google.com/zh-CN//archive/papers/dapper-2010-1.pdf">https://static.googleusercontent.com/media/research.google.com/zh-CN//archive/papers/dapper-2010-1.pdf</a></p>
+</li>
+<li><p> SKywalking Java Agent 源码地址 <a target="_blank" rel="noopener" href="https://github.com/apache/skywalking-java">https://github.com/apache/skywalking-java</a></p>
+</li>
+</ol>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Skywalking/" class="category-chain-item">Skywalking</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>深入理解 Skywalking Agent</div>
+      <div>http://thinkinjava.cn/2022/04/04/2022/sky/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年4月4日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/07/19/2019/1019-java-stack/" title="Java 技术栈(Warning)">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Java 技术栈(Warning)</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/11/25/2021/mosn-dynamic-metadata/" title="MOSN 动态路由的使用">
+                        <span class="hidden-mobile">MOSN 动态路由的使用</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

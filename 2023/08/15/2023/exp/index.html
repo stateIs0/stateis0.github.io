@@ -1,0 +1,711 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="前言多年以来，ToB 的应用程序都面临定制化需求应该怎么搞的问题。 举例，大部分本地化软件厂家，都有一个标准程序，这个程序支持大部分企业的功能需求，但面对世界 500 强等大客户时，他们的特殊需求，厂家通常是无法拒绝的（通常因为订单大，给的多，可背书）。比如使用非标准数据库，业务流程里加入一些安全检查等，回调里加入一些定制字段等； 由此而来的需求，一般有几种解决方案；   将这个需求做进标准产品里">
+<meta property="og:type" content="article">
+<meta property="og:title" content="EXP 一款 Java 插件化热插拔框架">
+<meta property="og:url" content="http://thinkinjava.cn/2023/08/15/2023/exp/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="前言多年以来，ToB 的应用程序都面临定制化需求应该怎么搞的问题。 举例，大部分本地化软件厂家，都有一个标准程序，这个程序支持大部分企业的功能需求，但面对世界 500 强等大客户时，他们的特殊需求，厂家通常是无法拒绝的（通常因为订单大，给的多，可背书）。比如使用非标准数据库，业务流程里加入一些安全检查等，回调里加入一些定制字段等； 由此而来的需求，一般有几种解决方案；   将这个需求做进标准产品里">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://thinkinjava.cn/img/2023/08/img.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2023/08/img_1.png">
+<meta property="article:published_time" content="2023-08-14T16:00:00.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.556Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://thinkinjava.cn/img/2023/08/img.png">
+  
+  
+  
+  <title>EXP 一款 Java 插件化热插拔框架 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="EXP 一款 Java 插件化热插拔框架"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-08-15 00:00" pubdate>
+          2023年8月15日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          17 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">EXP 一款 Java 插件化热插拔框架</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>多年以来，ToB 的应用程序都面临定制化需求应该怎么搞的问题。</p>
+<p>举例，大部分本地化软件厂家，都有一个标准程序，这个程序支持大部分企业的功能需求，但面对世界 500 强等大客户时，他们的特殊需求，厂家通常是无法拒绝的（通常因为订单大，给的多，可背书）。比如使用非标准数据库，业务流程里加入一些安全检查等，回调里加入一些定制字段等；</p>
+<p>由此而来的需求，一般有几种解决方案；</p>
+<ol>
+<li> 将这个需求做进标准产品里。让这个功能有个配置开关，也可以被其他的客户使用，通常这类需求可能比较“通用”</li>
+<li> 由于客户工期时间紧，虽然功能“通用”，但奈何时间不足，无法排进标准产品里，只能使用 git 拉一个标准的客户分支来进行开发，后期可能将其 merge 到标准产品里；</li>
+<li> 这个功能太不常见了，无法放到到标准产品里，那就直接拉新的 git 分支开发；</li>
+</ol>
+<p>分支开发，他的好处是效率非常快，噼里啪啦一顿改，定制需求就完成了。但是，这种方式会带来一个致命的问题：后期程序升级成本非常巨大。</p>
+<p>本地化程序和 saas 服务不同，本地化的程序通常是需要手动升级的，使用分支开发，升级的方式无非就是 merge 分支，解决冲突。</p>
+<p>如果改动很小，merge 倒也问题不大。<br>但是如果改动很大，merge 的方式，会带来很大的问题。因为如果举例定制开发的时间久了，当时拉分支改的代码和后面的标准产品迭代代码早就不兼容了，此时，merge 升级就非常困难。</p>
+<p>由此，我们思考，到底什么样的方式才能解决这种场景；</p>
+<p>目前来看，使用插件机制扩展客户需求，是其中一种方式。其本质用简单一句话概括：主程序预留扩展接口，定制客户实现接口逻辑。</p>
+<p>你可以将其理解为一种更复杂的策略模式或者 SPI；只是，插件通常是 classloader 类隔离的。</p>
+<p>大概如下图：<br><img src="/img/2023/08/img.png" srcset="/img/loading.gif" lazyload></p>
+<p>本文我们假设插件系统是当前解决定制需求痛点的方案之一，那我们今天就来设计一下这个插件系统。</p>
+<h2 id="设计"><a href="#设计" class="headerlink" title="设计"></a>设计</h2><p>首先分析需求，插件系统需要哪些功能：</p>
+<ol>
+<li> 通常主程序定义接口，插件实现逻辑；即这个功能在主程序里是空的。在客户侧是安装的。那么，我们可能需要一个可插拔的功能，即需要的时候，我们安装，不需要的时候，不安装或者卸载。</li>
+<li> 需要热插拔吗？我想不是必须的，但如果每次都需要重启才能调整插件，用户体验会很不好。那我们就加上热插拔吧。</li>
+<li> 插件里可以写 servlet or spring rest api 吗？我想是需要的。插件里可以对外新增接口，为定制客户提供新的服务能力。对了，插件还得支持事务，Mybatis ，AOP，RPC 等。</li>
+<li> 一个扩展点可以有多个实现，那这个扩展点可以同时存在多个插件吗？我想是需要的，比方说对接短信服务商，a 客户走 s1 厂商，b 客户走 s2 厂商。另外，一个客户可能对同一个扩展点有多个实现，此时可能需要更复杂的路由策略，那么，这个时候，我们可以提供一种机制，支持这种策略。</li>
+<li> 插件里的配置怎么办？插件配置通常是可以热更新的，且通常是在一个单独的插件系统里配置的。此时，我们需要提供一个区分于 spring  application.yml 的配置策略，即几个基于插件维度的配置 API。</li>
+<li> 出于安全考虑，插件包类型不仅仅支持 jar 包，还需要支持 zip 包。</li>
+<li> 插件的技术问题，要支持类隔离，否则，如果插件开发者引入了一个有问题的 lib 或版本不兼容的 lib，将会导致灾难。另外，无法保证各个插件之间的包名完全不同。</li>
+</ol>
+<p>需求 7788 差不多了，我们来设计一下编程界面。</p>
+<ol>
+<li> 入口 API</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">ExpAppContext</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 加载插件</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    Plugin <span class="title function_">load</span><span class="params">(File file)</span> <span class="keyword">throws</span> Throwable;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 卸载插件</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">unload</span><span class="params">(String id)</span> <span class="keyword">throws</span> Exception;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 获取多个扩展点的插件实例</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    &lt;P&gt; List&lt;P&gt; <span class="title function_">get</span><span class="params">(String extCode)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 简化操作, code 就是全路径类名</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    &lt;P&gt; List&lt;P&gt; <span class="title function_">get</span><span class="params">(Class&lt;P&gt; pClass)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 获取单个插件实例.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    &lt;P&gt; P <span class="title function_">get</span><span class="params">(String extCode, String pluginId)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ExpAppContext 接口，作为核心模型，提供以下能力</p>
+<ol>
+<li> 安装一个 file 插件，并在 jvm 里生效，返回插件信息，每个插件都有一个 id</li>
+<li> 可以根据 id 从 jvm spring 里卸载插件。</li>
+<li> 可以根据扩展点 code 获取多个实现，这个返回的实现是一个集合</li>
+<li> 可以根据扩展点 code + 插件 id 指定获取多单个实现，这个返回的实现是一个对象。</li>
+</ol>
+<p>这几个 API 可以实现插件的基本功能。</p>
+<p>我们再添加关于租户的 API</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">TenantService</span> &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 获取 TenantCallback 扩展逻辑;</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">default</span> TenantCallback <span class="title function_">getTenantCallback</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> TenantCallback.TenantCallbackMock.instance;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 设置 callback;</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">default</span> <span class="keyword">void</span> <span class="title function_">setTenantCallback</span><span class="params">(TenantCallback callback)</span> &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">TenantCallback</span> &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 返回这个插件的序号, 默认 0;</span></span><br><span class="line"><span class="comment">     * &#123;<span class="doctag">@link</span>  cn.think.in.java.open.exp.client.ExpAppContext#get(java.lang.Class)&#125; 函数返回的List 的第一位就是 sort 最高的.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    Integer <span class="title function_">getSort</span><span class="params">(String pluginId)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 这个插件是否属于当前租户, 默认是;</span></span><br><span class="line"><span class="comment">     * 这个返回值, 会影响 &#123;<span class="doctag">@link</span>  cn.think.in.java.open.exp.client.ExpAppContext#get(java.lang.Class)&#125; 的结果</span></span><br><span class="line"><span class="comment">     * 即进行过滤, 返回为 true 的 plugin 实现, 才会被返回.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    Boolean <span class="title function_">isOwnCurrentTenant</span><span class="params">(String pluginId)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在调用 ExpAppContext#get 时，需要过滤租户实现，还需要对单个租户的多个实现进行排序。用户可以实现自己的 getSort(pluginId) 和 isOwnCurrentTenant(pluginId) 逻辑。</p>
+<p>API 有了，我们的编程界面就出来了，他应该是这样的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">       Class&lt;UserService&gt; extensionClass = UserService.class;</span><br><span class="line">       <span class="type">ExpAppContext</span> <span class="variable">expAppContext</span> <span class="operator">=</span> Bootstrap.bootstrap(<span class="string">&quot;exp-plugins/&quot;</span>, <span class="string">&quot;workdir-simple-java-app&quot;</span>);</span><br><span class="line">       expAppContext.setTenantCallback(<span class="keyword">new</span> <span class="title class_">TenantCallback</span>() &#123;</span><br><span class="line">           <span class="meta">@Override</span></span><br><span class="line">           <span class="keyword">public</span> Integer <span class="title function_">getSort</span><span class="params">(String pluginId)</span> &#123;</span><br><span class="line">               <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Random</span>().nextInt(<span class="number">10</span>);</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="meta">@Override</span></span><br><span class="line">           <span class="keyword">public</span> Boolean <span class="title function_">isOwnCurrentTenant</span><span class="params">(String pluginId)</span> &#123;</span><br><span class="line">               <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;);</span><br><span class="line">       Optional&lt;UserService&gt; first = expAppContext.get(extensionClass).stream().findFirst();</span><br><span class="line">       first.ifPresent(userService -&gt; &#123;</span><br><span class="line">           System.out.println(userService.getClass());</span><br><span class="line">           System.out.println(userService.getClass().getClassLoader());</span><br><span class="line">           userService.createUserExt();</span><br><span class="line">       &#125;);</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li> 我们的扩展点介绍名是UserService，方法名是 createUserExt</li>
+<li> 我们使用 Bootstrap 配置工作目录和插件目录，并启动，启动过程中包含调用 load 方法，然后返回一个核心领域对象。</li>
+<li> 可以使用 Context 配置租户策略；</li>
+<li> 最后我们使用 expAppContext.get().findFirst() 方法，返回一个这个扩展点优先级最高的实现。</li>
+</ol>
+<p>读取插件配置 API：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">PluginConfig</span> &#123;</span><br><span class="line">    String <span class="title function_">getProperty</span><span class="params">(String pluginId, String key, String defaultValue)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意这个 API 和正常的 config  api 不同，他新增了 pluginId 维度，使插件配置之间是互相隔离的。具体的 PluginConfig 还可以根据租户再进行配置隔离。</p>
+<p>表面的 API 已经差不多了，内部的实现，需要开始了，比如</p>
+<ol>
+<li> 类加载机制，包含 zip jar 的类隔离加载。</li>
+<li> 容器注入，需要将插件里代码注入到 spring 里。</li>
+<li> 插件的热插拔，怎么 unload，怎么 load，怎么从 spring 里 remove，怎么卸载等等。</li>
+</ol>
+<h2 id="开发"><a href="#开发" class="headerlink" title="开发"></a>开发</h2><p>具体细节本文不再展开，因为代码都在 github stateis0/exp 项目里，这个项目包含实现代码，example 代码，api 使用，适配 springboot starter，最佳实践等。</p>
+<p>项目代码结构依赖：<br><img src="/img/2023/08/img_1.png" srcset="/img/loading.gif" lazyload alt="img_1.png"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>EXP 全称： Extension Plugin 扩展点插件系统；</p>
+<p>希望本项目可以帮助你解决本地化软件的定制需求问题。同时，也欢迎为本项目提 issue，pr 等。</p>
+<p>项目地址 <a target="_blank" rel="noopener" href="https://github.com/stateIs0/exp">EXP 扩展点插件系统 for Github</a></p>
+<p>欢迎 star 交流。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/openSource/" class="category-chain-item">openSource</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>EXP 一款 Java 插件化热插拔框架</div>
+      <div>http://thinkinjava.cn/2023/08/15/2023/exp/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年8月15日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/08/15/2023/memory_fix/" title="Java 堆外内存排查">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Java 堆外内存排查</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/07/19/2019/1019-java-stack/" title="Java 技术栈(Warning)">
+                        <span class="hidden-mobile">Java 技术栈(Warning)</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

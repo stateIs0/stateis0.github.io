@@ -1,0 +1,684 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="像我这样的菜鸟，总会有各种疑问，刚开始是对 JDK API 的疑问，对 NIO 的疑问，对 JVM 的疑问，当工作几年后，对服务的可用性，可扩展性也有了新的疑问，什么疑问呢？其实是老生常谈的话题：服务的扩容问题。 正常情况下的服务演化之路让我们从最初开始。  单体应用每个创业公司基本都是从类似  SSM 和 SSH 这种架构起来的，没什么好讲的，基本每个程序员都经历过。 RPC 应用当业务越来越大">
+<meta property="og:type" content="article">
+<meta property="og:title" content="扎心一问：分库分表就能无限扩容吗">
+<meta property="og:url" content="http://thinkinjava.cn/2019/01/15/2019/2019-01-16-fkfb/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="像我这样的菜鸟，总会有各种疑问，刚开始是对 JDK API 的疑问，对 NIO 的疑问，对 JVM 的疑问，当工作几年后，对服务的可用性，可扩展性也有了新的疑问，什么疑问呢？其实是老生常谈的话题：服务的扩容问题。 正常情况下的服务演化之路让我们从最初开始。  单体应用每个创业公司基本都是从类似  SSM 和 SSH 这种架构起来的，没什么好讲的，基本每个程序员都经历过。 RPC 应用当业务越来越大">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/01/16/img.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/01/16/img_1.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/01/16/img_2.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/01/16/img_3.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/01/16/img_4.png">
+<meta property="article:published_time" content="2019-01-15T09:01:02.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.553Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://thinkinjava.cn/img/2019/01/16/img.png">
+  
+  
+  
+  <title>扎心一问：分库分表就能无限扩容吗 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="扎心一问：分库分表就能无限扩容吗"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2019-01-15 17:01" pubdate>
+          2019年1月15日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          12 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">扎心一问：分库分表就能无限扩容吗</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>像我这样的菜鸟，总会有各种疑问，刚开始是对 JDK API 的疑问，对 NIO 的疑问，对 JVM 的疑问，当工作几年后，对服务的可用性，可扩展性也有了新的疑问，什么疑问呢？其实是老生常谈的话题：服务的扩容问题。</p>
+<h2 id="正常情况下的服务演化之路"><a href="#正常情况下的服务演化之路" class="headerlink" title="正常情况下的服务演化之路"></a>正常情况下的服务演化之路</h2><p>让我们从最初开始。</p>
+<ol>
+<li>单体应用<br>每个创业公司基本都是从类似  SSM 和 SSH 这种架构起来的，没什么好讲的，基本每个程序员都经历过。</li>
+<li>RPC 应用<br>当业务越来越大，我们需要对服务进行水平扩容，扩容很简单，只要保证服务是无状态的就可以了，如下图：</li>
+</ol>
+<p><img src="/img/2019/01/16/img.png" srcset="/img/loading.gif" lazyload></p>
+<p>当业务又越来越大，我们的服务关系错综复杂，同时，有很多服务访问都是不需要连接 DB 的，只需要连接缓存即可，那么就可以做成分离的，减少 DB 宝贵的连接。如下图：</p>
+<p><img src="/img/2019/01/16/img_1.png" srcset="/img/loading.gif" lazyload></p>
+<p>我相信大部分公司都是在这个阶段。Dubbo 就是为了解决这个问题而生的。</p>
+<ol start="3">
+<li>分库分表</li>
+</ol>
+<p>如果你的公司产品很受欢迎，业务继续高速发展，数据越来越多，SQL 操作越来越慢，那么数据库就会成为瓶颈，那么你肯定会想到分库分表，不论通过 ID hash 或者 range 的方式都可以。如下图：</p>
+<p><img src="/img/2019/01/16/img_2.png" srcset="/img/loading.gif" lazyload></p>
+<p>这下应该没问题了吧。任凭你用户再多，并发再高，我只要无限扩容数据库，无限扩容应用，就可以了。</p>
+<p>这也是本文的标题，分库分表就能解决无限扩容吗？</p>
+<p>实际上，像上面的架构，并不能解决。</p>
+<p>其实，这个问题和 RPC 的问题有点类似：数据库连接过多！！！</p>
+<p>通常，我们的 RPC 应用由于是使用中间件进行访问数据库，应用实际上是不知道到底要访问哪个数据库的，访问数据库的规则由中间件决定，例如 sharding JDBC。这就导致，这个应用必须和所有的数据库连接，就像我们上面的架构图一样，一个 RPC 应用需要和 3 个 mysql 连接，如果是 30 个 RPC 应用，每个 RPC 的数据库连接池大小是8 ，每个 mysql 需要维护 240 个连接，我们知道，mysql 默认连接数是 100，最大连接数是 16384，也就是说，假设每个应用的连接池大小是 8 ，超过 2048 个应用就无法再继续连接了，也就无法继续扩容了。注意，由于每个物理库有很多逻辑库，再加上微服务运动如火如荼， 2048 并没有看起来那么大。</p>
+<p>也许你说，我可以通过前面加一个 proxy 来解决连接数的问题，实际上，代理的性能也会成为问题，为什么？代理的连接数也是不能超过 16384 的，如果并发超过  16384，变成 163840，那么 proxy 也解决不了问题。</p>
+<p>怎么办？让我们再看看上面的架构图：</p>
+<p><img src="/img/2019/01/16/img_3.png" srcset="/img/loading.gif" lazyload></p>
+<p>我们发现，问题是出在“每个 RPC 应用都要连所有的库”，导致扩容应用的同时，每个数据库连接数就要增加。<strong>就算增加数据库，也不能解决连接数的问题。</strong></p>
+<p>那怎么办呢？</p>
+<h2 id="单元化"><a href="#单元化" class="headerlink" title="单元化"></a>单元化</h2><p>单元化，听起来高大上，通常在一些 XXX 大会上，分享“关于两地三中心”，“三地五中心”，“异地多活”等等牛逼的名词的时候，单元化也会一起出现。</p>
+<p>这里我们不讨论那么牛逼的，就只说“数据库连接数过多” 的问题。</p>
+<p>实际上，思路很简单：我们不让应用连接所有的数据库就可以了。</p>
+<p>假设我们根据 range 分成了 10 个库，现在有 10 个应用，我们让每个应用只连一个库，当应用增多变成 20个，数据库的连接不够用了，我们就将 10 个库分成 20 个库，这样，无论你应用扩容到多少个，都可以解决数据库连接数过多的问题。</p>
+<p>注意：做这件事的前提是：你必须保证，访问你这个应用的 request 请求的数据库一定是在这个应用的。s</p>
+<p>换个说法，当用户从 DNS 那里进来的时候，就知道自己要去那个应用了，所以，规则在 DNS 之前就定好了，虽然这有点夸张，但肯定在进应用之前就知道要去哪个库了。</p>
+<p>所以，这通常需要一个规则，例如通过用户 ID hash，由配置中心广播 hash 规则。这样，所有的组件都能保持一致的规则，从而正确的访问到数据库。如下图：</p>
+<p><img src="/img/2019/01/16/img_4.png" srcset="/img/loading.gif" lazyload alt="单元化"></p>
+<p>到这里，我们终于解决了无限扩容的问题。</p>
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>本文从单体应用开始，逐步讲述了一个正常后台的演进历程，知道了分库分表并不能解决“无限扩容” 的问题，只有单元化才能解决这问题。而单元化则带来更多的复杂性。但是好处不言而喻。</p>
+<p>单元化带来的更多的思路。</p>
+<p>有了单元化，解决了无限扩容的问题，但是我们还没有考虑单点的问题，即服务的可用性。要知道，我们这里的数据库都是单点的。</p>
+<p>这就是另一个话题 —— 异地多活。限于篇幅，下次再聊。</p>
+<p>EOF</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>扎心一问：分库分表就能无限扩容吗</div>
+      <div>http://thinkinjava.cn/2019/01/15/2019/2019-01-16-fkfb/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2019年1月15日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2019/02/15/2019/2019-02-16-yddh/" title="最易懂的数据库异地多活方案">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">最易懂的数据库异地多活方案</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2019/01/12/2019/2019-01-12-lu-raft-kv/" title="编写你的第一个 Java 版 Raft 分布式 KV 存储">
+                        <span class="hidden-mobile">编写你的第一个 Java 版 Raft 分布式 KV 存储</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

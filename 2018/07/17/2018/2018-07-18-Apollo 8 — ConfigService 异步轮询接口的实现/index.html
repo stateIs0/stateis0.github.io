@@ -1,0 +1,691 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Apollo 8 — ConfigService 异步轮询接口的实现">
+<meta property="og:url" content="http://thinkinjava.cn/2018/07/17/2018/2018-07-18-Apollo%208%20%E2%80%94%20ConfigService%20%E5%BC%82%E6%AD%A5%E8%BD%AE%E8%AF%A2%E6%8E%A5%E5%8F%A3%E7%9A%84%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-ca1bbe21c2a21b52.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-07-17T07:01:01.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.546Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-ca1bbe21c2a21b52.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>Apollo 8 — ConfigService 异步轮询接口的实现 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Apollo 8 — ConfigService 异步轮询接口的实现"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-07-17 15:01" pubdate>
+          2018年7月17日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          14 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Apollo 8 — ConfigService 异步轮询接口的实现</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ##  源码
+
+<p>Apollo 长轮询的实现，是通过客户端轮询 <code>/notifications/v2</code> 接口实现的。具体代码在 com.ctrip.framework.apollo.configservice.controller.NotificationControllerV2.java。</p>
+<p>这个类也是实现了 ReleaseMessageListener 监控，表明他是一个消息监听器，当有新的消息时，就会调用他的 hanlderMessage 方法。这个具体我们后面再说。</p>
+<p>该类只有一个 rest 接口： pollNotification 方法。返回值是 DeferredResult，这是 Spring 支持 Servlet 3 的一个类，关于异步同步的不同，可以看笔者的另一篇文章 <a href="http://thinkinjava.cn/2018/07/%E5%BC%82%E6%AD%A5-Servlet-%E5%92%8C%E5%90%8C%E6%AD%A5-Servlet-%E7%9A%84%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/">异步 Servlet 和同步 Servlet 的性能测试</a>。</p>
+<p>该接口提供了几个参数：</p>
+<ol>
+<li>appId appId</li>
+<li>cluster 集群名称</li>
+<li>notificationsAsString 通知对象的 json 字符串</li>
+<li>dataCenter，idc 属性</li>
+<li>clientIp 客户端 IP， 非必传，为了扩展吧估计</li>
+</ol>
+<p>大家有么有觉得少了什么？ namespace 。</p>
+<p>当然，没有 namespace 这个重要的参数是不存在的。</p>
+<p>参数在 notificationsAsString 中。客户端会将自己所有的  namespace 传递到服务端进行查询。</p>
+<p>是时候上源码了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RequestMapping(method = RequestMethod.GET)</span></span><br><span class="line">  <span class="keyword">public</span> DeferredResult&lt;ResponseEntity&lt;List&lt;ApolloConfigNotification&gt;&gt;&gt; <span class="title function_">pollNotification</span><span class="params">(</span></span><br><span class="line"><span class="params">      <span class="meta">@RequestParam(value = &quot;appId&quot;)</span> String appId,// appId</span></span><br><span class="line"><span class="params">      <span class="meta">@RequestParam(value = &quot;cluster&quot;)</span> String cluster,// <span class="keyword">default</span></span></span><br><span class="line"><span class="params">      <span class="meta">@RequestParam(value = &quot;notifications&quot;)</span> String notificationsAsString,// json 对象 List&lt;ApolloConfigNotification&gt;</span></span><br><span class="line"><span class="params">      <span class="meta">@RequestParam(value = &quot;dataCenter&quot;, required = false)</span> String dataCenter,// 基本用不上, idc 属性</span></span><br><span class="line"><span class="params">      <span class="meta">@RequestParam(value = &quot;ip&quot;, required = false)</span> String clientIp)</span> &#123;</span><br><span class="line"></span><br><span class="line">    List&lt;ApolloConfigNotification&gt; notifications =<span class="comment">// 转换成对象</span></span><br><span class="line">          gson.fromJson(notificationsAsString, notificationsTypeReference);</span><br><span class="line">          </span><br><span class="line">    <span class="comment">// Spring 的异步对象: timeout 60s, 返回304</span></span><br><span class="line">    <span class="type">DeferredResultWrapper</span> <span class="variable">deferredResultWrapper</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DeferredResultWrapper</span>();</span><br><span class="line">    Set&lt;String&gt; namespaces = Sets.newHashSet();</span><br><span class="line">    Map&lt;String, Long&gt; clientSideNotifications = Maps.newHashMap();</span><br><span class="line">    Map&lt;String, ApolloConfigNotification&gt; filteredNotifications = filterNotifications(appId, notifications);<span class="comment">// 过滤一下名字</span></span><br><span class="line">    <span class="comment">// 循环</span></span><br><span class="line">    <span class="keyword">for</span> (Map.Entry&lt;String, ApolloConfigNotification&gt; notificationEntry : filteredNotifications.entrySet()) &#123;</span><br><span class="line">      <span class="comment">// 拿出 key</span></span><br><span class="line">      <span class="type">String</span> <span class="variable">normalizedNamespace</span> <span class="operator">=</span> notificationEntry.getKey();</span><br><span class="line">      <span class="comment">// 拿出 value</span></span><br><span class="line">      <span class="type">ApolloConfigNotification</span> <span class="variable">notification</span> <span class="operator">=</span> notificationEntry.getValue();</span><br><span class="line">      <span class="comment">/* 添加到 namespaces Set */</span></span><br><span class="line">      namespaces.add(normalizedNamespace);</span><br><span class="line">      <span class="comment">// 添加到 client 端的通知, key 是 namespace, values 是 messageId</span></span><br><span class="line">      clientSideNotifications.put(normalizedNamespace, notification.getNotificationId());</span><br><span class="line">      <span class="comment">// 如果不相等, 记录客户端名字</span></span><br><span class="line">      <span class="keyword">if</span> (!Objects.equals(notification.getNamespaceName(), normalizedNamespace)) &#123;</span><br><span class="line">        <span class="comment">// 记录 key = 标准名字, value = 客户端名字</span></span><br><span class="line">        deferredResultWrapper.recordNamespaceNameNormalizedResult(notification.getNamespaceName(), normalizedNamespace);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;<span class="comment">// 记在 namespaces 集合, clientSideNotifications 也put (namespace, notificationId)</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 组装得到需要观察的 key,包括公共的.</span></span><br><span class="line">    Multimap&lt;String, String&gt; watchedKeysMap =</span><br><span class="line">        watchKeysUtil.assembleAllWatchKeys(appId, cluster, namespaces, dataCenter);<span class="comment">// namespaces 是集合</span></span><br><span class="line">    <span class="comment">// 得到 value; 这个 value 也就是 appId + cluster + namespace</span></span><br><span class="line">    Set&lt;String&gt; watchedKeys = Sets.newHashSet(watchedKeysMap.values());</span><br><span class="line">    <span class="comment">// 从缓存得到最新的发布消息</span></span><br><span class="line">    List&lt;ReleaseMessage&gt; latestReleaseMessages =<span class="comment">// 根据 key 从缓存得到最新发布的消息.</span></span><br><span class="line">        releaseMessageService.findLatestReleaseMessagesGroupByMessages(watchedKeys);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* 如果不关闭, 这个请求将会一直持有一个数据库连接. 影响并发能力. 这是一个 hack 操作*/</span></span><br><span class="line">    entityManagerUtil.closeEntityManager();</span><br><span class="line">    <span class="comment">// 计算出新的通知</span></span><br><span class="line">    List&lt;ApolloConfigNotification&gt; newNotifications =</span><br><span class="line">        getApolloConfigNotifications(namespaces, clientSideNotifications, watchedKeysMap,</span><br><span class="line">            latestReleaseMessages);</span><br><span class="line">    <span class="comment">// 不是空, 理解返回结果, 不等待</span></span><br><span class="line">    <span class="keyword">if</span> (!CollectionUtils.isEmpty(newNotifications)) &#123;</span><br><span class="line">      deferredResultWrapper.setResult(newNotifications);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 设置 timeout 回调:打印日志</span></span><br><span class="line">      deferredResultWrapper</span><br><span class="line">          .onTimeout(() -&gt; logWatchedKeys(watchedKeys, <span class="string">&quot;Apollo.LongPoll.TimeOutKeys&quot;</span>));</span><br><span class="line">      <span class="comment">// 设置完成回调:删除 key</span></span><br><span class="line">      deferredResultWrapper.onCompletion(() -&gt; &#123;</span><br><span class="line">        <span class="comment">//取消注册</span></span><br><span class="line">        <span class="keyword">for</span> (String key : watchedKeys) &#123;</span><br><span class="line">          deferredResults.remove(key, deferredResultWrapper);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;);</span><br><span class="line"></span><br><span class="line">      <span class="comment">//register all keys 注册</span></span><br><span class="line">      <span class="keyword">for</span> (String key : watchedKeys) &#123;</span><br><span class="line">        <span class="built_in">this</span>.deferredResults.put(key, deferredResultWrapper);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 立即返回</span></span><br><span class="line">    <span class="keyword">return</span> deferredResultWrapper.getResult();<span class="comment">/** <span class="doctag">@see</span> DeferredResultHandler 是关键 */</span></span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>注释写了很多了，再简单说说逻辑：</p>
+<ol>
+<li>解析 JSON 字符串为 List&lt; ApolloConfigNotification&gt; 对象。</li>
+<li>创建 Spring 异步对象。</li>
+<li>处理过滤 namespace。</li>
+<li>根据 namespace 生成需要监听的 key，格式为 appId + cluster + namespace，包括公共 namespace。并获取最新的 Release 信息。</li>
+<li>关闭 Spring 实例管理器，释放数据库资源。</li>
+<li>根据刚刚得到的 ReleaseMessage，和客户端的 ReleaseMessage 的版本进行对比，生成新的配置通知对象集合。</li>
+<li>如果不是空 —— 立即返回给客户端，结束此次调用。如果没有，进入第 8 步。</li>
+<li>设置 timeout 回调方法 —— 打印日志。再设置完成回调方法：删除注册的 key。</li>
+<li>对客户端感兴趣的 key 进行注册，这些 key 都对应着 deferredResultWrapper 对象，可以认为他就是客户端。</li>
+<li>返回 Spring 异步对象。该请求将被异步挂起。</li>
+</ol>
+<p>Apollo 的 DeferredResultWrapper 保证了 Spring 的 DeferredResult 对象，泛型内容是 List<ApolloConfigNotification>， 构造这个对象，默认的 timeout 是 60 秒，即挂起 60 秒。同时，对 setResult 方法进行包装，加入了对客户端 key 和服务端 key 的一个映射（大小写不一致） 。</p>
+<p>我们刚刚说，Apollo 会将这些 key 注册起来。那么什么时候使用呢，异步对象被挂起，又是上面时候被唤醒呢？</p>
+<p>答案就在 handleMessage 方法里。我们刚刚说他是一个监听器，当消息扫描器扫描到新的消息时，会通知所有的监听器，也就是执行 handlerMessage 方法。方法内容如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">handleMessage</span><span class="params">(ReleaseMessage message, String channel)</span> &#123;</span><br><span class="line"></span><br><span class="line">  <span class="type">String</span> <span class="variable">content</span> <span class="operator">=</span> message.getMessage();</span><br><span class="line">  <span class="keyword">if</span> (!Topics.APOLLO_RELEASE_TOPIC.equals(channel) || Strings.isNullOrEmpty(content)) &#123;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="type">String</span> <span class="variable">changedNamespace</span> <span class="operator">=</span> retrieveNamespaceFromReleaseMessage.apply(content);</span><br><span class="line"></span><br><span class="line">  <span class="comment">//create a new list to avoid ConcurrentModificationException 构造一个新 list ,防止并发失败</span></span><br><span class="line">  List&lt;DeferredResultWrapper&gt; results = Lists.newArrayList(deferredResults.get(content));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 创建通知对象</span></span><br><span class="line">  <span class="type">ApolloConfigNotification</span> <span class="variable">configNotification</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ApolloConfigNotification</span>(changedNamespace, message.getId());</span><br><span class="line">  configNotification.addMessage(content, message.getId());</span><br><span class="line"></span><br><span class="line">  <span class="comment">//do async notification if too many clients 如果有大量的客户端(100)在等待,使用线程池异步处理</span></span><br><span class="line">  <span class="keyword">if</span> (results.size() &gt; bizConfig.releaseMessageNotificationBatch()) &#123;</span><br><span class="line">    <span class="comment">// 大量通知批量处理</span></span><br><span class="line">    largeNotificationBatchExecutorService.submit(() -&gt; &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; results.size(); i++) &#123; <span class="comment">// 循环</span></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 假设一个公共 Namespace 有10W 台机器使用，如果该公共 Namespace 发布时直接下发配置更新消息的话，</span></span><br><span class="line"><span class="comment">         * 就会导致这 10W 台机器一下子都来请求配置，这动静就有点大了，而且对 Config Service 的压力也会比较大。</span></span><br><span class="line"><span class="comment">         * 即&quot;惊群效应&quot;</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">if</span> (i &gt; <span class="number">0</span> &amp;&amp; i % bizConfig.releaseMessageNotificationBatch() == <span class="number">0</span>) &#123;<span class="comment">// 如果处理了一批客户端,休息一下(100ms)</span></span><br><span class="line">            TimeUnit.MILLISECONDS.sleep(bizConfig.releaseMessageNotificationBatchIntervalInMilli());</span><br><span class="line">        &#125;</span><br><span class="line">        results.get(i).setResult(configNotification);<span class="comment">// 通知每个等待的 HTTP 请求</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 否则,同步处理</span></span><br><span class="line">  <span class="keyword">for</span> (DeferredResultWrapper result : results) &#123;</span><br><span class="line">    result.setResult(configNotification);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>笔者去除了一些日志和一些数据判断。大致的逻辑如下：</p>
+<ol>
+<li>消息类型必须是 “apollo-release”。然后拿到消息里的 namespace 内容。</li>
+<li><strong>根据 namespace 从注册器里拿出 Spring 异步对象集合</strong>。</li>
+<li>创建通知对象。</li>
+<li>如果有超过 100 个客户端在等待，那么就使用线程池批量执行通知。否则就同步慢慢执行。</li>
+<li>每处理 100 个客户端就休息 100ms，防止发生惊群效应，导致大量客户端调用配置获取接口，引起服务抖动。</li>
+<li>循环调用 Spring 异步对象的 setResult 方法，让其立即返回。</li>
+</ol>
+<p>具体的流程图如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-ca1bbe21c2a21b52.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>其中，灰色区域是扫描器的异步线程，黄色区域是接口的同步线程。他们共享 deferredResults 这个线程安全的 Map，实现异步解耦和实时通知客户端。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>好了，这就是 Apollo 的长轮询接口，客户端会不断的轮询服务器，服务器会 Hold住  60 秒，这是通过 Servlet 3 的异步 + NIO 来实现的，能够保持万级连接（Tomcat 默认 10000）。</p>
+<p>通过一个线程安全的 Map + 监听器，让扫描器线程和 HTTP 线程共享 Spring 异步对象，即实现了消息实时通知，也让应用程序实现异步解耦。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Apollo/" class="category-chain-item">Apollo</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Apollo 8 — ConfigService 异步轮询接口的实现</div>
+      <div>http://thinkinjava.cn/2018/07/17/2018/2018-07-18-Apollo 8 — ConfigService 异步轮询接口的实现/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年7月17日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/07/18/2018/2018-07-20-Apollo%2010%20%E2%80%94%20adminService%20%E5%85%A8%E9%87%8F%E5%8F%91%E5%B8%83/" title="Apollo 10 — adminService 全量发布">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Apollo 10 — adminService 全量发布</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/07/16/2018/2018-07-17-Apollo%207%20%E2%80%94%20ConfigService%20%E6%B6%88%E6%81%AF%E6%89%AB%E6%8F%8F%E8%AE%BE%E8%AE%A1%E5%AE%9E%E7%8E%B0/" title="Apollo 7 — ConfigService 消息扫描设计实现">
+                        <span class="hidden-mobile">Apollo 7 — ConfigService 消息扫描设计实现</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

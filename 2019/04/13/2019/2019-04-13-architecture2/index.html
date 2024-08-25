@@ -1,0 +1,711 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="有角度就有空间。多视图方法背后的核心思想有些类似：从不同角度，规划“分割”与“交互”。 1 软件架构为谁设计？什么是软件架构？不同的角色有不同的看法。 程序员：软件架构就是决定编写哪些类，使用哪些库和框架。程序经理：软件架构就是模块的划分和接口的定义。系统分析员：软件架构就是业务领域对象的关系建模。配置管理员：软件架构就是开发出来的以及编译过后的软件到底是个啥结构。DBA：软件架构规定了持久化数据">
+<meta property="og:type" content="article">
+<meta property="og:title" content="软件架构视图介绍">
+<meta property="og:url" content="http://thinkinjava.cn/2019/04/13/2019/2019-04-13-architecture2/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="有角度就有空间。多视图方法背后的核心思想有些类似：从不同角度，规划“分割”与“交互”。 1 软件架构为谁设计？什么是软件架构？不同的角色有不同的看法。 程序员：软件架构就是决定编写哪些类，使用哪些库和框架。程序经理：软件架构就是模块的划分和接口的定义。系统分析员：软件架构就是业务领域对象的关系建模。配置管理员：软件架构就是开发出来的以及编译过后的软件到底是个啥结构。DBA：软件架构规定了持久化数据">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/04/03/img.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/04/03/img_1.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/04/03/img_2.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/04/03/img_3.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/04/03/img_4.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/04/03/img_5.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/04/03/img_6.png">
+<meta property="article:published_time" content="2019-04-13T04:02:02.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.554Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://thinkinjava.cn/img/2019/04/03/img.png">
+  
+  
+  
+  <title>软件架构视图介绍 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="软件架构视图介绍"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2019-04-13 12:02" pubdate>
+          2019年4月13日 中午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          18 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">软件架构视图介绍</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>有角度就有空间。多视图方法背后的核心思想有些类似：从不同角度，规划“分割”与“交互”。</p>
+<h2 id="1-软件架构为谁设计？"><a href="#1-软件架构为谁设计？" class="headerlink" title="1 软件架构为谁设计？"></a>1 软件架构为谁设计？</h2><p>什么是软件架构？不同的角色有不同的看法。</p>
+<p>程序员：软件架构就是决定编写哪些类，使用哪些库和框架。<br>程序经理：软件架构就是模块的划分和接口的定义。<br>系统分析员：软件架构就是业务领域对象的关系建模。<br>配置管理员：软件架构就是开发出来的以及编译过后的软件到底是个啥结构。<br>DBA：软件架构规定了持久化数据库的结构，其他一切只不过是对数据的操作而已。<br>运维：软件架构规定了软件部署到硬件的策略。<br>用户：软件架构应该是将系统划分为一个个功能子系统。</p>
+<p>以上，就是从不同的视角得到的不同的软件架构视图。而架构师需要为不同社众的需求而设计。</p>
+<p>架构视图的本质是“分而治之”，能帮助架构师从不同角度设计，特别是面对复杂系统时，“分而治之”的设计是必须的。</p>
+<h2 id="2-如何设计？"><a href="#2-如何设计？" class="headerlink" title="2 如何设计？"></a>2 如何设计？</h2><p>1 为用户设计。<br>为什么开发一个软件？因为要给用户使用，或者辅助用户完成工作，或者为用户提供娱乐等等。</p>
+<p>用户要功能，也要质量，缺一不可。</p>
+<p>架构师必须牢记：为用户而设计。</p>
+<p>同时，诸如性能，易用性等软件质量属性，并不像“软件功能”那样直接帮助用户达到特定目标，但也非常重要。例如，如果你开发一个查询余额功能，查询一次需要一分钟，虽然能得到结果，但用户肯定无法接受。</p>
+<p>因此，架构师必须牢记：为用户设计的同时，不仅要满足用户要求的功能，也要达到用户期望的质量。</p>
+<p>2 为客户而设计</p>
+<p>很多时候，用户 不等于 客户。</p>
+<p>例如，开发一个商场收银系统，很明显，客户是商场老板，用户是商场收银员。</p>
+<p>架构师需要为客户而设计：充分考虑客户的业务目标、上线时间的需求，预算限制，以及集成需要等，还要特别关注客户所在领域的业务规则和业务限制。</p>
+<p>例如：如果客户是一家小型超市，那么就不应该使用那种需要昂贵的设备和搞性能中间件的架构方案。</p>
+<p>3 为开发者设计</p>
+<p>开发流程中，一般先研究需求，再设计架构，然后交给开发人员编程……作为架构，不仅要为“上游”的需求而设计，还要为“下游” 的开发人员而设计。</p>
+<p>例如，性能是软件运行期间的重要属性，也是重要的的质量属性，最关心性能的人其实是客户；</p>
+<p>程序员最关心什么？可扩展性。可扩展性也是软件开发期间的重要质量属性。</p>
+<p>不只是可扩展性，还有可重用性，可移植性，易理解性，易测试性等，都是开发人员关心的。</p>
+<p>架构师必须牢记：为了使开发流程更顺畅，必须为开发者设计。</p>
+<p>4 为管理人员设计</p>
+<p>软件越来越复杂，单兵作战已经很少了，取而代之的是团队开发，而团队开发反过来又导致软件开发更加复杂，因此，现在不仅仅是软件复杂的问题，还有管理复杂的问题。</p>
+<p>开发人员之间的依赖，源自他们负责的程序之间的依赖，要理清并管理好协作，就应该搞清楚系统一级“模块 + 交互”的设计，搞清楚架构。可见，架构是开发管理的核心基础。</p>
+<p>就软件项目管理而言，软件架构应当起到应有的作用：<strong>为项目经理指定项目计划、管理项目分工和考核进度等提供依据。</strong></p>
+<p>一方面：软件架构应该从大局着手，就技术方面的重大问题作出决策，构造一个由粗粒度模块组成的解决方案，从而把不同模块分配给不同的小组分别开发。<br>另一方面：软件架构应当规定各个模块如何交互的机制和接口，在开发小组之间，起到“沟通桥梁”和“合作契约” 的作用。</p>
+<p>5 小结</p>
+<p>架构师在设计架构时，应该要考虑到不同的角色，使<code>架构</code>满足<code>包含了关于如何构建软件的一些最重要的设计决策</code>的定义。</p>
+<p>如下图：<br><img src="/img/2019/04/03/img.png" srcset="/img/loading.gif" lazyload></p>
+<h2 id="3-什么是架构视图"><a href="#3-什么是架构视图" class="headerlink" title="3 什么是架构视图"></a>3 什么是架构视图</h2><p>为什么提供多个架构视图？</p>
+<ul>
+<li>架构要涵盖的内容和决策太多了，超过了人脑“一撮而就” 的能力范围，因此采用“ 分而治之” 的办法从不同视角分别设计。</li>
+<li>同时，也为了软件架构的理解，交流和归档提供了方便。</li>
+</ul>
+<p>在多种架构视图中，最常用的是逻辑架构视图和物理架构视图。</p>
+<p>1 什么是逻辑架构视图？</p>
+<p>软件的逻辑架构视图，规定了软件系统由哪些逻辑元素组成，以及这些逻辑元素之间关系。</p>
+<p>软件逻辑架构的核心任务，是比较全面的识别模块，规划接口，并基于此进一步明确模块之间的使用关系和使用机制。通常，一个软件的 UML 类图，就是他的逻辑架构。</p>
+<p>2 什么是物理架构视图？</p>
+<p>说白了，就是由哪些物理元素组成，以及这些物理元素是如何交互的。</p>
+<p>物理架构可以反映出软件系统动态运行时的组织情况，通常物理元素就是进程、线程、类的实例对象等，而进程之间的调度，线程同步，进程/线程通信等，则进一步反映出物理架构的动态行为。</p>
+<p>3 如何设计一个 逻辑视图 + 物理视图 的软件架构？</p>
+<p>架构设计，将会指导后续的详细设计和编程，而详细设计和编程，这会贯彻和利用这些设计：</p>
+<p>a 首先设计逻辑架构，体现为，层、功能子模块和模块等的划分决策，有了模块划分，比如产生协作，逻辑接口还要规定这些模块之间如何进行交互，因此还要设计交互接口。</p>
+<p>b 所谓交互，指不同模块之间的沟通和通信，一般有几种方式：方法调用、RPC 远程调用，消息机制。</p>
+<p>c 物理架构，关注软件在运行时期的情况，物理架构规定了软件系统如何利用进程和线程完成期望的并发处理，进程线程这些主动单元会调用哪些被动单元，消息直接的交互如何处理等等。这些设计，将会为后续编程实现提供基础。</p>
+<p>具体过程如下图：</p>
+<p><img src="/img/2019/04/03/img_1.png" srcset="/img/loading.gif" lazyload></p>
+<h2 id="4-架构设计流程实战"><a href="#4-架构设计流程实战" class="headerlink" title="4 架构设计流程实战"></a>4 架构设计流程实战</h2><p>设计技巧：<br>先有需求，再有用例，通过分而治之和迭代式设计，设计第一版本的逻辑视图，有了逻辑视图，再设计第一版本的物理视图，再根据第一版本的物理视图设计 第二版本的逻辑视图</p>
+<p>1 用例设计（需求设计）<br>2 逻辑架构设计版本 1<br>3 物理架构设计版本 1<br>4 逻辑结构设计版本 2<br>5 物理架构设计版本 2<br>6 逻辑架构设计版本 n…..<br>7 逻辑架构设计版本 n…..</p>
+<p>假设我们现在有个需求：设计一个邮件代理服务器，并且提供后台管理功能。</p>
+<p>根据上面的流程, 先来个用例图：</p>
+<p><img src="/img/2019/04/03/img_2.png" srcset="/img/loading.gif" lazyload></p>
+<p>逻辑视图 版本 1</p>
+<p><img src="/img/2019/04/03/img_3.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>物理视图 版本 1</p>
+<p><img src="/img/2019/04/03/img_4.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>逻辑视图 版本 2</p>
+<p><img src="/img/2019/04/03/img_5.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>物理视图 版本 2 </p>
+<p><img src="/img/2019/04/03/img_6.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>到这里，我们就基本完成了一个 逻辑视图 + 物理视图的 架构设计。</p>
+<p>我们通过分而治之，迭代式设计的方式，让逻辑架构设计和物理架构设计交替进行，不断验证，促进设计优化，从而完成架构设计。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>软件架构设计——温昱</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java-%E8%AE%BE%E8%AE%A1/" class="category-chain-item">Java 设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>软件架构视图介绍</div>
+      <div>http://thinkinjava.cn/2019/04/13/2019/2019-04-13-architecture2/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2019年4月13日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2019/05/08/2019/2019-05-09-rmq-sendmsg/" title="RocketMQ 发送消息（一条消息从发送到存储的过程）">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">RocketMQ 发送消息（一条消息从发送到存储的过程）</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2019/04/13/2019/2019-04-13-architecture/" title="软件架构概念">
+                        <span class="hidden-mobile">软件架构概念</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

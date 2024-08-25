@@ -1,0 +1,759 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="SOFA-源码分析-—-调用方式">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/09/2018/2018-05-09-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E8%B0%83%E7%94%A8%E6%96%B9%E5%BC%8F/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-c46a87332e6472f3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-fd9b6b5a0d8ea83d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-05-08T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.544Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-c46a87332e6472f3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>SOFA-源码分析-—-调用方式 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="SOFA-源码分析-—-调用方式"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-05-09 02:11" pubdate>
+          2018年5月9日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          29 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">SOFA-源码分析-—-调用方式</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 前言
+
+<p>SOFARPC 提供了多种调用方式满足不同的场景。 </p>
+<p>例如，同步阻塞调用；异步 future 调用，Callback 回调调用，Oneway 调用。</p>
+<p>每种调用模式都有对应的场景。类似于单进程中的调用模式。在单进程中，我们可以使用 JDK 的 Future 实现异步，可以通过观察者实现回调。</p>
+<p>那么，在 RPC 框架中，这些功能如何实现呢？</p>
+<p>我们一个个开始看。</p>
+<h2 id="同步调用-Sync"><a href="#同步调用-Sync" class="headerlink" title="同步调用 Sync"></a>同步调用 Sync</h2><p>每个 ConsumerConfig 都有一个 invokeType 属性，在 SOFA 中，对应的常量是 <code>RpcConstants.INVOKER_TYPE_SYNC</code>。</p>
+<p>直接受到这个属性影响的是 AbstractCluster 的 doSendMsg 方法。该方法会从 request 中取出 invokeType 属性，而这个值是什么时候设置进入这个 request 的呢？在 DefaultClientProxyInvoker 类中的  decorateRequest 方法里：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!consumerConfig.isGeneric()) &#123;</span><br><span class="line">    <span class="comment">// 找到调用类型， generic的时候类型在filter里进行判断</span></span><br><span class="line">    request.setInvokeType(consumerConfig.getMethodInvokeType(request.getMethodName()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里判断，如果不是泛型调用，则将 config 中的值设置到 request 中。</p>
+<p>回到 DefaultClientProxyInvoker 中，如果是同步调用（默认），则调用 ClientTransport 的 syncSend 方法，并等待一个 response。通过层层调用，最终会来到 BaseRemoting 类的 invokeSync 方法。</p>
+<p>该方法会创建一个 Future ，并将这个 Future 放到 Connection（和 Channel 是一对一的关系） 的里一个 Map 中，key 是一个 id， value 则是  Future，然后发送数据给服务器，当 Channel 收到服务器返回的数据时，会重 Channle 中取出对应的 Channel 中的  Connection 对象，然后取出 Connection 对象中对应 key 的 Future，这个 Key 来自服务端传递过来的，类似于 cookie。</p>
+<p>很明显，这么做能很大的提高xiaolv，例如，客户端并发使用同一个 Channel 向服务端发送数据，客户端不用串行等待数据的返回，实际上，对于 Bolt 来说，调用是异步的，每次用户调用都会传递一个 Future，Channel 发送数据完之后，不必等待数据返回，而是继续发送数据，当 Channel 收到服务端返回的数据后，便从 Channel 中取出对应的 Future（服务端传递来的 ID 标识），完成 Future 的唤醒。</p>
+<p>而对于用户来说，看起来是同步的，因为 Future 会阻塞等待结果，类似 JDK 的 Future。只是用户感知不到而已，在等待的过程中，Channel 或者说 Connection 一直在工作，例如发送数据，例如处理别的 Future 发送来的数据。</p>
+<p>而整个网络层的效率也是非常的高，不涉及任何的业务操作，写出数据是异步的，拿到数据，只需唤醒等待的线程即可。</p>
+<p>总结一下，整个同步调用的过程是：客户端发送数据的时候，会创建一个 Future，并将这个 Future 放进到 Connection 的 Map 中，key 为 Future ID，value 是 Future（一个 Connection 绑定一个  Channel），然后异步向服务端发送数据，发送完毕后 Channel 又会立即响应其他的调用。当 Channel 收到服务端的响应数据，Channle 会取出 Connection ，找到对应 ID 的 Future ，这个 ID 就是服务端和客户端的约定。找到 Future 后，便将返回值注入到 Future 的 result 中，然后唤醒阻塞等待返回值的线程。</p>
+<h2 id="异步调用-Future"><a href="#异步调用-Future" class="headerlink" title="异步调用 Future"></a>异步调用 Future</h2><p>异步调用的 invokeType 对应的常量是 <code>RpcConstants.INVOKER_TYPE_FUTURE</code>，异步调用会立即返回一个 Future，然后通过 get 方法阻塞等待返回值。使用方式是：<code>BoltResponseFuture future1 = (BoltResponseFuture) SofaResponseFuture.getFuture();</code></p>
+<p>具体源码在 AbstractCluster 类的 doSendMsg 方法中：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (RpcConstants.INVOKER_TYPE_FUTURE.equals(invokeType)) &#123;</span><br><span class="line">    <span class="comment">// 开始调用</span></span><br><span class="line">    <span class="type">ResponseFuture</span> <span class="variable">future</span> <span class="operator">=</span> transport.asyncSend(request, timeout);</span><br><span class="line">    <span class="comment">// 放入线程上下文</span></span><br><span class="line">    RpcInternalContext.getContext().setFuture(future);</span><br><span class="line">    response = <span class="keyword">new</span> <span class="title class_">SofaResponse</span>();</span><br></pre></td></tr></table></figure>
+
+<p>当 Bolt 返回一个 Future 后，将其设置到 ThreadLocal 中，然后返回一个空的 response。用户在使用 SofaResponseFuture 获取 Future 的时候，其实就是从 RpcInvokeContext 中获取。可以看出，不是一个上下文，这里 RpcInvokeContext  是面向业务开发者使用的，而 RpcInternalContext 则是框架使用的。在 DefaultClientProxyInvoker 的 decorateResponse 方法中，会进行上下文转换，将框架内部上下文的数据复制到业务上下文中。</p>
+<p>关键在于异步调用，在 BoltClientTransport 的 doInvokeAsync 方法中，会根据是否含有监听器判断是异步还是回调，如果没有监听器，则是异步 Future 模式，而如果是异步的话，就会转成回调模式（因为实现类似）。</p>
+<p>具体实现则是创建一个 BoltFutureInvokeCallback 对象，该对象内部有一个 onResponse 方法，该方法会在任务完成之后回调。同时也会创建一个 BoltResponseFuture 对象，该对象会有 setXXX 方法，在 Callback 的 onResponse 方法中会调用 setXXX 方法，进行结果赋值和唤醒。</p>
+<p>onResponse 会由一个 RpcInvokeCallbackListener 对象唤醒，在他的内部类 CallbackTask 的 run 方法中，会异步回调这个方法。</p>
+<p>而这个对象的创建时机在 BaseRemoting 的 invokeWithCallback 方法的第一行：调用 createInvokeFuture 方法。具体代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> InvokeFuture <span class="title function_">createInvokeFuture</span><span class="params">(Connection conn, RemotingCommand request, InvokeContext invokeContext, InvokeCallback invokeCallback)</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DefaultInvokeFuture</span>(</span><br><span class="line">	    request.getId(), </span><br><span class="line">	    <span class="keyword">new</span> <span class="title class_">RpcInvokeCallbackListener</span>( RemotingUtil.parseRemoteAddress(conn.getChannel())), </span><br><span class="line">	    invokeCallback, </span><br><span class="line">	    request.getProtocolCode().getFirstByte(), </span><br><span class="line">        <span class="built_in">this</span>.getCommandFactory(), </span><br><span class="line">        invokeContext);</span><br><span class="line">&#125;	</span><br></pre></td></tr></table></figure>
+
+<p>在 RpcResponseProcessor 类中，在 doProcess 方法收到数据之后，会调用 future 的 executeInvokeCallback 方法。和同步方式不同的是，虽然都是一个 InvokeFuture 实现，同步只会调用 putResponse 赋值并唤醒。</p>
+<p>而  Future 的模式则要复杂的多，该方法会执行监听器（RpcInvokeCallbackListener）的 onResponse 方法，并传递自己。 而在监听器的 onResponse 方法中，会创建一个任务，异步执行 Future 中的任务。</p>
+<p>我们当前的 Future 任务则是拿到返回值，并唤醒阻塞线程。</p>
+<p>整体依赖和流程大概如下图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-c46a87332e6472f3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>总结一下异步调用的过程：异步调用在 SOFA 内部包装成了回调的方式，使用一个 Callback 封装了  面向用户的 ResponsFuture, 再使用一个监听器封装 Callback,  监听器监听 InvokeFuture ，当 InvokeFuture 响应服务器的时候，会回调监听器，监听器再回调 Callback，Callback 再唤醒 ResponseFuture，用户就可以得到数据了。</p>
+<h2 id="单向-oneWay"><a href="#单向-oneWay" class="headerlink" title="单向 oneWay"></a>单向 oneWay</h2><p>单向的使用一般是不关心结果的，使用方式则是很简单的将 invokeType 设置成 <code>RpcConstants.INVOKER_TYPE_ONEWAY</code>，。</p>
+<p>SOFA 内部的区别处理也在 AbstractCluster 类的 doSendMsg 方法中，具体代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 单向调用</span></span><br><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (RpcConstants.INVOKER_TYPE_ONEWAY.equals(invokeType)) &#123;</span><br><span class="line">    <span class="type">long</span> <span class="variable">start</span> <span class="operator">=</span> RpcRuntimeContext.now();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        transport.oneWaySend(request, timeout);</span><br><span class="line">        response = <span class="keyword">new</span> <span class="title class_">SofaResponse</span>();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (RpcInternalContext.isAttachmentEnable()) &#123;</span><br><span class="line">            <span class="type">long</span> <span class="variable">elapsed</span> <span class="operator">=</span> RpcRuntimeContext.now() - start;</span><br><span class="line">            context.setAttachment(RpcConstants.INTERNAL_KEY_CLIENT_ELAPSE, elapsed);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从代码中，可以看到，这里只是返回了一个空的对象。</p>
+<p>而在 Bolt 中的实现也非常的简单，仅仅是调用了 Channel 的 writeAndFlush 方法，只有在失败的时候，才会由响应，成功是没有任何响应的。代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">oneway</span><span class="params">(<span class="keyword">final</span> Connection conn, <span class="keyword">final</span> RemotingCommand request)</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        conn.getChannel().writeAndFlush(request).addListener(<span class="keyword">new</span> <span class="title class_">ChannelFutureListener</span>() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">operationComplete</span><span class="params">(ChannelFuture f)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">                <span class="keyword">if</span> (!f.isSuccess()) &#123;</span><br><span class="line">                    logger.error(<span class="string">&quot;Invoke send failed. The address is &#123;&#125;&quot;</span>,</span><br><span class="line">                        RemotingUtil.parseRemoteAddress(conn.getChannel()), f.cause());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="literal">null</span> == conn) &#123;</span><br><span class="line">            logger.error(<span class="string">&quot;Conn is null&quot;</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            logger.error(<span class="string">&quot;Exception caught when sending invocation. The address is &#123;&#125;&quot;</span>,</span><br><span class="line">                RemotingUtil.parseRemoteAddress(conn.getChannel()), e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>单向调用就是这么简单。所以，如果你试图获取返回值，那么得到的永远是 Nnll。</p>
+<h2 id="回调-Callback"><a href="#回调-Callback" class="headerlink" title="回调 Callback"></a>回调 Callback</h2><p>在 SOFA 中， 有 3 种回调级别，目的是应用各种不同的场景。</p>
+<ol>
+<li>接口级别，即调用这个接口的所有方法，都会引发回调。</li>
+<li>方法级别，针对某个方法，会引发回调。</li>
+<li>调用级别，某次调用，会引发回调。</li>
+</ol>
+<h5 id="使用方式："><a href="#使用方式：" class="headerlink" title="使用方式："></a>使用方式：</h5><ol>
+<li>接口级别：只需要设置 ConsumerConfig 的 onReturn 方法即可。例如下面这样，子类实现 SofaResponseCallback 即可：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">SofaResponseCallback</span> <span class="variable">sofaResponseCallbackImpl</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SofaResponseCallbackImpl</span>();</span><br><span class="line"></span><br><span class="line">ConsumerConfig&lt;HelloService&gt; consumer = <span class="keyword">new</span> <span class="title class_">ConsumerConfig</span>&lt;HelloService&gt;()</span><br><span class="line">            .setInterfaceId(HelloService.class.getName())</span><br><span class="line">            .setInvokeType(RpcConstants.INVOKER_TYPE_CALLBACK)</span><br><span class="line">            .setOnReturn(sofaResponseCallbackImpl)</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>方法级别：需要单独创建一个 MethodConfig，然后设置到 ConsumerConfig 的 Methods 属性中：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">SofaResponseCallback</span> <span class="variable">sofaResponseCallbackImpl</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SofaResponseCallbackImpl</span>();</span><br><span class="line"></span><br><span class="line"><span class="type">MethodConfig</span> <span class="variable">methodConfig</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">MethodConfig</span>();</span><br><span class="line">methodConfig.setName(<span class="string">&quot;sayHello&quot;</span>)</span><br><span class="line">            .setInvokeType(RpcConstants.INVOKER_TYPE_CALLBACK)</span><br><span class="line">            .setOnReturn(sofaResponseCallbackImpl );</span><br><span class="line"></span><br><span class="line">ConsumerConfig&lt;HelloService&gt; consumerConfig = <span class="keyword">new</span> <span class="title class_">ConsumerConfig</span>&lt;HelloService&gt;()</span><br><span class="line">            .setApplication(applicationConfig)</span><br><span class="line">            .setInterfaceId(HelloService.class.getName())</span><br><span class="line">            .setTimeout(<span class="number">5000</span>)</span><br><span class="line">            .setMethods(Collections.singletonList(methodConfig))</span><br><span class="line">            .setDirectUrl(<span class="string">&quot;bolt://127.0.0.1:22222?appName=future-server&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>只需要像上面一样，设置 sayHello 方法的回调实现，然后将方法配置设置到 ConsumerConfig 中。就可以在每次调用该方法时，引发回调。</p>
+<ol start="3">
+<li>调用级别：他的优先级最高，每次调用都会引发回调。使用方式如下：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">SofaResponseCallback</span> <span class="variable">sofaResponseCallbackImpl</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SofaResponseCallbackImpl</span>();</span><br><span class="line"></span><br><span class="line">RpcInvokeContext.getContext().setResponseCallback(sofaResponseCallbackImpl);</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，通过在上下文的设置，就能生效，每次调用都会引发回调。</p>
+<p>知道了如何使用，再来看看如何实现。</p>
+<h5 id="源码分析回调"><a href="#源码分析回调" class="headerlink" title="源码分析回调"></a>源码分析回调</h5><p>主要逻辑还是在 AbstractCluster 的 doSendMsg 中。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Callback调用</span></span><br><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (RpcConstants.INVOKER_TYPE_CALLBACK.equals(invokeType)) &#123;</span><br><span class="line">    <span class="comment">// 调用级别回调监听器</span></span><br><span class="line">    <span class="type">SofaResponseCallback</span> <span class="variable">sofaResponseCallback</span> <span class="operator">=</span> request.getSofaResponseCallback();</span><br><span class="line">    <span class="keyword">if</span> (sofaResponseCallback == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="type">SofaResponseCallback</span> <span class="variable">methodResponseCallback</span> <span class="operator">=</span> consumerConfig</span><br><span class="line">            .getMethodOnreturn(request.getMethodName());</span><br><span class="line">        <span class="keyword">if</span> (methodResponseCallback != <span class="literal">null</span>) &#123; <span class="comment">// 方法的Callback</span></span><br><span class="line">            request.setSofaResponseCallback(methodResponseCallback);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    transport.asyncSend(request, timeout);</span><br><span class="line">    response = <span class="keyword">new</span> <span class="title class_">SofaResponse</span>();</span><br><span class="line">&#125;	</span><br></pre></td></tr></table></figure>
+
+<p>从源码中，可以看出，优先使用调用级别的回调，如果没有，才寻找方法级别的回调。而接口级别的回调则是默认机制。</p>
+<p>因此，他们的优先级排序为 调用级别 —&gt; 方法级别 —-&gt; 回调级别。</p>
+<p>request 中的回调设置在 DefaultClientProxyInvoker 的 decorateRequest 方法中，即装饰 request，具体代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">RpcInvokeContext</span> <span class="variable">invokeCtx</span> <span class="operator">=</span> RpcInvokeContext.peekContext();</span><br><span class="line"><span class="type">RpcInternalContext</span> <span class="variable">internalContext</span> <span class="operator">=</span> RpcInternalContext.getContext();</span><br><span class="line"><span class="keyword">if</span> (invokeCtx != <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="comment">// 如果用户设置了调用级别回调函数</span></span><br><span class="line">    <span class="type">SofaResponseCallback</span> <span class="variable">responseCallback</span> <span class="operator">=</span> invokeCtx.getResponseCallback();</span><br><span class="line">    <span class="keyword">if</span> (responseCallback != <span class="literal">null</span>) &#123;</span><br><span class="line">        request.setSofaResponseCallback(responseCallback);</span><br><span class="line">        invokeCtx.setResponseCallback(<span class="literal">null</span>); <span class="comment">// 一次性用完</span></span><br><span class="line">        invokeCtx.put(RemotingConstants.INVOKE_CTX_IS_ASYNC_CHAIN,</span><br><span class="line">            isSendableResponseCallback(responseCallback));</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>从 RpcInvokeContext  复制到 request 中。且用完之后，立即删除，这点需要注意！！也就是说，仅仅使用一次。</p>
+<p>那么 consumerConfig.getMethodOnreturn（）方法会根据方法名获取到一个回调对对象，如何实现呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 得到方法名对应的自定义参数列表</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> methodName 方法名，不支持重载</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> method onReturn</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> SofaResponseCallback <span class="title function_">getMethodOnreturn</span><span class="params">(String methodName)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (SofaResponseCallback) getMethodConfigValue(methodName, RpcConstants.CONFIG_KEY_ONRETURN,</span><br><span class="line">        getOnReturn());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 得到方法级配置，找不到则返回默认值</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> methodName   方法名</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> configKey    配置key，例如参数</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> defaultValue 默认值</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> 配置值 method config value</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> Object <span class="title function_">getMethodConfigValue</span><span class="params">(String methodName, String configKey, Object defaultValue)</span> &#123;</span><br><span class="line">    <span class="type">Object</span> <span class="variable">value</span> <span class="operator">=</span> getMethodConfigValue(methodName, configKey);</span><br><span class="line">    <span class="keyword">return</span> value == <span class="literal">null</span> ? defaultValue : value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> SofaResponseCallback <span class="title function_">getOnReturn</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> onReturn;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 得到方法级配置，找不到则返回null</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> methodName 方法名</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> configKey  配置key，例如参数</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> 配置值 method config value</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> Object <span class="title function_">getMethodConfigValue</span><span class="params">(String methodName, String configKey)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (configValueCache == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> buildmkey(methodName, configKey);</span><br><span class="line">    <span class="keyword">return</span> configValueCache.get(key);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上就是获取方法级回调的实现。</p>
+<p>通过获取 configValueCache 的值，如果没有，则使用接口级别的回调设置。即默认值。那么，我们好像没有设置过这个 configValueCache 的值，从哪里来的呢？</p>
+<p>在 AbstractInterfaceConfig 的 getConfigValueCache 方法中，我们能够看到从 methods Map 中转移数据到 configValueCache 中。而这个方法的调用时机则是 FilterInvoker 的构造方法中：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="title function_">FilterInvoker</span><span class="params">(AbstractInterfaceConfig config)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.config = config;</span><br><span class="line">    <span class="keyword">if</span> (config != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="built_in">this</span>.configContext = config.getConfigValueCache(<span class="literal">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>具体转移代码入下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">synchronized</span> Map&lt;String, Object&gt; <span class="title function_">getConfigValueCache</span><span class="params">(<span class="type">boolean</span> rebuild)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (configValueCache != <span class="literal">null</span> &amp;&amp; !rebuild) &#123;</span><br><span class="line">        <span class="keyword">return</span> configValueCache;</span><br><span class="line">    &#125;</span><br><span class="line">    Map&lt;String, Object&gt; context = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;String, Object&gt;(<span class="number">32</span>);</span><br><span class="line">    Map&lt;String, String&gt; providerParams = getParameters();</span><br><span class="line">    <span class="keyword">if</span> (providerParams != <span class="literal">null</span>) &#123;</span><br><span class="line">        context.putAll(providerParams); <span class="comment">// 复制接口的自定义参数</span></span><br><span class="line">    &#125;</span><br><span class="line">    Map&lt;String, MethodConfig&gt; methodConfigs = getMethods();</span><br><span class="line">    <span class="keyword">if</span> (CommonUtils.isNotEmpty(methodConfigs)) &#123;</span><br><span class="line">        <span class="keyword">for</span> (MethodConfig methodConfig : methodConfigs.values()) &#123;</span><br><span class="line">            <span class="type">String</span> <span class="variable">prefix</span> <span class="operator">=</span> RpcConstants.HIDE_KEY_PREFIX + methodConfig.getName() + RpcConstants.HIDE_KEY_PREFIX;</span><br><span class="line">            Map&lt;String, String&gt; methodparam = methodConfig.getParameters();</span><br><span class="line">            <span class="keyword">if</span> (methodparam != <span class="literal">null</span>) &#123; <span class="comment">// 复制方法级自定义参数</span></span><br><span class="line">                <span class="keyword">for</span> (Map.Entry&lt;String, String&gt; entry : methodparam.entrySet()) &#123;</span><br><span class="line">                    context.put(prefix + entry.getKey(), entry.getValue());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 复制方法级参数属性</span></span><br><span class="line">            BeanUtils.copyPropertiesToMap(methodConfig, prefix, context);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 复制接口级参数属性</span></span><br><span class="line">    BeanUtils.copyPropertiesToMap(<span class="built_in">this</span>, StringUtils.EMPTY, context);</span><br><span class="line">    configValueCache = Collections.unmodifiableMap(context);</span><br><span class="line">    <span class="keyword">return</span> configValueCache;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果 configValueCache 没有初始化或者需要重建，则执行下面的逻辑，首先拿到 methods Map，然后 for 循环到 configValueCache Map 中。</p>
+<p>那么如何使用呢？</p>
+<p>注意，此时 ，Cluster 的 doSendMsg 方法中，request 已经有回调对象了，注意，回调 Callback 和 Future 调用的是同一个方法，即 transport.asyncSend(request, timeout);</p>
+<p>在 BoltClientTransport 的 doInvokeAsync 方法中，会判断 request 中，是否含有回调，如果有，则执行回调逻辑，如果没有，则将 Future 转成回调。</p>
+<p>而回调的逻辑是，根据监听器等属性创建一个 BoltInvokerCallback 对象包装  SofaResponseCallback 对象，然后，再创建一个 RpcInvokeCallbackListener 对象包装他，再创建一个 InvokeFuture 包装监听器  发起 RPC 调用。</p>
+<p>InvokeFuture  会在 RpcResponseProcessor 类的 doProcess 方法被回调，这点逻辑和异步 Future 的逻辑类似。回调他的 putResponse 方法和 executeInvokeCallback 方法。</p>
+<p>然后，在 executeInvokeCallback 方法中，则调用 RpcInvokeCallbackListener 的 onResponse 方法。</p>
+<p>RpcInvokeCallbackListener 则创建一个 CallbackTask 任务，提交给线程池，任务内容是执行 BoltInvokerCallback  的 onResponse 方法。</p>
+<p>BoltInvokerCallback 则会调用 SofaResponseCallback 的 的 onAppXXXX 方法。完成最终用户的调用。</p>
+<p>整体设计图和流程图和异步 Future 类似（内部是 Callback 实现）。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-fd9b6b5a0d8ea83d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>可以看到，和异步 Future 唯一不同的就是面向用户的 API 不同和内部一个 Callback 不同。<br>异步 Future 面向用户的 API 是 BoltResponseFuture 。<br>回调 Callback 面向用户的是 SofaResponseCallback。</p>
+<p>但内部的原理都是一样的。都是使用  RpcInvokeCallbackListener  和 DefaultInvokeFuture 回调实现。</p>
+<p>DefaultInvokeFuture 设置在 Channel 中，当收到返回值后，便调用他的方法，接着完成这个链式返回，直到调用用户设置的 API。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>今天我们分析了 SOFA 的调用 API，包括同步，异步 Future，回调 Callback，单向 oneWay。</p>
+<p>其中单向实现最简单，同步也比较简单。</p>
+<p>异步的内部实现和回调的内部实现完全一样，只是展示给用户的 API 不同。都是通过观察者模式实现的。</p>
+<p>我们思考一下： 为什么要使用这么多层次包装呢?</p>
+<p>首先 InvokeFuture 和 RpcInvokeCallbackListener 是面向网络层的。也就是 Bolt 内部的接口。</p>
+<p>他们对于 SOFA—RPC 来讲，是统一的。</p>
+<p>而 SOFA 对于异步和回调则使用了不同的 API：<br>异步使用了 BoltResponseFuture 和 BoltFutureInovkeCallback。<br>回调使用 SofaResponseCallback 和 BoltInvokerCallback。</p>
+<p>为什么在 Bolt 层和用户层需要再加 InvokeCallback 这一层呢？</p>
+<p>InvokeCallback 这一层可以将用户层和网络层很好的解耦，如果网络层发生变化，那么，只需要变动中间层就可以了，用户层不会受到影响。</p>
+<p>好了，今天就到这里。bye！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/SOFA/" class="category-chain-item">SOFA</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>SOFA-源码分析-—-调用方式</div>
+      <div>http://thinkinjava.cn/2018/05/09/2018/2018-05-09-SOFA-源码分析-—-调用方式/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年5月9日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/05/09/2018/2018-05-09-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E6%B3%9B%E5%8C%96%E8%B0%83%E7%94%A8/" title="SOFA-源码分析-—-泛化调用">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SOFA-源码分析-—-泛化调用</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/05/08/2018/2018-05-08-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E8%BF%9E%E6%8E%A5%E7%AE%A1%E7%90%86%E5%99%A8/" title="SOFA-源码分析-—-连接管理器">
+                        <span class="hidden-mobile">SOFA-源码分析-—-连接管理器</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,733 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="内存管理内存管理的要求在研究各种内存管理的机制和技术时，一定要牢记内存管理所必须满足的要求：  重定位 指的是处理机硬件和操作系统软件必须能将程序代码中地址映射为程序在内存中实际的物理地址。   保护 每个进程必须内保护以免受到其他进程的干扰，未经允许进程不能对其他进程的存储区进行读写操作   共享 协同工作的多个进程需要共享同一数据结构。   逻辑组织 计算机系统中的内存组织形式是包含字或字节序">
+<meta property="og:type" content="article">
+<meta property="og:title" content="内存管理">
+<meta property="og:url" content="http://thinkinjava.cn/2017/10/08/2017/2017-10-08-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="内存管理内存管理的要求在研究各种内存管理的机制和技术时，一定要牢记内存管理所必须满足的要求：  重定位 指的是处理机硬件和操作系统软件必须能将程序代码中地址映射为程序在内存中实际的物理地址。   保护 每个进程必须内保护以免受到其他进程的干扰，未经允许进程不能对其他进程的存储区进行读写操作   共享 协同工作的多个进程需要共享同一数据结构。   逻辑组织 计算机系统中的内存组织形式是包含字或字节序">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-10-07T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.517Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>内存管理 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="内存管理"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2017-10-08 02:11" pubdate>
+          2017年10月8日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          15 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">内存管理</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h3 id="内存管理"><a href="#内存管理" class="headerlink" title="内存管理"></a>内存管理</h3><h4 id="内存管理的要求"><a href="#内存管理的要求" class="headerlink" title="内存管理的要求"></a>内存管理的要求</h4><p>在研究各种内存管理的机制和技术时，一定要牢记内存管理所必须满足的要求：</p>
+<ol>
+<li>重定位<blockquote>
+<p>指的是处理机硬件和操作系统软件必须能将程序代码中地址映射为程序在内存中实际的物理地址。</p>
+</blockquote>
+</li>
+<li>保护<blockquote>
+<p>每个进程必须内保护以免受到其他进程的干扰，未经允许进程不能对其他进程的存储区进行读写操作</p>
+</blockquote>
+</li>
+<li>共享<blockquote>
+<p>协同工作的多个进程需要共享同一数据结构。</p>
+</blockquote>
+</li>
+<li>逻辑组织<blockquote>
+<p>计算机系统中的内存组织形式是包含字或字节序列的线性或一维地址空间。</p>
+</blockquote>
+</li>
+<li>物理组织<blockquote>
+<p>计算机的存储器至少分2个层次：主存和辅助存储器。</p>
+</blockquote>
+</li>
+</ol>
+<h4 id="程序的加载"><a href="#程序的加载" class="headerlink" title="程序的加载"></a>程序的加载</h4><p><strong>任何操作系统的核心人物是将程序调入到主存中执行。</strong> 在多数现代多道程序系统中，完成这个人物涉及到一个名为<code>虚拟存储器</code>的复杂调度方案，而虚拟存储器又是建立在两个基本技术基础之上的：分段和分页。还要一种更为基本的技术：分区。</p>
+<table>
+<thead>
+<tr>
+<th>header 1</th>
+<th>header 2</th>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>固定分区</td>
+<td>在系统生成时，内存分为若干个分区。等于或小于分区大小的进程可以调入内存</td>
+<td>易于实现，开销少</td>
+<td>存在内存碎片</td>
+</tr>
+<tr>
+<td>动态分区</td>
+<td>动态建立分区，所以分区大小与进程大小相同</td>
+<td>无内存碎片，内存利用率较高</td>
+<td>由于要进行压缩，处理机利用率不高</td>
+</tr>
+<tr>
+<td>简单分页</td>
+<td>主存分为大小相同的帧，每个进程分为同样大小的页，通过将进程中所有页调入内存空闲页，将进程调入内存，这些内存中的页可不连接</td>
+<td>无外部碎片</td>
+<td>少量的内部碎片</td>
+</tr>
+<tr>
+<td>简单分段</td>
+<td>每个进程分为若干个段，通过将进程所有的段调入内存，将进程调入内存，这些内存中的段可不连续</td>
+<td>无内部碎片</td>
+<td>需要压缩</td>
+</tr>
+<tr>
+<td>虚拟内存分页</td>
+<td>除了不需将近所有页都调入内存外，其余与分页相同，不在内存中的页当需要时自动调入</td>
+<td>无外部碎片，可容纳更多进程，虚拟内存空间大</td>
+<td>复杂的内存，管理导致开销大</td>
+</tr>
+<tr>
+<td>虚拟内存分段</td>
+<td>除了不需将进程所有段调入内存外其余与分段相同，不在内存中的段当需要时自动调入</td>
+<td>无内部碎片，可容纳更多进程，虚拟内存空间大，支持保护和功效共享</td>
+<td>复杂的内存，管理导致开销大</td>
+</tr>
+</tbody></table>
+<h4 id="分页"><a href="#分页" class="headerlink" title="分页"></a>分页</h4><p>分页就是将内存分成多个同样大小的存储区，每个进程页分成同样大小的页，较小的进程需要较少的页，较大的进程需要较多的页，进程在调入内存时，所有的进程页放入内存中空闲页，并建立页表。这种方法解决了分区方案中所固有的许多问题。</p>
+<h4 id="局部性和虚拟内存"><a href="#局部性和虚拟内存" class="headerlink" title="局部性和虚拟内存"></a>局部性和虚拟内存</h4><p>颠簸：处理器把大部分时间花在调入调出近的片段上而不是执行用户的指令上</p>
+<p>本质上，OS都是根据最近的历史来预测在较近的将来最不可能用到的那些片段。</p>
+<p>局部性原理指的是：一个进程的程序和数据访问都有聚集成群的倾向。因此，关于在一个短的时间内，只需要进程的几个片段的假设是合理的，同样，页可以智能的预测在较短的将来会用到哪些片段。从而可以避免颠簸。</p>
+<p>而局部性原理意味着虚拟内存是可行的。可行且有效的虚拟内存需要两个部件。一个是支持分页或/和分段的硬件。另一个是OS必须包括相应的软件，这些软件能管理主存和辅助存储器之间页和/ 和段的移动。</p>
+<h3 id="操作系统软件"><a href="#操作系统软件" class="headerlink" title="操作系统软件"></a>操作系统软件</h3><p>操作系统的内存管理部分的设计取决于对下面几个方面的选择：</p>
+<ol>
+<li>是否运用虚拟存储技术。</li>
+<li>运用分页，分段还是组合使用</li>
+<li>内存管理的不同方面使用什么样的算法。</li>
+</ol>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>为了有效使用处理机和I/O设备，在主存中保留尽可能多的进程显然是有益的。另外，让程序员不受大小的约束也是可取的，其基本技术是分页和分段。</p>
+<p>达到上面两点的方法是使用虚拟内存。在虚拟内存，所有引用的地址都是逻辑地址，在执行时转换为物理地址。使用虚拟内存可以让进程存放于主存的任何位置并可以不时改变。虚拟内存还可以让程序分为一些片段，在执行时，这些片段不需要连续的存放于主存中，甚至不需要进程的所有片段都在主存中。</p>
+<p>可以提供虚拟内存的基本方法是：分段和分页。运用分页，每一个进程被分成相对较小的，大小固定的页，分段则可以使用大小可变的片段。当然也可以在一个内存管理的设计中组合使用分段和分页技术。</p>
+<p>虚拟内存管理需要硬件和软件的支持，处理机可以提供硬件支持，这种支持包括虚拟地址到物理地址的动态转换，当所引用的页或段不在主存中时产生一个中断。这个中断可以激活OS中的内存管理软件。</p>
+<p>和OS对内存管理相关的几个设计问题是：</p>
+<ol>
+<li>装入策略。进程的页可以根据请求调入或使用预分页，后者可以同时调入一些页，成批的执行输入动作。</li>
+<li>分配策略。在纯分段的系统中，将要调入主存的段必须能适合主存的空闲空间。</li>
+<li>替换策略。当内存被占满时，必须决定哪一个页或哪些页被替换掉。</li>
+<li>常驻集管理。当一个进程替换时，OS必须决定分配多大的主存给他。它可以在进程创建时静态分配，也可动态分配。</li>
+<li>清除策略。修改过的进程可以在替换时写出，或使用预清除策略。后者成批或成蔟的执行输出动作。</li>
+<li>加载控制。这是在任一给定时间，决定主存中驻留多少进程。</li>
+</ol>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%9F%BA%E7%A1%80/" class="category-chain-item">基础</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>内存管理</div>
+      <div>http://thinkinjava.cn/2017/10/08/2017/2017-10-08-内存管理/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2017年10月8日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2017/10/08/2017/2017-10-08-%E4%B8%AD%E5%A4%AE%E5%A4%84%E7%90%86%E5%99%A8/" title="中央处理器">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">中央处理器</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2017/10/08/2017/2017-10-08-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/" title="处理机调度">
+                        <span class="hidden-mobile">处理机调度</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

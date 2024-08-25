@@ -1,0 +1,680 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之-CyclicBarrier-源码分析">
+<meta property="og:url" content="http://thinkinjava.cn/2018/04/14/2018/2018-04-14-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-CyclicBarrier-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-9d1936c1348d5538.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-98429ec758d7f705.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-04-13T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.540Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-9d1936c1348d5538.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>并发编程之-CyclicBarrier-源码分析 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="并发编程之-CyclicBarrier-源码分析"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-04-14 02:11" pubdate>
+          2018年4月14日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          15 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">并发编程之-CyclicBarrier-源码分析</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->## 前言
+
+<p>在之前的介绍 CountDownLatch 的文章中，CountDown 可以实现多个线程协调，在所有指定线程完成后，主线程才执行任务。</p>
+<p>但是，CountDownLatch 有个缺陷，这点 JDK 的文档中也说了：他只能使用一次。在有些场合，似乎有些浪费，需要不停的创建 CountDownLatch 实例，JDK  在 CountDownLatch 的文档中向我们介绍了 CyclicBarrier——循环栅栏。具体使用参见文章 <a href="http://thinkinjava.cn/article/37">并发编程之 线程协作工具类</a>。</p>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><p>该类结构如下:<br><img src="https://upload-images.jianshu.io/upload_images/4236553-9d1936c1348d5538.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>有一个我们常用的方法 await，还有一个内部类，Generation ，仅有一个参数，有什么作用呢？</p>
+<p>在 CyclicBarrier 中，有一个 “代” 的概念，因为 CyclicBarrier 是可以复用的，那么每次所有的线程通过了栅栏，就表示一代过去了，就像我们的新年一样。当所有人跨过了元旦，日历就更新了。</p>
+<p>为什么需要这个呢？后面我们看源码的时候在细说，现在说有点不太容易懂。</p>
+<p>再看看构造方法，有 2 个构造方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">CyclicBarrier</span><span class="params">(<span class="type">int</span> parties)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>(parties, <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">CyclicBarrier</span><span class="params">(<span class="type">int</span> parties, Runnable barrierAction)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (parties &lt;= <span class="number">0</span>) <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>();</span><br><span class="line">    <span class="built_in">this</span>.parties = parties;</span><br><span class="line">    <span class="built_in">this</span>.count = parties;</span><br><span class="line">    <span class="built_in">this</span>.barrierCommand = barrierAction;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果使用 CyclicBarrier 就知道了，CyclicBarrier 支持在所有线程通过栅栏的时候，执行一个线程的任务。</p>
+<p>parties 属性就是线程的数量，这个数量用来控制什么时候释放打开栅栏，让所有线<br>程通过。</p>
+<p>好了，CyclicBarrier 的最重要的方法就是 await 方法，当执行了这样一个方法，就像是树立了一个栅栏，将线程挡住了，只有所有的线程都到了这个栅栏上，栅栏才会打开。</p>
+<p>看看这个方法的实现。</p>
+<h2 id="await-方法实现"><a href="#await-方法实现" class="headerlink" title="await 方法实现"></a>await 方法实现</h2><p>代码加注释如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="type">int</span> <span class="title function_">dowait</span><span class="params">(<span class="type">boolean</span> timed, <span class="type">long</span> nanos)</span></span><br><span class="line">    <span class="keyword">throws</span> InterruptedException, BrokenBarrierException,</span><br><span class="line">           TimeoutException &#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="built_in">this</span>.lock;</span><br><span class="line">    <span class="comment">// 锁住</span></span><br><span class="line">    lock.lock();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 当前代</span></span><br><span class="line">        <span class="keyword">final</span> <span class="type">Generation</span> <span class="variable">g</span> <span class="operator">=</span> generation;</span><br><span class="line">        <span class="comment">// 如果这代损坏了，抛出异常</span></span><br><span class="line">        <span class="keyword">if</span> (g.broken)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">BrokenBarrierException</span>();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果线程中断了，抛出异常</span></span><br><span class="line">        <span class="keyword">if</span> (Thread.interrupted()) &#123;</span><br><span class="line">            <span class="comment">// 将损坏状态设置为 true</span></span><br><span class="line">            <span class="comment">// 并通知其他阻塞在此栅栏上的线程</span></span><br><span class="line">            breakBarrier();</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">InterruptedException</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 获取下标    </span></span><br><span class="line">        <span class="type">int</span> <span class="variable">index</span> <span class="operator">=</span> --count;</span><br><span class="line">        <span class="comment">// 如果是 0 ,说明到头了</span></span><br><span class="line">        <span class="keyword">if</span> (index == <span class="number">0</span>) &#123;  <span class="comment">// tripped</span></span><br><span class="line">            <span class="type">boolean</span> <span class="variable">ranAction</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">final</span> <span class="type">Runnable</span> <span class="variable">command</span> <span class="operator">=</span> barrierCommand;</span><br><span class="line">                <span class="comment">// 执行栅栏任务</span></span><br><span class="line">                <span class="keyword">if</span> (command != <span class="literal">null</span>)</span><br><span class="line">                    command.run();</span><br><span class="line">                ranAction = <span class="literal">true</span>;</span><br><span class="line">                <span class="comment">// 更新一代,将 count 重置,将 generation 重置.</span></span><br><span class="line">                <span class="comment">// 唤醒之前等待的线程</span></span><br><span class="line">                nextGeneration();</span><br><span class="line">                <span class="comment">// 结束</span></span><br><span class="line">                <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                <span class="comment">// 如果执行栅栏任务的时候失败了,就将栅栏失效</span></span><br><span class="line">                <span class="keyword">if</span> (!ranAction)</span><br><span class="line">                    breakBarrier();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="comment">// 如果没有时间限制,则直接等待,直到被唤醒</span></span><br><span class="line">                <span class="keyword">if</span> (!timed)</span><br><span class="line">                    trip.await();</span><br><span class="line">                <span class="comment">// 如果有时间限制,则等待指定时间</span></span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (nanos &gt; <span class="number">0L</span>)</span><br><span class="line">                    nanos = trip.awaitNanos(nanos);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException ie) &#123;</span><br><span class="line">                <span class="comment">// g == generation &gt;&gt; 当前代</span></span><br><span class="line">                <span class="comment">// ! g.broken &gt;&gt;&gt; 没有损坏</span></span><br><span class="line">                <span class="keyword">if</span> (g == generation &amp;&amp; ! g.broken) &#123;</span><br><span class="line">                    <span class="comment">// 让栅栏失效</span></span><br><span class="line">                    breakBarrier();</span><br><span class="line">                    <span class="keyword">throw</span> ie;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="comment">// 上面条件不满足,说明这个线程不是这代的.</span></span><br><span class="line">                    <span class="comment">// 就不会影响当前这代栅栏执行逻辑.所以,就打个标记就好了</span></span><br><span class="line">                    Thread.currentThread().interrupt();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 当有任何一个线程中断了,会调用 breakBarrier 方法.</span></span><br><span class="line">            <span class="comment">// 就会唤醒其他的线程,其他线程醒来后,也要抛出异常</span></span><br><span class="line">            <span class="keyword">if</span> (g.broken)</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">BrokenBarrierException</span>();</span><br><span class="line">            <span class="comment">// g != generation &gt;&gt;&gt; 正常换代了</span></span><br><span class="line">            <span class="comment">// 一切正常,返回当前线程所在栅栏的下标</span></span><br><span class="line">            <span class="comment">// 如果 g == generation，说明还没有换代，那为什么会醒了？</span></span><br><span class="line">            <span class="comment">// 因为一个线程可以使用多个栅栏，当别的栅栏唤醒了这个线程，就会走到这里，所以需要判断是否是当前代。</span></span><br><span class="line">            <span class="comment">// 正是因为这个原因，才需要 generation 来保证正确。</span></span><br><span class="line">            <span class="keyword">if</span> (g != generation)</span><br><span class="line">                <span class="keyword">return</span> index;</span><br><span class="line">            <span class="comment">// 如果有时间限制,且时间小于等于0,销毁栅栏,并抛出异常</span></span><br><span class="line">            <span class="keyword">if</span> (timed &amp;&amp; nanos &lt;= <span class="number">0L</span>) &#123;</span><br><span class="line">                breakBarrier();</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">TimeoutException</span>();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>代码虽然长，但整体逻辑还是很简单的。总结一下该方法吧。</p>
+<ol>
+<li><p>首先，每个 CyclicBarrier 都有一个 Lock，想执行 await 方法，就必须获得这把锁。所以，CyclicBarrier 在并发情况下的性能是不高的。</p>
+</li>
+<li><p>一些线程中断的判断，注意，CyclicBarrier 中，只有有一个线程中断了，其余的线程也会抛出中断异常。并且，<strong>这个 CyclicBarrier 就不能再次使用了。</strong></p>
+</li>
+<li><p>每次线程调用一次 await 方法，表示这个线程到了栅栏这里了，那么就将计数器减一。如果计数器到 0 了，表示这是这一代最后一个线程到达栅栏，就尝试执行我们构造方法中输入的任务。最后，将代更新，计数器重置，并唤醒所有之前等待在栅栏上的线程。</p>
+</li>
+<li><p>如果不是最后一个线程到达栅栏了，就使用 Condition 的 await 方法阻塞线程。如果等待过程中，线程中断了，就抛出异常。这里，注意一下，如果中断的线程的使用 CyclicBarrier 不是这代的，比如，在最后一次线程执行 signalAll 后，并且更新了这个“代”对象。在这个区间，这个线程被中断了，那么，JDK 认为任务已经完成了，就不必在乎中断了，只需要打个标记。所以，catch 里的 else 判断用于极少情况下出现的判断——任务完成，“代” 更新了，突然出现了中断。这个时候，CyclicBarrier 是不在乎的。因为任务已经完成了。</p>
+</li>
+<li><p>当有一个线程中断了，也会唤醒其他线程，那么就需要判断 broken 状态。 </p>
+</li>
+<li><p>如果这个线程被其他的 CyclicBarrier 唤醒了，那么 g 肯定等于 generation，这个事件就不能 return 了，而是继续循环阻塞。反之，如果是当前 CyclicBarrier 唤醒的，就返回线程在 CyclicBarrier 的下标。完成了一次冲过栅栏的过程。</p>
+</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>从 await 方法看，CyclicBarrier 还是比较简单的，JDK 的思路就是：设置一个计数器，线程每调用一次计数器，就减一，并使用  Condition 阻塞线程。当计数器是0的时候，就唤醒所有线程，并尝试执行构造函数中的任务。由于 CyclicBarrier 是可重复执行的，所以，就需要重置计数器。</p>
+<p>CyclicBarrier 还有一个重要的点，就是 generation 的概念，由于每一个线程可以使用多个 CyclicBarrier，每个 CyclicBarrier 又都可以唤醒线程，那么就需要用代来控制，如果代不匹配，就需要重新休眠。同时，这个代还记录了线程的中断状态，如果任何线程中断了，那么所有的线程都会抛出中断异常，并且 CyclicBarrier 不再可用了。</p>
+<p>总而言之，CyclicBarrier 是依靠一个计数器实现的，内部有一个 count 变量，每次调用都会减一。当一次完整的栅栏活动结束后，计数器重置，这样，就可以重复利用了。</p>
+<p>而他和 CountDownLatch 的区别在于，CountDownLatch 只能使用一次就 over 了，CyclicBarrier 能使用多次，可以说功能类似，CyclicBarrier 更强大一点。并且 CyclicBarrier 携带了一个在栅栏处可以执行的任务。更加灵活。</p>
+<p>下面来一张图，说说 CyclicBarrier 的流程。和 CountDownLatch 类似：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-98429ec758d7f705.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>并发编程之-CyclicBarrier-源码分析</div>
+      <div>http://thinkinjava.cn/2018/04/14/2018/2018-04-14-并发编程之-CyclicBarrier-源码分析/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年4月14日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/04/14/2018/2018-04-14-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-Condition-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" title="并发编程之-Condition-源码分析">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">并发编程之-Condition-源码分析</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/04/14/2018/2018-04-14-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-Semaphore-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" title="并发编程之-Semaphore-源码分析">
+                        <span class="hidden-mobile">并发编程之-Semaphore-源码分析</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

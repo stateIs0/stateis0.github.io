@@ -1,0 +1,774 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="概述Java 内存排查，一直是不容易的事情，堆内内存还好，只要有 dump 文件，放到 MAT 分析下，基本就可以了，但是堆外内存，一直是个老大难问题。我们经常会遇到以下几个问题：  为什么我配置了 Xmx2G，系统告警说内存用到了 4G？ 为什么配置了-XX:MaxDirectMemorySize 却没有效果？ 为什么 jdk 提供的工具，无法检查出堆外内存？ Xmx 和 Xms 设置相同，理论">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 堆外内存排查">
+<meta property="og:url" content="http://thinkinjava.cn/2023/08/15/2023/memory_fix/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="概述Java 内存排查，一直是不容易的事情，堆内内存还好，只要有 dump 文件，放到 MAT 分析下，基本就可以了，但是堆外内存，一直是个老大难问题。我们经常会遇到以下几个问题：  为什么我配置了 Xmx2G，系统告警说内存用到了 4G？ 为什么配置了-XX:MaxDirectMemorySize 却没有效果？ 为什么 jdk 提供的工具，无法检查出堆外内存？ Xmx 和 Xms 设置相同，理论">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://thinkinjava.cn/img/2023/08/img_2.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2023/08/img_3.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2023/08/img_4.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2023/08/img_5.png">
+<meta property="article:published_time" content="2023-08-14T17:00:00.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.556Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://thinkinjava.cn/img/2023/08/img_2.png">
+  
+  
+  
+  <title>Java 堆外内存排查 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Java 堆外内存排查"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-08-15 01:00" pubdate>
+          2023年8月15日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          15 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Java 堆外内存排查</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Java 内存排查，一直是不容易的事情，堆内内存还好，只要有 dump 文件，放到 MAT 分析下，基本就可以了，但是堆外内存，一直是个老大难问题。我们经常会遇到以下几个问题：</p>
+<ul>
+<li>为什么我配置了 Xmx2G，系统告警说内存用到了 4G？</li>
+<li>为什么配置了-XX:MaxDirectMemorySize 却没有效果？</li>
+<li>为什么 jdk 提供的工具，无法检查出堆外内存？</li>
+<li>Xmx 和 Xms 设置相同，理论上，物理内存是不是就没有变化了？但为什么总是在变化呢？</li>
+</ul>
+<p>以上几个问题，只是冰山一角，君不见网上有数不清的堆外内存排查案例。本文尝试总结堆外内存的来龙去脉。</p>
+<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><p>首先 Java 内存的分类：</p>
+<ul>
+<li>堆内（eden，Survivor0， Survivor1， old，压缩指针（15M 左右））</li>
+<li>堆外<ul>
+<li>JVM 自身运行需要的堆外内存</li>
+<li>线程栈（1Mb，200个线程，通常就是 200Mb 左右）</li>
+<li>GC 自身占用内存（50Mb 左右）</li>
+<li>元数据（metaspace）100M 左右<ul>
+<li>类信息，方法信息</li>
+<li>字节码，Code （代码存储区，80 Mb 左右）</li>
+<li>运行时常量池</li>
+<li>类常量池</li>
+<li>符号表（sumbol，几兆左右）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>开发者可以使用的堆外内存（直接内存）<ul>
+<li>ByteBuffer.aallocateDirect() 内存分配，受 XX:MaxDirectMemorySize 限制，这个内存是会被 JVM GC 自动回收的。</li>
+<li>反射 Unsafe.allocateMemory 调用分配的内存，XX:MaxDirectMemorySize 无效。</li>
+<li>JNI 使用 C 分配的内存，XX:MaxDirectMemorySize 无效。</li>
+</ul>
+</li>
+</ul>
+<h2 id="排查思路"><a href="#排查思路" class="headerlink" title="排查思路"></a>排查思路</h2><p>前提条件：如果出现了 RES 大于 Xmx，首先要排除元数据区是否没有配置 Max 参数。这个可以使用 Jmap （jmap -histo[:live] pid）查看。</p>
+<p>如果元数据区没有问题。 通常就是堆外内存导致，Unsafe 或者 JNI</p>
+<p>jmap -histo:live 30232</p>
+<h4 id="Jmap-使用："><a href="#Jmap-使用：" class="headerlink" title="Jmap 使用："></a>Jmap 使用：</h4><p>option:</p>
+<ul>
+<li>no option： 查看进程的内存映像信息,类似 Solaris pmap 命令。</li>
+<li>heap： 显示Java堆详细信息</li>
+<li>histo:live  ： 显示堆中对象的统计信息， 会触发 GC ！</li>
+<li>clstats：打印类加载器信息</li>
+<li>finalizerinfo： 显示在F-Queue队列等待Finalizer线程执行finalizer方法的对象</li>
+<li>dump:<dump-options>：生成堆转储快照</li>
+<li>F： 当-dump没有响应时，使用-dump或者-histo参数. 在这个模式下,live子参数无效.</li>
+<li>help：打印帮助信息</li>
+<li>J<flag>：指定传递给运行jmap的JVM的参数</li>
+</ul>
+<p>如何判断是 unsafe 还是 JNI ? 使用 NMT（Native Memory Tracking），注意：NMT 会带来 5%~10% 的性能损耗。</p>
+<p>NMT 是 oracle 追踪堆外内存的一个插件。</p>
+<p>这里使用一段代码例子：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException, IOException &#123;</span><br><span class="line">    <span class="keyword">for</span> (; ; ) &#123;</span><br><span class="line">       Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">       <span class="comment">// 堆外内存申请</span></span><br><span class="line">       ByteBuffer.allocateDirect(<span class="number">1024</span> * <span class="number">1024</span> * <span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>每秒执行一次申请堆外内存操作。</p>
+<p>使用步骤：</p>
+<ul>
+<li>重启 Java 应用， 加入 -XX:NativeMemoryTracking=detail 参数。最好再加上 -XX:+AlwaysPreTouch 参数，可排除内存曲线干扰。<ul>
+<li>启动参数 -XX:NativeMemoryTracking=detail -Xmx1G -Xms1G  -XX:+AlwaysPreTouch -XX:MaxDirectMemorySize=10G</li>
+<li>如果要关闭：jcmd <pid> VM.native_memory shutdown</li>
+</ul>
+</li>
+<li>等待内存变化，发现变化后，使用 jcmd 8490 VM.native_memory summary scale=MB 查看内存。结果如下图：</li>
+</ul>
+<p><img src="/img/2023/08/img_2.png" srcset="/img/loading.gif" lazyload alt="img_2.png"></p>
+<p>如上图， 列出了相关的内存信息，堆内存 1024，class 680 个，线程数 22个 等信息。</p>
+<p>主要关注 total committed（committed表示应用正在使用的内存大小） 结果。可以看到这边显示的 1.8G，而实际上，我们只申请了 1G。</p>
+<p>注意：下面显示 Internal 使用了 2709M，<code>这就是 unsafe 申请的内存</code>。</p>
+<p>如果看见 top 中的 RES 和 这个 commited 差不多，基本上，就是使用了 unsafe 内存。</p>
+<p>unsafe 问题怎么办？</p>
+<p>注意：-XX:MaxDirectMemorySize=size 默认和 -Xmx 相等</p>
+<p>NIO 和 Netty 都取 -XX:MaxDirectMemorySize 值限制大小。NIO 和 Netty 有计数器字段，计算已申请堆外内存大小，监控堆外内存使用情况，超过最大值限制，抛OOM。</p>
+<ul>
+<li>NIO 中 是：OutOfMemoryError: Direct buffer memory。</li>
+<li>Netty 中是：OutOfDirectMemoryError: failed to allocate capacity byte(s) of direct memory (used: usedMemory , max: DIRECT_MEMORY_LIMIT )。</li>
+</ul>
+<p>JDK 工具： jvisualvm<br><img src="/img/2023/08/img_3.png" srcset="/img/loading.gif" lazyload alt="img_3.png"></p>
+<p>上图左边展示了 Unsafe 堆外内存的监控曲线，右边展示了 MappedByteBuffer 的内存增长曲线。</p>
+<p>相关代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException, IOException &#123;</span><br><span class="line">    <span class="keyword">for</span> (; ; ) &#123;</span><br><span class="line">        Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">        <span class="comment">// 堆外内存。</span></span><br><span class="line">        ByteBuffer.allocateDirect(<span class="number">1024</span>);</span><br><span class="line">        <span class="type">File</span> <span class="variable">file</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(<span class="string">&quot;/Users/cxs/Downloads/setting.xml&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (!file.exists()) &#123;</span><br><span class="line">            file.createNewFile();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">FileChannel</span> <span class="variable">channel</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">RandomAccessFile</span>(file, <span class="string">&quot;rw&quot;</span>).getChannel();</span><br><span class="line">        <span class="comment">// mmp 内存映射。底层 map0 方法</span></span><br><span class="line">        <span class="type">MappedByteBuffer</span> <span class="variable">map</span> <span class="operator">=</span> channel.map(FileChannel.MapMode.READ_ONLY, <span class="number">0</span>, file.length());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这段代码，既分配了堆外内存，又申请了 mmp（底层调用的是个 naive 方法）；</p>
+<p>如果是 unsafe 内存，分为 2 种情况：</p>
+<ul>
+<li>如果是 ByteBuffer.aallocateDirect() 分配的，可以使用 XX:MaxDirectMemorySize 控制。如何确定？ java.nio.Bits#totalCapacity 属性监控。<ul>
+<li>还可能是 netty ，通常不会，可能性小，监控项：io.netty.util.internal.PlatformDependent#DIRECT_MEMORY_COUNTER</li>
+</ul>
+</li>
+<li>如果是 Unsafe 分配的，比较麻烦，需要 debug 这个 unsafe 类，找出是哪里用的，然后再进行查看，为什么泄漏。</li>
+<li>另外检查是否有System.gc</li>
+</ul>
+<p>如果 RES 和 这个 commited 差很多，那通常就是 JNI 分配内存的问题。</p>
+<p>题外话：ByteBuffer 的回收。<br><code>Direct ByteBuffer分配出去的直接内存其实也是由GC负责回收的，而不像Unsafe是完全自行管理的，Hotspot在GC时会扫描Direct ByteBuffer对象是否有引用，如没有则同时也会回收其占用的堆外内存。</code></p>
+<p>DirectByteBuffer 类有一个内部的静态类 Deallocator，这个类实现了 Runnable 接口并在 run() 方法内释放了内存，源码如下</p>
+<h3 id="JNI-问题怎么办？"><a href="#JNI-问题怎么办？" class="headerlink" title="JNI 问题怎么办？"></a>JNI 问题怎么办？</h3><p>常见 java zip 工具类。</p>
+<p>google 工具：</p>
+<ul>
+<li>root 权限安装 gperftools，export 环境变量， 重启 Java 应用。然后静等输出 多个 heap 二进制文件。</li>
+<li>有了 heap 文件后，使用 pprof 将最后一个 heap 二进制文件转成 pdf 调用图，即可查看。</li>
+</ul>
+<p>通常会有这样的图：<br><img src="/img/2023/08/img_4.png" srcset="/img/loading.gif" lazyload alt="img_4.png"></p>
+<h2 id="实战"><a href="#实战" class="headerlink" title="实战"></a>实战</h2><ul>
+<li>使用 NMT 排除 unsafe 内存泄漏。</li>
+</ul>
+<p>unsafe 内存泄漏实战代码。</p>
+<p>JVM 参数：-XX:NativeMemoryTracking=detail -Xmx1G -Xms1G  -XX:+AlwaysPreTouch -XX:MaxDirectMemorySize=1M</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.nio.ByteBuffer;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Main2</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException, IOException &#123;</span><br><span class="line">        <span class="keyword">for</span> (; ; ) &#123;</span><br><span class="line">            Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">            ByteBuffer.allocateDirect(<span class="number">1024</span> * <span class="number">1024</span> * <span class="number">100</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>使用 google pprof 排查 JNI 内存泄漏。</li>
+</ul>
+<p>工具安装：</p>
+<ul>
+<li>yum install gperftools</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">export LD_PRELOAD=<span class="string">&quot;/usr/lib64/libtcmalloc.so&quot;</span></span><br><span class="line">export HEAPPROFILE=<span class="string">&quot;/usr/local/timevale/my&quot;</span></span><br><span class="line">export HEAP_PROFILE_ALLOCATION_INTERVAL=<span class="number">2147483648</span></span><br></pre></td></tr></table></figure>
+
+<p>JNI 内存泄漏实战代码：</p>
+<p>JVM 参数：-XX:NativeMemoryTracking=detail -Xmx20M -Xms20M  -XX:+AlwaysPreTouch -XX:MaxDirectMemorySize=1M</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.*;</span><br><span class="line"><span class="keyword">import</span> java.util.Random;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ThreadLocalRandom;</span><br><span class="line"><span class="keyword">import</span> java.util.zip.GZIPInputStream;</span><br><span class="line"><span class="keyword">import</span> java.util.zip.GZIPOutputStream;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Main</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> String <span class="title function_">randomString</span><span class="params">(<span class="type">int</span> strLength)</span> &#123;</span><br><span class="line">        <span class="type">Random</span> <span class="variable">rnd</span> <span class="operator">=</span> ThreadLocalRandom.current();</span><br><span class="line">        <span class="type">StringBuilder</span> <span class="variable">ret</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; strLength; i++) &#123;</span><br><span class="line">            <span class="type">boolean</span> <span class="variable">isChar</span> <span class="operator">=</span> (rnd.nextInt(<span class="number">2</span>) % <span class="number">2</span> == <span class="number">0</span>);</span><br><span class="line">            <span class="keyword">if</span> (isChar) &#123;</span><br><span class="line">                <span class="type">int</span> <span class="variable">choice</span> <span class="operator">=</span> rnd.nextInt(<span class="number">2</span>) % <span class="number">2</span> == <span class="number">0</span> ? <span class="number">65</span> : <span class="number">97</span>;</span><br><span class="line">                ret.append((<span class="type">char</span>) (choice + rnd.nextInt(<span class="number">26</span>)));</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                ret.append(rnd.nextInt(<span class="number">10</span>));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> ret.toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">copy</span><span class="params">(InputStream input, OutputStream output)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">count</span> <span class="operator">=</span> copyLarge(input, output);</span><br><span class="line">        <span class="keyword">return</span> count &gt; <span class="number">2147483647L</span> ? -<span class="number">1</span> : (<span class="type">int</span>) count;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="type">long</span> <span class="title function_">copyLarge</span><span class="params">(InputStream input, OutputStream output)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">4096</span>];</span><br><span class="line">        <span class="type">long</span> <span class="variable">count</span> <span class="operator">=</span> <span class="number">0L</span>;</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> n;</span><br><span class="line">        <span class="keyword">for</span> (; -<span class="number">1</span> != (n = input.read(buffer)); count += (<span class="type">long</span>) n) &#123;</span><br><span class="line">            output.write(buffer, <span class="number">0</span>, n);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> count;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> String <span class="title function_">decompress</span><span class="params">(<span class="type">byte</span>[] input)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">ByteArrayOutputStream</span> <span class="variable">out</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line">        copy(<span class="keyword">new</span> <span class="title class_">GZIPInputStream</span>(<span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>(input)), out);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">String</span>(out.toByteArray());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="type">byte</span>[] compress(String str) <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">ByteArrayOutputStream</span> <span class="variable">bos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line">        <span class="type">GZIPOutputStream</span> <span class="variable">gzip</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">GZIPOutputStream</span>(bos);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            gzip.write(str.getBytes());</span><br><span class="line">            gzip.finish();</span><br><span class="line">            <span class="type">byte</span>[] b = bos.toByteArray();</span><br><span class="line">            <span class="keyword">return</span> b;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                gzip.close();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                bos.close();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> <span class="variable">BLOCK_SIZE</span> <span class="operator">=</span> <span class="number">102400</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">str</span> <span class="operator">=</span> randomString(BLOCK_SIZE);</span><br><span class="line"></span><br><span class="line">        <span class="type">byte</span>[] bytes = compress(str);</span><br><span class="line">        <span class="keyword">for</span> (; ; ) &#123;</span><br><span class="line">            decompress(bytes);</span><br><span class="line">            Thread.sleep(<span class="number">1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="其他工具"><a href="#其他工具" class="headerlink" title="其他工具"></a>其他工具</h2><ul>
+<li>GDB dump查看内存空间内容</li>
+<li>pmap 查看进程内存地址空间<ul>
+<li>pmap -x 30232 | sort -k 3 -n -r</li>
+<li>7f5a</li>
+</ul>
+</li>
+<li>strace常用来跟踪进程执行时的系统调用和所接收的信号<ul>
+<li>strace -o output.txt -T -tt -e trace=all -p 28979</li>
+<li>strace -f -e”brk,mmap,munmap” -o output.txt -p 30232</li>
+</ul>
+</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="/img/2023/08/img_5.png" srcset="/img/loading.gif" lazyload alt="img_5.png"></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/openSource/" class="category-chain-item">openSource</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Java 堆外内存排查</div>
+      <div>http://thinkinjava.cn/2023/08/15/2023/memory_fix/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年8月15日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/08/15/2023/0815p/" title="一些照片">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">一些照片</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/08/15/2023/exp/" title="EXP 一款 Java 插件化热插拔框架">
+                        <span class="hidden-mobile">EXP 一款 Java 插件化热插拔框架</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

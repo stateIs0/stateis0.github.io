@@ -1,0 +1,703 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="SOFA--源码分析-—-自动故障剔除">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/07/2018/2018-05-07-SOFA--%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E8%87%AA%E5%8A%A8%E6%95%85%E9%9A%9C%E5%89%94%E9%99%A4/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-05-06T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.543Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>SOFA--源码分析-—-自动故障剔除 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="SOFA--源码分析-—-自动故障剔除"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-05-07 02:11" pubdate>
+          2018年5月7日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          19 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">SOFA--源码分析-—-自动故障剔除</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       ## 前言
+
+<p>集群中通常一个服务有多个服务提供者。其中部分服务提供者可能由于网络，配置，长时间 fullgc ，线程池满，硬件故障等导致长连接还存活但是程序已经无法正常响应。单机故障剔除功能会将这部分异常的服务提供者进行降级，使得客户端的请求更多地指向健康节点。当异常节点的表现正常后，单机故障剔除功能会对该节点进行恢复，使得客户端请求逐渐将流量分发到该节点。单机故障剔除功能解决了服务故障持续影响业务的问题，避免了雪崩效应。可以减少人工干预需要的较长的响应时间，提高系统可用率。</p>
+<p>这种功能叫做自动故障剔除。</p>
+<p>而 SOFA 是怎么实现的呢？</p>
+<h2 id="如何使用"><a href="#如何使用" class="headerlink" title="如何使用"></a>如何使用</h2><p>自动故障剔除的运行机制：</p>
+<ul>
+<li>单机故障剔除会统计一个时间窗口内的调用次数和异常次数，并计算每个服务对应ip的异常率和该服务的平均异常率。</li>
+<li>当达到ip异常率大于服务平均异常率到一定比例时，会对该服务+ip的维度进行权重降级。</li>
+<li>如果该服务+ip维度的权重并没有降为0，那么当该服务+ip维度的调用情况正常时，则会对其进行权重恢复。</li>
+<li>整个计算和调控过程异步进行，不会阻塞调用。</li>
+</ul>
+<p>根据官方例子，使用方式如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">FaultToleranceConfig</span> <span class="variable">faultToleranceConfig</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FaultToleranceConfig</span>();</span><br><span class="line">        <span class="comment">// 是否开启调控.</span></span><br><span class="line">        faultToleranceConfig.setRegulationEffective(<span class="literal">true</span>);</span><br><span class="line">        <span class="comment">// 是否进行降级</span></span><br><span class="line">        faultToleranceConfig.setDegradeEffective(<span class="literal">true</span>);</span><br><span class="line">        <span class="comment">// 时间窗口大小</span></span><br><span class="line">        faultToleranceConfig.setTimeWindow(<span class="number">20</span>);</span><br><span class="line">        <span class="comment">// 每次权重降级的比率</span></span><br><span class="line">        faultToleranceConfig.setWeightDegradeRate(<span class="number">0.5</span>);</span><br><span class="line"></span><br><span class="line">FaultToleranceConfigManager.putAppConfig(<span class="string">&quot;appName&quot;</span>, faultToleranceConfig);</span><br></pre></td></tr></table></figure>
+
+<p>如上，该应用会在打开了单机故障剔除开关，每20s的时间窗口进行一次异常情况的计算，如果某个服务+ip的调用维度被判定为故障节点，则会进行将该服务+ip的权重降级为0.5倍。</p>
+<p>可以看到，这个功能面向框架用户的 API 就是这个 FaultToleranceConfig 类，即故障容错配置。</p>
+<p>用户可以配置某个服务是否开启调控，是否进行降级，实际窗口大小（秒），每次权重降级的比率。</p>
+<p>那么，SOFA 是如何实现的呢？</p>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><p>首先说明，由于这个功能相比较之前的功能，代码要复杂一些，因此，本次分析主要分析主流程，不会面面俱到。关于详细的代码细节，我们将在后面的源码分析中详细解释。</p>
+<h5 id="1-初始化"><a href="#1-初始化" class="headerlink" title="1. 初始化"></a>1. 初始化</h5><p>SOFA 对于该功能的设计使用了 Modle 的方式，简单来说，就是一个可扩展，可热插拔的中间件。SOFA  的中间件和 RPC 框架都是通过  Modle 的方式来实现的。</p>
+<p>如何实现呢？</p>
+<p>RPC 初始化的时候，会调用 RpcRuntimeContext 类的静态块，该静态块内部会初始化其他模块，即调用 ModuleFactory.installModules() 方法。该方法会加载配置文件中所有 Module 接口的 SPI 文件。然后循环调用 install 方法，即初始化。</p>
+<p>目前的源码中只有一个 Module 的实现类，即 FaultToleranceModule 。故障容错模块。该类的 install 方法 会创建一个订阅者，在事件总线中订阅两个事件：ClientSyncReceiveEvent 和 ClientAsyncReceiveEvent。然后创建一个事件窗口调控器。并初始化该调控器。</p>
+<p>TimeWindowRegulator  是故障调控的核心类，内部包含以下属性：</p>
+<ol>
+<li>measureCounter 度量计数器，每执行一次度量任务，就加一。</li>
+<li>measureScheduler 度量定时任务线程池，使用 RATE 模式，即从任务开始时间开始计算。如果任务的时间超过了间隔时间，间隔时间将失效。这里的间隔时间是 1 秒。</li>
+<li>regulationExecutor 计算线程池，即在定时任务线程池中提交计算任务给这个线程池，以实现快速返回。该线程池核心大小为 2. </li>
+<li>measureModels 度量模型，一个存放 MeasureModel 对象的 List。</li>
+<li>measureStrategy 计算策略（根据度量结果，判断是否需要执行降级或者恢复） </li>
+<li>weightDegradeStrategy 降级策略: 调整权重 </li>
+<li>logDegradeStrategy 降级策略: 只打印日志</li>
+<li>recoverStrategy 恢复策略：调整权重</li>
+<li>listener 调用统计监听器，当发生事件时，会调用监听器的方法。</li>
+</ol>
+<p>属性很多，暂时不详细解释。说主流程。</p>
+<p>该类的 intit 方法是初始化这些属性，并注册监听器。注册方式是调用 InvocationStatFactory.addListener(listener) 方法。而这个监听器是该类的内部类 —— TimeWindowRegulatorListener。</p>
+<p>好，初始化完毕之后，开始说流程。</p>
+<p>当 RPC 框架调用了发送消息的方法，并返回（或者失败）后，就会向事件总线 EventBus 丢一个事件。例如 ClientSyncReceiveEvent 事件，该事件需要包含以下属性：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ConsumerConfig consumerConfig;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ProviderInfo   providerInfo;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> SofaRequest    request;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> SofaResponse   response;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Throwable      throwable;</span><br></pre></td></tr></table></figure>
+
+<p>基本包含了此次调用的所有信息。</p>
+<p>此时，就会触发订阅者的 onEvent 方法。即 FaultToleranceSubscriber 的 onEvent 方法。该方法会判断，如果用户启用了自动故障剔除功能，则根据 consumerConfig 和 providerInfo 得到一个调用统计器对象，并对调用次数加一。</p>
+<p>关键的方法在 onEvent 中调用的 InvocationStatFactory.getInvocationStat(consumerConfig, providerInfo); 该方法会创建一个 InvocationStat  调用统计器对象，放入 Map 中，而对应的 key 则是根据上面两个参数生成的 InvocationStatDimension 统计维度对象。</p>
+<p>创建完  InvocationStat  调用统计器对象后，调用所有监听器的 onAddInvocationStat 方法，表示，我添加了一个监听器了，你可以做点什么了。还记得 TimeWindowRegulator 初始化的时候会添加一个监听器吗。就是这里的监听器。</p>
+<p>内部类 TimeWindowRegulatorListener  的方法逻辑如下：<br>调用度量策略对象的 buildMeasureModel 方法，传入调用统计器。返回一个度量模型。然后，将这个模型添加进 List（measureModels 属性） 中。并调用外部类的 startRegulate 方法，开始进行调控。</p>
+<p>startRegulate 方法就是启动了定时任务，使用了一个原子 boolean 变量进行状态判断。</p>
+<p>定时任务的内容是什么呢？</p>
+<p>答：运行 MeasureRunnable 任务。<br>该任务首先会对度量计数器加一。然后循环 List 中的 MeasureModel 度量模型。并判断该 MeasureModel 是否到达了用户设定的时间窗口（取于用户设置的时间大小）。</p>
+<p>如果到达了时间窗口，并调用 measureStrategy 度量策略对象（serviceHorizontal）的 measure 方法，参数则是度量模型，返回一个度量的结果对象 —— MeasureResult。</p>
+<p>得到这个对象后，向计算线程池提交一个 RegulationRunnable 任务，该任务内容如下：<br>拿到刚刚传入的度量结果拿到度量结果详情的集合 —— measureResultDetails，循环这些集合，并执行 doRegulate 方法，进行调控。</p>
+<p>该方法就是真正的对服务进行调控的方法了。首先，一个服务有 3 个状态：健康，异常，忽略。状态来自于刚刚的 measure 方法。</p>
+<p>如果用户设置了可以降级的话，则判断服务的度量状态，如果异常了且不超过一个服务的最大调控 IP 数，则执行权重降级逻辑。反之，打印日志。</p>
+<p>如果度量状态是正常的，则执行权重恢复，并从降级 IP 列表中删除。</p>
+<p>如果用户没有设置可以降级，且度量状态是异常，那么，执行日志降级。即对异常 IP 记性异常信息的日志打印。</p>
+<p>当对权重进行降级之后，能够被负载均衡击中的几率就会对应的小很多。甚至了无法击中。</p>
+<p>以上，就是 SOFA 自动故障剔除功能的基本实现流程。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>还是那句话，由于这个功能比较繁杂，限于篇幅，今天看的是总流程，总结一下这个流程。</p>
+<p>RPC 框架在启动的时候，会自动加载故障容错模块，并监听客户端发送事件。同时会初始化故障容错相关的类和监听器。</p>
+<p>当发生订阅事件的时候，会调用 onEvent 方法，进而调用 TimeWindowRegulatorListener 的监听器方法。该方法会将度量模型添加进 List 中。</p>
+<p>定时任务每隔一秒会调度 MeasureRunnable 任务，内容是根据用户设置的时间窗口处理 List 中的调度模型。</p>
+<p>定时任务会向计算任务线程池提交一个 RegulationRunnable 任务。用于处理度量结果中的数据。该任务会循环度量结果的所有度量结果详情，并调用 doRegulate 方法进行调控。</p>
+<p>最后，doRegulate 方法则是根据 度量结果详情 的状态判断是否应该对服务 + IP 进行权重降级或者权重恢复，再或者是打印日志 —— 这依据用户设置。</p>
+<p>以上就是 SOFA  自动故障剔除的基本流程。后面我们会详细分析自动故障剔除的细节代码。敬请期待。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/SOFA/" class="category-chain-item">SOFA</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>SOFA--源码分析-—-自动故障剔除</div>
+      <div>http://thinkinjava.cn/2018/05/07/2018/2018-05-07-SOFA--源码分析-—-自动故障剔除/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年5月7日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/05/08/2018/2018-05-08-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E8%BF%9E%E6%8E%A5%E7%AE%A1%E7%90%86%E5%99%A8/" title="SOFA-源码分析-—-连接管理器">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SOFA-源码分析-—-连接管理器</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/05/07/2018/2018-05-07-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E2%80%94-%E8%87%AA%E5%AE%9A%E4%B9%89%E8%B7%AF%E7%94%B1%E5%AF%BB%E5%9D%80/" title="SOFA-源码分析—-自定义路由寻址">
+                        <span class="hidden-mobile">SOFA-源码分析—-自定义路由寻址</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

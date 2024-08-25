@@ -1,0 +1,743 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="好了,今天我们继续分析 tomcat 源码, 这是第六篇了, 上一篇我们一边 debug 一边研究了 tomcat 的类加载体系, 我觉得效果还不错, 楼主感觉对 tomcat 的类加载体系的理解又加深了一点. 所以, 我们今天还是按照之前的方式来继续看源码, 一边 debug, 一边看, 今天我们分析的是tomcat 中2个非常重要的组件——-生命周期和容器. tomcat 庞大的架构, 他是如">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解-Tomcat（六）源码剖析Tomcat-启动过程----生命周期和容器组件">
+<meta property="og:url" content="http://thinkinjava.cn/2017/11/22/2017/2017-11-22-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat%EF%BC%88%E5%85%AD%EF%BC%89%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90Tomcat-%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B----%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E5%92%8C%E5%AE%B9%E5%99%A8%E7%BB%84%E4%BB%B6/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="好了,今天我们继续分析 tomcat 源码, 这是第六篇了, 上一篇我们一边 debug 一边研究了 tomcat 的类加载体系, 我觉得效果还不错, 楼主感觉对 tomcat 的类加载体系的理解又加深了一点. 所以, 我们今天还是按照之前的方式来继续看源码, 一边 debug, 一边看, 今天我们分析的是tomcat 中2个非常重要的组件——-生命周期和容器. tomcat 庞大的架构, 他是如">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://thinkinjava.cn/img/2017/11/22/img.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2017/11/22/img_1.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2017/11/22/img_2.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2017/11/22/img_3.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2017/11/22/img_4.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2017/11/22/img_5.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2017/11/22/img_6.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2017/11/22/img_7.png">
+<meta property="article:published_time" content="2017-11-21T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.523Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://thinkinjava.cn/img/2017/11/22/img.png">
+  
+  
+  
+  <title>深入理解-Tomcat（六）源码剖析Tomcat-启动过程----生命周期和容器组件 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="深入理解-Tomcat（六）源码剖析Tomcat-启动过程----生命周期和容器组件"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2017-11-22 02:11" pubdate>
+          2017年11月22日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          33 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">深入理解-Tomcat（六）源码剖析Tomcat-启动过程----生命周期和容器组件</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>好了,今天我们继续分析 tomcat 源码, 这是第六篇了, 上一篇我们一边 debug 一边研究了 tomcat 的类加载体系, 我觉得效果还不错, 楼主感觉对 tomcat 的类加载体系的理解又加深了一点. 所以, 我们今天还是按照之前的方式来继续看源码, 一边 debug, 一边看, 今天我们分析的是tomcat 中2个非常重要的组件——-生命周期和容器. tomcat 庞大的架构, 他是如何管理每个对象的呢? 我们在<a target="_blank" rel="noopener" href="http://www.jianshu.com/p/d74eef07487f">深入理解 Tomcat (二) 从宏观上理解 Tomcat 组件及架构</a>中说过一段:</p>
+<blockquote>
+<p>基于JMX Tomcat会为每个组件进行注册过程，通过Registry管理起来，而Registry是基于JMX来实现的，因此在看组件的init和start过程实际上就是初始化MBean和触发MBean的start方法，会大量看到形如： Registry.getRegistry(null, null).invoke(mbeans, “init”, false); Registry.getRegistry(null, null).invoke(mbeans, “start”, false); 这样的代码，这实际上就是通过JMX管理各种组件的行为和生命期。</p>
+</blockquote>
+<p>当时大家可能还不是很理解这句话, 觉得这是在扯淡, 听不懂. 好吧, 今天我们就用代码说话, 看看 JMX 到底怎么管理 tomcat 的 组件.</p>
+<h3 id="1-什么是-JMX"><a href="#1-什么是-JMX" class="headerlink" title="1. 什么是 JMX?"></a>1. 什么是 JMX?</h3><p>我们之前说过:</p>
+<blockquote>
+<p>JMX 即 Java Management Extensions(JMX 规范), 是用来对 tomcat 进行管理的. tomcat 中的实现是 commons modeler 库, Catalina 使用这个库来编写托管 Bean 的工作. 托管 Bean 就是用来管理 Catalina 中其他对象的 Bean.</p>
+</blockquote>
+<p><strong>简单来说: 就是一个可以为Java应用程序或系统植入远程管理功能的框架。</strong></p>
+<p>既然是框架, 肯定要有架构图:<br><img src="/img/2017/11/22/img.png" srcset="/img/loading.gif" lazyload></p>
+<p>这里对上图中三个分层进行介绍：</p>
+<ul>
+<li><p>Probe Level：负责资源的检测（获取信息），包含MBeans，通常也叫做Instrumentation Level。MX管理构件（MBean）分为四种形式，分别是标准管理构件（Standard MBean）、动态管理构件（Dynamic MBean）、开放管理构件(Open Mbean)和模型管理构件(Model MBean)。</p>
+</li>
+<li><p>Agent Level：即MBeanServer，是JMX的核心，负责连接Mbeans和应用程序。 </p>
+</li>
+<li><p>Remote Management Level：通过connectors和adaptors来远程操作MBeanServer，常用的控制台，例如JConsole、<strong>VisualVM</strong>(等会我们就要用这个)等。</p>
+</li>
+</ul>
+<h3 id="2-我们看看生命周期组件接口是如何设计的"><a href="#2-我们看看生命周期组件接口是如何设计的" class="headerlink" title="2. 我们看看生命周期组件接口是如何设计的:"></a>2. 我们看看生命周期组件接口是如何设计的:</h3><p><img src="/img/2017/11/22/img_1.png" srcset="/img/loading.gif" lazyload></p>
+<p>这是一张 IDEA 生成的简单的 StandardHost(Host 容器的标准实现) 的 UML类图, 基本上, tomcat 的容器类都是这样的继承结构.</p>
+<p>因此我们就可以直接看下面这张图:<br><img src="/img/2017/11/22/img_2.png" srcset="/img/loading.gif" lazyload></p>
+<p>这里对上图中涉及的主要类作个简单介绍：</p>
+<ol>
+<li><p>Lifecycle：定义了容器生命周期、容器状态转换及容器状态迁移事件的监听器注册和移除等主要接口；</p>
+</li>
+<li><p>LifecycleBase：作为Lifecycle接口的抽象实现类，运用抽象模板模式将所有容器的生命周期及状态转换衔接起来，此外还提供了生成LifecycleEvent事件的接口；</p>
+</li>
+<li><p>LifecycleSupport：提供有关LifecycleEvent事件的监听器注册、移除，并且使用经典的监听器模式，实现事件生成后触达监听器的实现；</p>
+</li>
+<li><p>MBeanRegistration：Java JMX框架提供的注册MBean的接口，引入此接口是为了便于使用JMX提供的管理功能；</p>
+</li>
+<li><p>LifecycleMBeanBase：Tomcat提供的对MBeanRegistration的抽象实现类，运用抽象模板模式将所有容器统一注册到JMX；</p>
+</li>
+<li><p>此外，ContainerBase、StandardServer、StandardService、WebappLoader、Connector、StandardContext、StandardEngine、StandardHost、StandardWrapper等容器都继承了LifecycleMBeanBase，因此这些容器都具有了同样的生命周期并可以通过JMX进行管理。</p>
+</li>
+</ol>
+<h3 id="3-再看看我们的容器结构"><a href="#3-再看看我们的容器结构" class="headerlink" title="3. 再看看我们的容器结构"></a>3. 再看看我们的容器结构</h3><p>我们之前说, 如果从宏观上讲容器, 画画图, 讲讲就好了, 就可以在脑海里形成一个映象, 今天, 我们要好好的讲讲容器, 从代码层面去理解他们. 这样一来, 也顺便把我们的容器组件也讲了, 等于又讲了生命周期组件, 还有容器组件. 一举两得. 哈哈哈. 好吧, 不扯了, 回来, 我们继续讲容器. 还是先来一张图吧:</p>
+<p><img src="/img/2017/11/22/img_3.png" srcset="/img/loading.gif" lazyload></p>
+<p>从上图中我们可以看到:　StandardServer、StandardService、Connector、StandardContext这些容器，彼此之间都有父子关系，每个容器都可能包含零个或者多个子容器，这些子容器可能存在不同类型或者相同类型的多个. 所以他们都包含的关系, 如果让你来设计这些容器的生命周期, 你会用什么设计模式呢?</p>
+<h3 id="4-容器初始化-开始-Debug"><a href="#4-容器初始化-开始-Debug" class="headerlink" title="4. 容器初始化, 开始 Debug"></a>4. 容器初始化, 开始 Debug</h3><p>首先我们启动 main 方法:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String args[])</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 命令</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">command</span> <span class="operator">=</span> <span class="string">&quot;start&quot;</span>;</span><br><span class="line">        <span class="comment">// 如果命令行中输入了参数</span></span><br><span class="line">        <span class="keyword">if</span> (args.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 命令 = 最后一个命令</span></span><br><span class="line">            command = args[args.length - <span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果命令是启动</span></span><br><span class="line">        <span class="keyword">if</span> (command.equals(<span class="string">&quot;startd&quot;</span>)) &#123;</span><br><span class="line">            args[args.length - <span class="number">1</span>] = <span class="string">&quot;start&quot;</span>;</span><br><span class="line">            daemon.load(args);</span><br><span class="line">            daemon.start();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果命令是停止了</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (command.equals(<span class="string">&quot;stopd&quot;</span>)) &#123;</span><br><span class="line">            args[args.length - <span class="number">1</span>] = <span class="string">&quot;stop&quot;</span>;</span><br><span class="line">            daemon.stop();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果命令是启动</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (command.equals(<span class="string">&quot;start&quot;</span>)) &#123;</span><br><span class="line">            daemon.setAwait(<span class="literal">true</span>);<span class="comment">// bootstrap 和 Catalina 一脉相连, 这里设置, 方法内部设置 Catalina 实例setAwait方法</span></span><br><span class="line">            daemon.load(args);<span class="comment">// args 为 空,方法内部调用 Catalina 的 load 方法.</span></span><br><span class="line">            daemon.start();<span class="comment">// 相同, 反射调用 Catalina 的 start 方法 ,至此,启动结束</span></span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (command.equals(<span class="string">&quot;stop&quot;</span>)) &#123;</span><br><span class="line">            daemon.stopServer(args);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (command.equals(<span class="string">&quot;configtest&quot;</span>)) &#123;</span><br><span class="line">            daemon.load(args);</span><br><span class="line">            <span class="keyword">if</span> (<span class="literal">null</span>==daemon.getServer()) &#123;</span><br><span class="line">                System.exit(<span class="number">1</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            System.exit(<span class="number">0</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            log.warn(<span class="string">&quot;Bootstrap: command \&quot;&quot;</span> + command + <span class="string">&quot;\&quot; does not exist.&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        <span class="comment">// Unwrap the Exception for clearer error reporting</span></span><br><span class="line">        <span class="keyword">if</span> (t <span class="keyword">instanceof</span> InvocationTargetException &amp;&amp;</span><br><span class="line">                t.getCause() != <span class="literal">null</span>) &#123;</span><br><span class="line">            t = t.getCause();</span><br><span class="line">        &#125;</span><br><span class="line">        handleThrowable(t);</span><br><span class="line">        t.printStackTrace();</span><br><span class="line">        System.exit(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>熟悉这个方法或者看过我们上篇文章的同学都知道, 我已经把类加载那部分代码去除了, 因为我们今天不研究类加载. 所以 ,我们看逻辑, 首先, 判断命令是什么, 我们现在的命令肯定是 start 啊, 所以进入 else if 块, 调用 load 方法 , 进入 load 方法, 可以看到, 该方法实际上就是 Catalina 类的 load 方法, 那么我们进入 Catalina 类的 load 方法看看(方法很长, 楼主去除了和今天的模块无关的代码):</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">load</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Start the new server</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            getServer().init();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (LifecycleException e) &#123;</span><br><span class="line">            <span class="keyword">if</span> (Boolean.getBoolean(<span class="string">&quot;org.apache.catalina.startup.EXIT_ON_INIT_FAILURE&quot;</span>)) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">java</span>.lang.Error(e);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                log.error(<span class="string">&quot;Catalina.start&quot;</span>, e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到, 这里有一个我们今天感兴趣的方法, getServer.init(), 这个方法看名字是启动 Server 的初始化, 而 Server 是我们上面图中最外层的容器. 因此, 我们去看看该方法, 也就是LifecycleBase.init() 方法. 该方法是一个模板方法, 只是定义了一个算法的骨架, 将一些细节算法延迟到了子类中. 看, 我们又学到了一个设计模式. 我们看看该方法:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">   <span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">init</span><span class="params">()</span> <span class="keyword">throws</span> LifecycleException &#123;</span><br><span class="line">       <span class="comment">// 1</span></span><br><span class="line">       <span class="keyword">if</span> (!state.equals(LifecycleState.NEW)) &#123;</span><br><span class="line">           invalidTransition(Lifecycle.BEFORE_INIT_EVENT);</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="comment">// 2</span></span><br><span class="line">       setStateInternal(LifecycleState.INITIALIZING, <span class="literal">null</span>, <span class="literal">false</span>);</span><br><span class="line"></span><br><span class="line">       <span class="keyword">try</span> &#123;</span><br><span class="line">           <span class="comment">// 模板方法</span></span><br><span class="line">           <span class="comment">/**</span></span><br><span class="line"><span class="comment">            * 采用模板方法模式来对所有支持生命周期管理的组件的生命周期各个阶段进行了总体管理，</span></span><br><span class="line"><span class="comment">            * 每个需要生命周期管理的组件只需要继承这个基类，</span></span><br><span class="line"><span class="comment">            * 然后覆盖对应的钩子方法即可完成相应的声明周期阶段的管理工作</span></span><br><span class="line"><span class="comment">            */</span></span><br><span class="line">           initInternal();</span><br><span class="line">       &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">           ExceptionUtils.handleThrowable(t);</span><br><span class="line">           setStateInternal(LifecycleState.FAILED, <span class="literal">null</span>, <span class="literal">false</span>);</span><br><span class="line">           <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">LifecycleException</span>(</span><br><span class="line">                   sm.getString(<span class="string">&quot;lifecycleBase.initFail&quot;</span>,toString()), t);</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       <span class="comment">// 3</span></span><br><span class="line">       setStateInternal(LifecycleState.INITIALIZED, <span class="literal">null</span>, <span class="literal">false</span>);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>我们看看该方法, 这应该就是容器启动的逻辑了, 先前我们定义了那么多状态, 现在用上了. 首先判断该方法的状态, 如果不是 NEW, 则抛出异常， 否则则设置状态为 INITIALIZING， 然后调用一个抽象方法 initInternal , 该方法由子类具体实现. 执行完则修改状态为 INITIALIZED. 这里应该是使用了状态模式. 依赖状态时,同步该方法, 防止并发错误. tomcat 可以的.</p>
+<h3 id="5-那么我们来看看-StandardServer-是如何实现-initInternal-方法的"><a href="#5-那么我们来看看-StandardServer-是如何实现-initInternal-方法的" class="headerlink" title="5. 那么我们来看看 StandardServer 是如何实现 initInternal 方法的:"></a>5. 那么我们来看看 StandardServer 是如何实现 initInternal 方法的:</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">initInternal</span><span class="params">()</span> <span class="keyword">throws</span> LifecycleException &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">super</span>.initInternal();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Register global String cache</span></span><br><span class="line">    <span class="comment">// Note although the cache is global, if there are multiple Servers</span></span><br><span class="line">    <span class="comment">// present in the JVM (may happen when embedding) then the same cache</span></span><br><span class="line">    <span class="comment">// will be registered under multiple names</span></span><br><span class="line">    onameStringCache = register(<span class="keyword">new</span> <span class="title class_">StringCache</span>(), <span class="string">&quot;type=StringCache&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Register the MBeanFactory</span></span><br><span class="line">    <span class="type">MBeanFactory</span> <span class="variable">factory</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">MBeanFactory</span>();</span><br><span class="line">    factory.setContainer(<span class="built_in">this</span>);</span><br><span class="line">    onameMBeanFactory = register(factory, <span class="string">&quot;type=MBeanFactory&quot;</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Register the naming resources</span></span><br><span class="line">    globalNamingResources.init();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Populate the extension validator with JARs from common and shared</span></span><br><span class="line">    <span class="comment">// class loaders</span></span><br><span class="line">    <span class="keyword">if</span> (getCatalina() != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="type">ClassLoader</span> <span class="variable">cl</span> <span class="operator">=</span> getCatalina().getParentClassLoader();</span><br><span class="line">        <span class="comment">// Walk the class loader hierarchy. Stop at the system class loader.</span></span><br><span class="line">        <span class="comment">// This will add the shared (if present) and common class loaders</span></span><br><span class="line">        <span class="keyword">while</span> (cl != <span class="literal">null</span> &amp;&amp; cl != ClassLoader.getSystemClassLoader()) &#123;</span><br><span class="line">            <span class="keyword">if</span> (cl <span class="keyword">instanceof</span> URLClassLoader) &#123;</span><br><span class="line">                URL[] urls = ((URLClassLoader) cl).getURLs();</span><br><span class="line">                <span class="keyword">for</span> (URL url : urls) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (url.getProtocol().equals(<span class="string">&quot;file&quot;</span>)) &#123;</span><br><span class="line">                        <span class="keyword">try</span> &#123;</span><br><span class="line">                            <span class="type">File</span> <span class="variable">f</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span> (url.toURI());</span><br><span class="line">                            <span class="keyword">if</span> (f.isFile() &amp;&amp;</span><br><span class="line">                                    f.getName().endsWith(<span class="string">&quot;.jar&quot;</span>)) &#123;</span><br><span class="line">                                ExtensionValidator.addSystemResource(f);</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125; <span class="keyword">catch</span> (URISyntaxException e) &#123;</span><br><span class="line">                            <span class="comment">// Ignore</span></span><br><span class="line">                        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                            <span class="comment">// Ignore</span></span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            cl = cl.getParent();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Initialize our defined Services</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; services.length; i++) &#123;</span><br><span class="line">        services[i].init();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="6-LifecycleMBeanBase-initInternal-实现"><a href="#6-LifecycleMBeanBase-initInternal-实现" class="headerlink" title="6. LifecycleMBeanBase.initInternal() 实现"></a>6. LifecycleMBeanBase.initInternal() 实现</h3><p>首先调用父类的  super.initInternal() 方法，此initInternal方法用于将容器托管到JMX，便于运维管理：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">initInternal</span><span class="params">()</span> <span class="keyword">throws</span> LifecycleException &#123;</span><br><span class="line">   </span><br><span class="line">    <span class="comment">// If oname is not null then registration has already happened via</span></span><br><span class="line">    <span class="comment">// preRegister().</span></span><br><span class="line">    <span class="keyword">if</span> (oname == <span class="literal">null</span>) &#123;</span><br><span class="line">        mserver = Registry.getRegistry(<span class="literal">null</span>, <span class="literal">null</span>).getMBeanServer();</span><br><span class="line">        oname = register(<span class="built_in">this</span>, getObjectNameKeyProperties());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="7-LifecycleMBeanBase-register-方法实现"><a href="#7-LifecycleMBeanBase-register-方法实现" class="headerlink" title="7. LifecycleMBeanBase.register 方法实现"></a>7. LifecycleMBeanBase.register 方法实现</h3><p>LifecycleMBeanBase 会调用自身的 register 方法， 该方法会将容器注册到 MBeanServer：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> ObjectName <span class="title function_">register</span><span class="params">(Object obj,</span></span><br><span class="line"><span class="params">        String objectNameKeyProperties)</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Construct an object name with the right domain</span></span><br><span class="line">    <span class="type">StringBuilder</span> <span class="variable">name</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>(getDomain());</span><br><span class="line">    name.append(<span class="string">&#x27;:&#x27;</span>);</span><br><span class="line">    name.append(objectNameKeyProperties);</span><br><span class="line"></span><br><span class="line">    <span class="type">ObjectName</span> <span class="variable">on</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        on = <span class="keyword">new</span> <span class="title class_">ObjectName</span>(name.toString());</span><br><span class="line">        <span class="comment">// 核心实现：registerComponent</span></span><br><span class="line">        Registry.getRegistry(<span class="literal">null</span>, <span class="literal">null</span>).registerComponent(obj, on, <span class="literal">null</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (MalformedObjectNameException e) &#123;</span><br><span class="line">        log.warn(sm.getString(<span class="string">&quot;lifecycleMBeanBase.registerFail&quot;</span>, obj, name),</span><br><span class="line">                e);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        log.warn(sm.getString(<span class="string">&quot;lifecycleMBeanBase.registerFail&quot;</span>, obj, name),</span><br><span class="line">                e);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> on;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>该方法内部核心方法是 Registry. registerComponent, 在org.apache.catalina.util 包下， 我们看看该方法实现。</p>
+<h3 id="8-Registry-registerComponent-方法实现"><a href="#8-Registry-registerComponent-方法实现" class="headerlink" title="8. Registry.registerComponent 方法实现"></a>8. Registry.registerComponent 方法实现</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">registerComponent</span><span class="params">(Object bean, ObjectName oname, String type)</span></span><br><span class="line">         <span class="keyword">throws</span> Exception</span><br><span class="line">  &#123;</span><br><span class="line">      <span class="keyword">if</span>( log.isDebugEnabled() ) &#123;</span><br><span class="line">          log.debug( <span class="string">&quot;Managed= &quot;</span>+ oname);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span>( bean ==<span class="literal">null</span> ) &#123;</span><br><span class="line">          log.error(<span class="string">&quot;Null component &quot;</span> + oname );</span><br><span class="line">          <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="keyword">if</span>( type==<span class="literal">null</span> ) &#123;</span><br><span class="line">              type=bean.getClass().getName();</span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">          <span class="type">ManagedBean</span> <span class="variable">managed</span> <span class="operator">=</span> findManagedBean(bean.getClass(), type);</span><br><span class="line"></span><br><span class="line">          <span class="comment">// The real mbean is created and registered</span></span><br><span class="line">          <span class="type">DynamicMBean</span> <span class="variable">mbean</span> <span class="operator">=</span> managed.createMBean(bean);</span><br><span class="line"></span><br><span class="line">          <span class="keyword">if</span>(  getMBeanServer().isRegistered( oname )) &#123;</span><br><span class="line">              <span class="keyword">if</span>( log.isDebugEnabled()) &#123;</span><br><span class="line">                  log.debug(<span class="string">&quot;Unregistering existing component &quot;</span> + oname );</span><br><span class="line">              &#125;</span><br><span class="line">              getMBeanServer().unregisterMBean( oname );</span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">          getMBeanServer().registerMBean( mbean, oname);</span><br><span class="line">      &#125; <span class="keyword">catch</span>( Exception ex) &#123;</span><br><span class="line">          log.error(<span class="string">&quot;Error registering &quot;</span> + oname, ex );</span><br><span class="line">          <span class="keyword">throw</span> ex;</span><br><span class="line">      &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>该方法会为当前容器创建一个 DynamicMBean ， 并且注册到MBeanServer。调用 MBeanServer.registerMBean() 方法。而 MBeanServer 在 javax.management， 也就是 rt.jar 中，该包由 java 的 BootStrap 启动类加载器加载。</p>
+<p>注册进MBeanServer 的 key 是什么呢？ 相信细心的同学会注意到 LifecycleMBeanBase.getObjectNameKeyProperties 和 LifecycleMBeanBase.getDomain 方法 和<br>LifecycleMBeanBase.getDomainInternal 方法， 这三个方法由具体子类实现，会生成一个专属于容器的key。格式为：<code>Catalina:type=Server</code>， 这是 Server 容器的 key， debug 可以看出来：</p>
+<p><img src="/img/2017/11/22/img_4.png" srcset="/img/loading.gif" lazyload></p>
+<h3 id="9-JMX-如何管理-组件？"><a href="#9-JMX-如何管理-组件？" class="headerlink" title="9. JMX 如何管理 组件？"></a>9. JMX 如何管理 组件？</h3><p>至此， 我们已经知道 Tomcat 是如何将容器注册到 MBeanServer 中的。 那么注册到 MBeanServer 中后是什么样子呢？我们看图:</p>
+<p><img src="/img/2017/11/22/img_5.png" srcset="/img/loading.gif" lazyload></p>
+<p>这是 JDK 自带的 JvisualVM 工具， 添加了 MBeans 插件， 就可以远程操作容器中的 组件了， 可以看到 Service 容器暴漏了很多接口， 用于运维人员管理容器和组件。</p>
+<h3 id="10-回到-StandardServer-initInternal-方法"><a href="#10-回到-StandardServer-initInternal-方法" class="headerlink" title="10. 回到 StandardServer.initInternal 方法"></a>10. 回到 StandardServer.initInternal 方法</h3><p>好了， 我们回到 StandardServer.initInternal 方法， 回到我们梦最开始的地方，<code> super.initInternal</code> 方法就是将容器注册到 JMX 中。 那下面的逻辑是做什么的呢？ 在执行完父类的 super.initInternal 的方法后， 该方法又注册个两个 JMX 。然后寻启动子容器的 init 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Initialize our defined Services</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; services.length; i++) &#123;</span><br><span class="line">        services[i].init();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>而子容器的 init 方法和 Server 的 init 方法的逻辑基本一致，所以不再赘述。</p>
+<h3 id="11-执行完-getServer-init-方法后做什么——容器启动"><a href="#11-执行完-getServer-init-方法后做什么——容器启动" class="headerlink" title="11. 执行完  getServer().init() 方法后做什么——容器启动"></a>11. 执行完 <code> getServer().init()</code> 方法后做什么——容器启动</h3><p>Bootstrap 的 load 方法调用了 Catalina 的 load 方法 ，该方法调用了Server 的init方法，执行完初始化过程，当然就是要执行 start 方法了， 那么如何执行呢？</p>
+<p> Bootstrap 调用了 Catalina 的 start 方法，该方法也同样执行了 Server 的 start 方法， 该方法的具体实现也在LifecycleBase 中：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">start</span><span class="params">()</span> <span class="keyword">throws</span> LifecycleException &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (LifecycleState.STARTING_PREP.equals(state) ||</span><br><span class="line">                LifecycleState.STARTING.equals(state) ||</span><br><span class="line">                LifecycleState.STARTED.equals(state)) &#123;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (log.isDebugEnabled()) &#123;</span><br><span class="line">                <span class="type">Exception</span> <span class="variable">e</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LifecycleException</span>();</span><br><span class="line">                log.debug(sm.getString(<span class="string">&quot;lifecycleBase.alreadyStarted&quot;</span>,</span><br><span class="line">                        toString()), e);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (log.isInfoEnabled()) &#123;</span><br><span class="line">                log.info(sm.getString(<span class="string">&quot;lifecycleBase.alreadyStarted&quot;</span>,</span><br><span class="line">                        toString()));</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (state.equals(LifecycleState.NEW)) &#123;</span><br><span class="line">            init();</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (state.equals(LifecycleState.FAILED))&#123;</span><br><span class="line">            stop();</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!state.equals(LifecycleState.INITIALIZED) &amp;&amp;</span><br><span class="line">                !state.equals(LifecycleState.STOPPED)) &#123;</span><br><span class="line">            invalidTransition(Lifecycle.BEFORE_START_EVENT);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        setStateInternal(LifecycleState.STARTING_PREP, <span class="literal">null</span>, <span class="literal">false</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            startInternal();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">            ExceptionUtils.handleThrowable(t);</span><br><span class="line">            setStateInternal(LifecycleState.FAILED, <span class="literal">null</span>, <span class="literal">false</span>);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">LifecycleException</span>(</span><br><span class="line">                    sm.getString(<span class="string">&quot;lifecycleBase.startFail&quot;</span>,toString()), t);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (state.equals(LifecycleState.FAILED) ||</span><br><span class="line">                state.equals(LifecycleState.MUST_STOP)) &#123;</span><br><span class="line">            stop();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// Shouldn&#x27;t be necessary but acts as a check that sub-classes are</span></span><br><span class="line">            <span class="comment">// doing what they are supposed to.</span></span><br><span class="line">            <span class="keyword">if</span> (!state.equals(LifecycleState.STARTING)) &#123;</span><br><span class="line">                invalidTransition(Lifecycle.AFTER_START_EVENT);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            setStateInternal(LifecycleState.STARTED, <span class="literal">null</span>, <span class="literal">false</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="12-StandardServer-startInternal-启动容器方法实现"><a href="#12-StandardServer-startInternal-启动容器方法实现" class="headerlink" title="12. StandardServer.startInternal 启动容器方法实现"></a>12. StandardServer.startInternal 启动容器方法实现</h3><p>可以看到该方法对状态的判断特别多，我们感兴趣的是 try 块中的  startInternal() 方法， 同样， 该方法也是个抽象方法，需要子类去具体实现自己的启动逻辑。我们看看Server 的启动逻辑：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">   <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">startInternal</span><span class="params">()</span> <span class="keyword">throws</span> LifecycleException &#123;</span><br><span class="line"></span><br><span class="line">       fireLifecycleEvent(CONFIGURE_START_EVENT, <span class="literal">null</span>);</span><br><span class="line">       setState(LifecycleState.STARTING);<span class="comment">//将自身状态更改为LifecycleState.STARTING；</span></span><br><span class="line">       globalNamingResources.start();</span><br><span class="line">       <span class="comment">// Start our defined Services</span></span><br><span class="line">       <span class="keyword">synchronized</span> (services) &#123;</span><br><span class="line">           <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; services.length; i++) &#123;</span><br><span class="line">               services[i].start();<span class="comment">// 启动所有子容器</span></span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="13-LifecycleSupport-fireLifecycleEvent-方法实现"><a href="#13-LifecycleSupport-fireLifecycleEvent-方法实现" class="headerlink" title="13. LifecycleSupport.fireLifecycleEvent()方法实现"></a>13. LifecycleSupport.fireLifecycleEvent()方法实现</h3><p>该方法首先执行自己的<code>fireLifecycleEvent</code>方法， 该方法内部是LifecycleSupport.fireLifecycleEvent()方法,  我们进入该方法看个究竟:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">fireLifecycleEvent</span><span class="params">(String type, Object data)</span> &#123;</span><br><span class="line">        <span class="comment">// 事件监听,观察者模式的另一种方式</span></span><br><span class="line">        <span class="type">LifecycleEvent</span> <span class="variable">event</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LifecycleEvent</span>(lifecycle, type, data);</span><br><span class="line">        LifecycleListener interested[] = listeners;<span class="comment">// 监听器数组 关注 事件(启动或者关闭事件)</span></span><br><span class="line">        <span class="comment">// 循环通知所有生命周期时间侦听器????</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; interested.length; i++)</span><br><span class="line">            <span class="comment">// 每个监听器都有自己的逻辑</span></span><br><span class="line">            interested[i].lifecycleEvent(event);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>该方法很简单, 楼主没有删一行代码, 首先, 创建一个事件对象, 然通知所有的监听器发生了该事件.并做响应.那么 Server 有哪些监听器呢?</p>
+<p><img src="/img/2017/11/22/img_6.png" srcset="/img/loading.gif" lazyload></p>
+<p>这些监听器将根据这个事件的类型做出响应. </p>
+<h3 id="14-我们回到-startInternal-方法-启动所有容器"><a href="#14-我们回到-startInternal-方法-启动所有容器" class="headerlink" title="14. 我们回到 startInternal 方法, 启动所有容器"></a>14. 我们回到 startInternal 方法, 启动所有容器</h3><p>事件监听结束之后,  调用 <code>setState(LifecycleState.STARTING);</code> 表明状态时开始中, 并且循环启动子容器, 这里的 Server 启动的是Service 数组, 循环启动他们的 start 方法. 以此类推. 启动所有的容器：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">synchronized</span> (services) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; services.length; i++) &#123;</span><br><span class="line">            services[i].start();<span class="comment">// 启动所有子容器</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>现在我们关注的是Server 容器， 因此， Server 会启动 services 数组中的所有 Service 组件。该方法就完成了通知所有监听器发送了启动事件，然后使用观察者模式，启动所有子容器，然后子容器继续递归启动。最后修改自己的状态并告诉监听器。</p>
+<h3 id="15-总结"><a href="#15-总结" class="headerlink" title="15. 总结"></a>15. 总结</h3><p>其实楼主在啃代码最深的感触就是设计模式， 真的很牛逼，不知道同学们发现了几个设计模式，楼主在本篇文章中发现了状态模式， 观察者模式，模板方法， 事件监听，代理模式。真的收益良多。不枉楼主每天看代码。</p>
+<p>还有就是对 Tomcat 生命周期组件的总结。我们再看看我们的类图：</p>
+<p><img src="/img/2017/11/22/img_7.png" srcset="/img/loading.gif" lazyload></p>
+<p>tomcat 的主要容器都继承了 LifecycleMBeanBase 抽象类，该类中关于 init 和 start 两个模板方法。定义了主要算法骨架，而方法中又都有抽象方法，需要子类自己去实现。而 LifecycleBase 中又定义了如何实现事件监听代理，LifecycleBase 依赖 LifecycleSupport 去完成真正的事件监听。对了，监听器是如何添加进 LifecycleSupport 的呢？LifecycleSupport 中含有<br> addLifecycleListener 方法。该方法也是被LifecycleBase代理的。而每个容器下面的子容器也是使用相同的逻辑完成初始化和启动。父容器和子容器使用了聚合的方式设计。</p>
+<p>可以说， tomcat的容器的生命周期组件设计是非常牛逼的。我们阅读源码不仅能了解他的设计原理，也能同大师交流，学会更多。</p>
+<p>好了， 今天的深入理解 Tomcat（六）源码剖析Tomcat 启动过程—-生命周期和容器组件就到这里，谢谢大家的耐心，再这个世界，耐心和坚持是无比珍贵的。尤其是程序员。</p>
+<p>good luck ！！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Tomcat/" class="category-chain-item">Tomcat</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>深入理解-Tomcat（六）源码剖析Tomcat-启动过程----生命周期和容器组件</div>
+      <div>http://thinkinjava.cn/2017/11/22/2017/2017-11-22-深入理解-Tomcat（六）源码剖析Tomcat-启动过程----生命周期和容器组件/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2017年11月22日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2017/11/23/2017/2017-11-23-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat%EF%BC%88%E4%B8%83%EF%BC%89%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-Tomcat-%E5%AE%8C%E6%95%B4%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B/" title="深入理解-Tomcat（七）源码剖析-Tomcat-完整启动过程">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">深入理解-Tomcat（七）源码剖析-Tomcat-完整启动过程</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2017/11/21/2017/2017-11-21-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-Tomcat%EF%BC%88%E4%BA%94%EF%BC%89%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90Tomcat-%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B----%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B/" title="深入理解-Tomcat（五）源码剖析Tomcat-启动过程----类加载过程">
+                        <span class="hidden-mobile">深入理解-Tomcat（五）源码剖析Tomcat-启动过程----类加载过程</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

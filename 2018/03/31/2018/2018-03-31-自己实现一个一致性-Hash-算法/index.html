@@ -1,0 +1,701 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="自己实现一个一致性-Hash-算法">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/31/2018/2018-03-31-%E8%87%AA%E5%B7%B1%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E4%B8%80%E8%87%B4%E6%80%A7-Hash-%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-77dfadca6f7a69d2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-51768b803b614b25.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-f42ecb157ad955a8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-03-30T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.539Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-77dfadca6f7a69d2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>自己实现一个一致性-Hash-算法 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="自己实现一个一致性-Hash-算法"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-03-31 02:11" pubdate>
+          2018年3月31日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          9 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">自己实现一个一致性-Hash-算法</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 前言
+
+<p>在前文<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/58fde9b2d0a3">分布式理论(八)—— Consistent Hash（一致性哈希算法）</a>中，我们讨论了一致性 hash 算法的原理，并说了，我们会自己写一个简单的算法。今天就来写一个。</p>
+<h2 id="普通-hash-的结果"><a href="#普通-hash-的结果" class="headerlink" title="普通 hash 的结果"></a>普通 hash 的结果</h2><p>先看看普通 hash 怎么做。</p>
+<p>首先，需要缓存节点对象，缓存中的存储对象，还有一个缓存节点集合，用于保存有效的缓存节点。</p>
+<ol>
+<li>实际存储对象，很简单的一个类，只需要获取他的 hash 值就好：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Obj</span> &#123;</span><br><span class="line">  String key;</span><br><span class="line">  Obj(String key) &#123;</span><br><span class="line">    <span class="built_in">this</span>.key = key;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">hashCode</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> key.hashCode();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;Obj&#123;&quot;</span> +</span><br><span class="line">        <span class="string">&quot;key=&#x27;&quot;</span> + key + <span class="string">&#x27;\&#x27;&#x27;</span> +</span><br><span class="line">        <span class="string">&#x27;&#125;&#x27;</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>缓存节点对象，用于存储实际对象：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Node</span> &#123;</span><br><span class="line"></span><br><span class="line">  Map&lt;Integer, Obj&gt; node = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">  String name;</span><br><span class="line"></span><br><span class="line">  Node(String name) &#123;</span><br><span class="line">    <span class="built_in">this</span>.name = name;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">putObj</span><span class="params">(Obj obj)</span> &#123;</span><br><span class="line">    node.put(obj.hashCode(), obj);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  Obj <span class="title function_">getObj</span><span class="params">(Obj obj)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> node.get(obj.hashCode());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">hashCode</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> name.hashCode();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>也很简单，内部使用了一个 map 保存节点。</p>
+<ol start="3">
+<li>缓存节点集合，用于保存有效的缓存节点：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">NodeArray</span> &#123;</span><br><span class="line"></span><br><span class="line">   Node[] nodes = <span class="keyword">new</span> <span class="title class_">Node</span>[<span class="number">1024</span>];</span><br><span class="line">   <span class="type">int</span> <span class="variable">size</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addNode</span><span class="params">(Node node)</span> &#123;</span><br><span class="line">     nodes[size++] = node;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   Obj <span class="title function_">get</span><span class="params">(Obj obj)</span> &#123;</span><br><span class="line">     <span class="type">int</span> <span class="variable">index</span> <span class="operator">=</span> obj.hashCode() % size;</span><br><span class="line">     <span class="keyword">return</span> nodes[index].getObj(obj);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">void</span> <span class="title function_">put</span><span class="params">(Obj obj)</span> &#123;</span><br><span class="line">     <span class="type">int</span> <span class="variable">index</span> <span class="operator">=</span> obj.hashCode() % size;</span><br><span class="line">     nodes[index].putObj(obj);</span><br><span class="line">   &#125;</span><br><span class="line"> &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>内部一个数组，取数据时，通过取余机器数量获取缓存节点，再从节点中取出数据。</p>
+<ol start="4">
+<li>测试：当增减节点时，还能不能找到原有数据：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">  * 验证普通 hash 对于增减节点，原有会不会出现移动。</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line"></span><br><span class="line">   <span class="type">NodeArray</span> <span class="variable">nodeArray</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">NodeArray</span>();</span><br><span class="line"></span><br><span class="line">   Node[] nodes = &#123;</span><br><span class="line">       <span class="keyword">new</span> <span class="title class_">Node</span>(<span class="string">&quot;Node--&gt; 1&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> <span class="title class_">Node</span>(<span class="string">&quot;Node--&gt; 2&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> <span class="title class_">Node</span>(<span class="string">&quot;Node--&gt; 3&quot;</span>)</span><br><span class="line">   &#125;;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">for</span> (Node node : nodes) &#123;</span><br><span class="line">     nodeArray.addNode(node);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   Obj[] objs = &#123;</span><br><span class="line">       <span class="keyword">new</span> <span class="title class_">Obj</span>(<span class="string">&quot;1&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> <span class="title class_">Obj</span>(<span class="string">&quot;2&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> <span class="title class_">Obj</span>(<span class="string">&quot;3&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> <span class="title class_">Obj</span>(<span class="string">&quot;4&quot;</span>),</span><br><span class="line">       <span class="keyword">new</span> <span class="title class_">Obj</span>(<span class="string">&quot;5&quot;</span>)</span><br><span class="line">   &#125;;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">for</span> (Obj obj : objs) &#123;</span><br><span class="line">     nodeArray.put(obj);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   validate(nodeArray, objs);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">validate</span><span class="params">(NodeArray nodeArray, Obj[] objs)</span> &#123;</span><br><span class="line">  <span class="keyword">for</span> (Obj obj : objs) &#123;</span><br><span class="line">    System.out.println(nodeArray.get(obj));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  nodeArray.addNode(<span class="keyword">new</span> <span class="title class_">Node</span>(<span class="string">&quot;anything1&quot;</span>));</span><br><span class="line">  nodeArray.addNode(<span class="keyword">new</span> <span class="title class_">Node</span>(<span class="string">&quot;anything2&quot;</span>));</span><br><span class="line"></span><br><span class="line">  System.out.println(<span class="string">&quot;========== after  =============&quot;</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (Obj obj : objs) &#123;</span><br><span class="line">    System.out.println(nodeArray.get(obj));</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>测试步骤如下：</p>
+<ol>
+<li>向集合中添加 3 个节点。</li>
+<li>向 <code>集群</code> 中添加 5 个对象，这 5 个对象会根据 hash 值散列到不同的节点中。</li>
+<li>打印 <code>未增减前</code> 的数据。</li>
+<li>打印 <code>增加 2 个节点</code> 后数据，看看还能不能访问到数据。</li>
+</ol>
+<p>结果：</p>
+<p> <img src="https://upload-images.jianshu.io/upload_images/4236553-77dfadca6f7a69d2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>一个都访问不到了。这就是普通的取余的缺点，在增减机器的情况下，这种结果无法接收。</p>
+<p>再看看一致性 hash 如何解决。</p>
+<h2 id="一致性-Hash-的结果"><a href="#一致性-Hash-的结果" class="headerlink" title="一致性 Hash 的结果"></a>一致性 Hash 的结果</h2><p>关键的地方来了。</p>
+<p>缓存节点对象和实际保存对象不用更改，改的是什么？</p>
+<p>改的是保存对象的方式和取出对象的方式，也就是不使用对机器进行取余的算法。</p>
+<p>新的 NodeArray 对象如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">NodeArray</span> &#123;</span><br><span class="line"></span><br><span class="line"><span class="comment">/** 按照 键 排序*/</span></span><br><span class="line">TreeMap&lt;Integer, Node&gt; nodes = <span class="keyword">new</span> <span class="title class_">TreeMap</span>&lt;&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">addNode</span><span class="params">(Node node)</span> &#123;</span><br><span class="line">  nodes.put(node.hashCode(), node);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">put</span><span class="params">(Obj obj)</span> &#123;</span><br><span class="line">  <span class="type">int</span> <span class="variable">objHashcode</span> <span class="operator">=</span> obj.hashCode();</span><br><span class="line">  <span class="type">Node</span> <span class="variable">node</span> <span class="operator">=</span> nodes.get(objHashcode);</span><br><span class="line">  <span class="keyword">if</span> (node != <span class="literal">null</span>) &#123;</span><br><span class="line">    node.putObj(obj);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 找到比给定 key 大的集合</span></span><br><span class="line">  SortedMap&lt;Integer, Node&gt; tailMap = nodes.tailMap(objHashcode);</span><br><span class="line">  <span class="comment">// 找到最小的节点</span></span><br><span class="line">  <span class="type">int</span> <span class="variable">nodeHashcode</span> <span class="operator">=</span> tailMap.isEmpty() ? nodes.firstKey() : tailMap.firstKey();</span><br><span class="line">  nodes.get(nodeHashcode).putObj(obj);</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Obj <span class="title function_">get</span><span class="params">(Obj obj)</span> &#123;</span><br><span class="line">  <span class="type">Node</span> <span class="variable">node</span> <span class="operator">=</span> nodes.get(obj.hashCode());</span><br><span class="line">  <span class="keyword">if</span> (node != <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> node.getObj(obj);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 找到比给定 key 大的集合</span></span><br><span class="line">  SortedMap&lt;Integer, Node&gt; tailMap = nodes.tailMap(obj.hashCode());</span><br><span class="line">  <span class="comment">// 找到最小的节点</span></span><br><span class="line">  <span class="type">int</span> <span class="variable">nodeHashcode</span> <span class="operator">=</span> tailMap.isEmpty() ? nodes.firstKey() : tailMap.firstKey();</span><br><span class="line">  <span class="keyword">return</span> nodes.get(nodeHashcode).getObj(obj);</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该类和之前的类的不同之处在于：</p>
+<ol>
+<li>内部没有使用数组，而是使用了有序 Map。</li>
+<li>put 方法中，对象如果没有落到缓存节点上，就找比他小的节点且离他最近的。这里我们使用了 TreeMap 的 tailMap 方法，具体 API 可以看文档。</li>
+<li>get 方法中，和 put 步骤相同，否则是取不到对象的。</li>
+</ol>
+<p>具体寻找节点的方式如图：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-51768b803b614b25.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>相同的测试用例，执行结果如下：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-f42ecb157ad955a8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>找到了之前所有的节点。解决了普通 hash 的问题。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>代码比较简单，主要是通过 JDK 自带的 TreeMap 实现的寻找临近节点。当然，我们这里也只是测试了添加，关于修改还没有测试，但思路是一样的。这里只是做一个抛砖引玉。</p>
+<p>同时，我们也没有实现虚拟节点，感兴趣的朋友可以尝试一下。</p>
+<p>good luck！！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>自己实现一个一致性-Hash-算法</div>
+      <div>http://thinkinjava.cn/2018/03/31/2018/2018-03-31-自己实现一个一致性-Hash-算法/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年3月31日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/03/31/2018/2018-03-31-%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA(%E5%85%AB)%E2%80%94%E2%80%94-Consistent-Hash%EF%BC%88%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95%EF%BC%89/" title="分布式理论(八)——-Consistent-Hash（一致性哈希算法）">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">分布式理论(八)——-Consistent-Hash（一致性哈希算法）</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/03/30/2018/2018-03-30-%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA(%E5%85%AD)%E2%80%94%E2%80%94-Raft-%E7%AE%97%E6%B3%95/" title="分布式理论(六)——-Raft-算法">
+                        <span class="hidden-mobile">分布式理论(六)——-Raft-算法</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

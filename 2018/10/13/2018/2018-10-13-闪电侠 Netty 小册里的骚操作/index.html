@@ -1,0 +1,687 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="闪电侠 Netty 小册里的骚操作">
+<meta property="og:url" content="http://thinkinjava.cn/2018/10/13/2018/2018-10-13-%E9%97%AA%E7%94%B5%E4%BE%A0%20Netty%20%E5%B0%8F%E5%86%8C%E9%87%8C%E7%9A%84%E9%AA%9A%E6%93%8D%E4%BD%9C/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-10-12T16:01:01.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.549Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>闪电侠 Netty 小册里的骚操作 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="闪电侠 Netty 小册里的骚操作"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-10-13 00:01" pubdate>
+          2018年10月13日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          14 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">闪电侠 Netty 小册里的骚操作</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       即使这是一本小册，但基于“不提笔不读书”的理念，仍然有必要总结一下。此小册对于那些“硬杠 Netty 源码 却不曾在千万级生产环境上使用实操”的用户非常有用。当然，对那些没有 Netty 编程经验的人来说，更为有用。
+
+<p>放个小册地址：<a target="_blank" rel="noopener" href="https://juejin.im/book/5b4bc28bf265da0f60130116/section/5b4db06d5188251afc257383#heading-2"><a target="_blank" rel="noopener" href="https://juejin.im/book/5b4bc28bf265da0f60130116">Netty 入门与实战：仿写微信 IM 即时通讯系统</a>
+</a></p>
+<p>再次强烈推荐，一碗黄焖鸡/半杯 Luckin coffee/一包炫赫门 的价钱，可以让你学会使用 Java 界的 epoll 进行多路复用网络编程，不能说是不划算的 ：）</p>
+<p>本文标题含有“骚操作”，为什么这么说呢？</p>
+<p>作者是某团某评基础架构部技术专家，长期负责后台千万级别的推送系统，而这些推送系统自然是长连接实现的。可以想象，作者的这些实践经验不可谓不好用，纵然看过源码，提过 issue，本人也觉得这些操作非常好用，非常骚气。</p>
+<h2 id="开始"><a href="#开始" class="headerlink" title="开始"></a>开始</h2><p>我们挑重点讲，虽然对于强迫症来讲，每一节都有笔记才是最吼的！</p>
+<p>1 服务端启动流程</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. 通过给 bind 方法添加监听器，用以自动绑定递增端口。算骚操作吧?</span><br><span class="line">2. attr 方法，为每条连接增加属性，能够实现全单例模式哟</span><br><span class="line">3. childOption 方法，关于 TCP连接的优化，SO_KEEPALIVE 底层心跳，TCP_NODELAY 延迟发送，SO_BACKLOG 等待队列</span><br></pre></td></tr></table></figure>
+
+<p>2  客户端启动流程</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. 还是通过监听器实现重试，但是是 connect 返回的 future，且重实间隔时间左移 1 位增加（性能优化，不使用乘二 ，优秀）。</span><br><span class="line">2. 重试不在主线程，而是使用 bootstrap.config().group().schedule 搞定时任务，和我想的不一样。优秀</span><br><span class="line">3. 客户端需要 CONNECT_TIMEOUT_MILLIS 属性</span><br></pre></td></tr></table></figure>
+
+<p>3 客户端与服务端双向通信</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1.客户端在 channelActive 立刻搞事情，嗯，rpc 通信通常也会做一些处理，例如打印客户端ip之类的。</span><br></pre></td></tr></table></figure>
+
+<p>4  客户端与服务端通信协议编解码（扩展较多）</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">emm，这个其实就是自定义应用层协议。</span><br><span class="line"><span class="bullet">1.</span> 4 字节魔数校验，例如 dubbo 就使用0xdabb进行校验，Java 字节码也使用 0xcafebabe 校验字节码。</span><br><span class="line"><span class="bullet">2.</span>  版本号肯定需要的</span><br><span class="line"><span class="bullet">3.</span> 序列化算法，肯定也需要的</span><br><span class="line"><span class="bullet">4.</span> 指令，肯定也是需要的，不过，也可以使用别的方式。</span><br><span class="line"><span class="bullet">5.</span> 后面的数据长度，也是需要的，方便拆包。</span><br><span class="line"></span><br><span class="line">其实这里可以参照 RPC 协议来看，这里更像一个简化的 RPC 协议。</span><br><span class="line">一般 RPC 框架首先获取协议类型，根据这个协议类型得到协议处理器，然后再处理（一个端口处理多个协议的场景）。</span><br><span class="line">生产级别的 RPC 通常较为复杂，以 SOFABolt 为例，需要以下字段：</span><br><span class="line"><span class="bullet">1.</span> 协议版本</span><br><span class="line"><span class="bullet">2.</span> 请求类型，即指令（Request，Response， oneway）</span><br><span class="line"><span class="bullet">3.</span> 指令版本</span><br><span class="line"><span class="bullet">4.</span> RequestID 负责数据对应</span><br><span class="line"><span class="bullet">5.</span> 序列号器</span><br><span class="line"><span class="bullet">6.</span> 协议开关（例如 CRC 校验，安全校验）</span><br><span class="line"><span class="bullet">7.</span> 响应码，约定异常，简化异常</span><br><span class="line"><span class="bullet">8.</span> 类名长度，Java rpc 框架必备</span><br><span class="line"><span class="bullet">9.</span> 请求头长度（参照 http header）</span><br><span class="line"><span class="bullet">10.</span> 请求体长度（参照http body）</span><br><span class="line"><span class="bullet">11.</span> 类名</span><br><span class="line"><span class="bullet">12.</span> 业务请求头内容（一般是 Map，SOFABolt 支持自定义，SOFARPC 里面藏着是否泛化调用等信息）</span><br><span class="line"><span class="bullet">13.</span> 业务请求体内容（一般就是个Request对象或 Response对象，里面包含约定的属性，例如参数，返回值，超级多，SOFARPC 有个属性类 RemotingConstants，这里都有）</span><br><span class="line"><span class="bullet">14.</span> CRC 校验码（金融场景必备）</span><br></pre></td></tr></table></figure>
+
+<p>5  实现客户端与服务端收发消息</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span> 使用 hannel.attr(Attributes.<span class="keyword">LOGIN</span>).<span class="keyword">set</span>(<span class="keyword">true</span>) 绑定登录标识方便哟</span><br></pre></td></tr></table></figure>
+
+<p>6  构建客户端与服务端 pipeline</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 常用的 ChannelInboundHandlerAdapter 和 ChannelOutboundHandlerAdapter 但是需要强转哦，麻烦，</span><br><span class="line">   建议使用 SimpleChannelInboundHandler (还帮你释放内存哟)。</span><br><span class="line"><span class="bullet">2.</span> 不使用 MessageToByteEncoder ，可以自己编解码哦，虽然麻烦点</span><br></pre></td></tr></table></figure>
+
+<p>7  拆包粘包理论与解决方案</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 常用拆包：固定长度，行拆包（有bug，我写过文章分析），分隔符，基于长度</span><br><span class="line"><span class="bullet">2.</span> 最通用的就是基于长度，只要你的自定义协议中包含长度域字段，就可以使用</span><br><span class="line"><span class="bullet">3.</span> LengthFieldBasedFrameDecoder 代替自己继承 ByteToMessageDecoder 哟。</span><br><span class="line"><span class="bullet">4.</span> 对 LengthFieldBasedFrameDecoder 扩展一下，校验魔数关闭错误连接美滋滋。</span><br></pre></td></tr></table></figure>
+
+<p>8  channelHandler 的生命周期 </p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 在 channelReadComplete 方法里执行 flush，批量刷新，性能提升美滋滋。</span><br><span class="line"><span class="bullet">2.</span> channelActive 和 channelInActive 增减连接，RPC 都这么干</span><br></pre></td></tr></table></figure>
+
+<p>9 使用 channelHandler 的热插拔实现客户端身份校验</p>
+<figure class="highlight basic"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1</span>. ctx.pipeline().<span class="comment">remove(this) 删除没有必要的 handler 美滋滋</span></span><br><span class="line"><span class="number">2</span>. handler<span class="comment">Removed 回调美滋滋</span></span><br></pre></td></tr></table></figure>
+
+<p>10  客户端互聊原理与实现</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span> <span class="keyword">Session</span> 通过 channel.attr(Attributes.<span class="keyword">SESSION</span>).<span class="keyword">set</span>(<span class="keyword">session</span>) 绑定连接美滋滋。</span><br><span class="line"><span class="number">2.</span> channel.attr(Attributes.<span class="keyword">SESSION</span>).<span class="keyword">set</span>(<span class="keyword">null</span>) 删除 <span class="keyword">session</span> 美滋滋</span><br><span class="line"><span class="number">3.</span> channel.attr(Attributes.<span class="keyword">SESSION</span>).<span class="keyword">get</span>() 美滋滋</span><br></pre></td></tr></table></figure>
+
+<p>11 群聊的发起与通知 </p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span> ChannelGroup c = ChannelGroup channelGroup = <span class="keyword">new</span> <span class="constructor">DefaultChannelGroup(<span class="params">ctx</span>.<span class="params">executor</span>()</span>) 批量处理连接美滋滋</span><br><span class="line"><span class="number">2.</span> channelGroup.writeAndFlush 批量写连接美滋滋</span><br></pre></td></tr></table></figure>
+<h3 id="高能预警！！！！"><a href="#高能预警！！！！" class="headerlink" title="高能预警！！！！"></a>高能预警！！！！</h3><p>12  牛逼的性能优化</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 共享 handler</span><br><span class="line"><span class="bullet">2.</span> 压缩 handler - 合并编解码器 —— MessageToMessageCodec</span><br><span class="line"><span class="bullet">3.</span> 虽然有状态的 handler 不能搞单例，但是你可以绑定到 channel 属性上，强行单例</span><br><span class="line"><span class="bullet">4.</span> 缩短事件传播路径—— 放 Map 里，在第一个 handler 里根据指令来找具体 handler。</span><br><span class="line"><span class="bullet">5.</span> 更改事件传播源—— 用 ctx.writeAndFlush() 不要用 ctx.channel().writeAndFlush()</span><br><span class="line"><span class="bullet">6.</span> 减少阻塞主线程的操作—— 使用业务线程池，RPC 优化重点</span><br><span class="line"><span class="bullet">7.</span> 计算耗时，使用回调 Future</span><br></pre></td></tr></table></figure>
+
+<p>13 心跳和空闲检测</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">1.</span> 空闲检测 IdleStateHandler 用起来很爽， channelIdle 和 userEventTriggered 都可以处理</span><br><span class="line"><span class="bullet">2.</span> 定时心跳 ctx.executor().scheduleAtFixedRate 很优秀</span><br><span class="line"><span class="bullet">3.</span> 通常空闲检测时间要比发送心跳的时间的两倍要长一些（3倍），这也是为了排除偶发的公网抖动，防止误判。美滋滋</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>小小短文，无法尽数 Netty 精华，但对于新手来说，已经足够使用了。而我这里仅仅是做简单的阅读总结，更多的内容，还需要读者自己去研究小册，研究源码，研究 Netty 在 RPC 里的运用，方能成为 Netty 多路复用网络编程高手。</p>
+<p>关于 RPC 里使用 Netty 的最佳范例，推荐蚂蚁金服开源框架 <a target="_blank" rel="noopener" href="https://github.com/alipay/sofa-bolt">SOFABolt</a>，可以说是对 Netty 编程最佳实践的提炼，和此文相辅相成进行学习，可助汝纵横 Java 各种面试。</p>
+<p>good luck！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Netty/" class="category-chain-item">Netty</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>闪电侠 Netty 小册里的骚操作</div>
+      <div>http://thinkinjava.cn/2018/10/13/2018/2018-10-13-闪电侠 Netty 小册里的骚操作/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年10月13日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/10/16/2018/2018-10-16-%E6%9C%AC%E4%BA%BA%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE%20Lu-Rpc/" title="本人开源项目 Lu-Rpc">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">本人开源项目 Lu-Rpc</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/10/08/2018/2018-10-08-%E9%9D%A2%E8%AF%95%E8%A2%AB%E9%97%AE%E7%83%82%E7%9A%84%20Spring%20IOC(%E6%B1%82%E6%B1%82%E4%BD%A0%E5%88%AB%E5%86%8D%E9%97%AE%E4%BA%86)/" title="面试被问烂的 Spring IOC(求求你别再问了)">
+                        <span class="hidden-mobile">面试被问烂的 Spring IOC(求求你别再问了)</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

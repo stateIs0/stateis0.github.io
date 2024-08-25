@@ -1,0 +1,724 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="深入浅出-JVM-ClassLoader">
+<meta property="og:url" content="http://thinkinjava.cn/2018/02/21/2018/2018-02-21-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-ClassLoader/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-0462adabdf0aac40.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-b58c0180435f2e21.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-eba420d0b83f65a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-dbe5357dffc7d83b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-02-20T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.535Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-0462adabdf0aac40.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>深入浅出-JVM-ClassLoader - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="深入浅出-JVM-ClassLoader"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-02-21 02:11" pubdate>
+          2018年2月21日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          24 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">深入浅出-JVM-ClassLoader</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       ## # 前言
+
+<p>在 JVM 综述里面，我们说，JVM 做了三件事情，Java 程序的内存管理，<br>Java Class 二进制字节流的加载（ClassLoader），Java 程序的执行（执行引擎）。我们也说，我们大部分情况下只关注前2个。在前面的文章中，我们已经分析了内存关系相关的，包括运行时数据区，GC 相关。今天我们要讲的就是类加载器。</p>
+<p>在 <a target="_blank" rel="noopener" href="https://www.jianshu.com/p/70154dc5a9ff">JVM 综述</a> 里，我们已经大致分析了一些概念。而今天的文章将详细的阐述类加载器。</p>
+<p>首先，我们要了解类加载器，当然，了解的目的是为了更好的开发，通过对类加载器的解读，看看我们能不能做些什么，比如修改类加载器的加载逻辑，比如加入自定义的类加载器等等功能。</p>
+<p>让我们开始吧！</p>
+<h2 id="1-类加载器介绍"><a href="#1-类加载器介绍" class="headerlink" title="# 1.  类加载器介绍"></a># 1.  类加载器介绍</h2><p>对于 Java 虚拟机来说，Class 文件是一个重要的接口，无论使用何种语言进行软件开发，只要能将源文件编译为正确的 Class 文件，那么这种语言就可以在 Java 虚拟机上运行。可以说，Class 文件就是虚拟机的基石。</p>
+<p>如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-0462adabdf0aac40.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="各种语言都可以在 JVM 上运行"></p>
+<p>从上图可以看出，虚拟机不拘泥于 Java 语言，任何一个源文件只要能编译成 Class 文件的格式，就可以在JVM 上运行！Class 文件格式就像是一个接口，只要遵守这个接口，就能够在 JVM 上运行。</p>
+<h2 id="2-类加载器的工作流程"><a href="#2-类加载器的工作流程" class="headerlink" title="# 2. 类加载器的工作流程"></a># 2. 类加载器的工作流程</h2><p>Class 文件通常是以文件的方式存在（任何二进制流都可以是 Class 类型），但只有能被 JVM 加载后才能被使用，才能运行编译后的代码。系统装在 Class 类型可以分为加载，链接和初始化三个步骤。其中，链接也可分为验证，准备和解析3步骤。如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-b58c0180435f2e21.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="Class 文件转载过程"></p>
+<p>其中，只有加载过程是程序员能够控制的，后面的几个步骤都是有虚拟机自动运行的。因此，我们的关注点主要放在加载阶段。</p>
+<h2 id="3-类加载流程中的-“加载”"><a href="#3-类加载流程中的-“加载”" class="headerlink" title="# 3.  类加载流程中的 “加载”"></a># 3.  类加载流程中的 “加载”</h2><p>上面说了，类加载器3个流程中，唯一能让程序员 “做手脚” 的就是加载过程，上面是加载过程呢？其主要作用就是从系统外部获得 Class 二进制数据流。</p>
+<p>JVM 不会无故装载 Class 文件，只有在必要的时候才装载，哪几个时候呢？</p>
+<ol>
+<li>当创建一个类的实例是，比如使用 new 关键字，或者通过反射，克隆，反序列化。</li>
+<li>当调用类的静态方法时，即当使用字节码 invokstatic 指令。</li>
+<li>当使用类或接口的静态字段时（final 常量除外），比如，使用 getstatic 或者 pustatic 指令。</li>
+<li>当时用 Java.lang.reflect 包中的方法反射类的方法时。</li>
+<li>当初始化子类，要求先初始化父类。</li>
+<li>作为启动虚拟机，含有 main（）方法的那个类。</li>
+</ol>
+<p>以上6种情况属于主动调用，主动调用会触发初始化，还有一种情况是被动调用，则不会引起初始化。</p>
+<h4 id="3-1-ClassLoader-抽象类介绍"><a href="#3-1-ClassLoader-抽象类介绍" class="headerlink" title="# 3.1 ClassLoader 抽象类介绍"></a># 3.1 ClassLoader 抽象类介绍</h4><p>Java 类加载器的具体实现就在 java.lang.ClassLoader，该类是一个抽象类，并且提供了一些重要的接口，用于自定义Class 的加载流程和加载方式。主要方法如下：</p>
+<ol>
+<li><p>public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException<br>给定一个类名，加载一个雷，返回代表这个类的 Class 实例，如果找不到类，则返回异常。</p>
+</li>
+<li><p>protected final Class&lt;?&gt; defineClass(String name, byte[] b, int off, int len) throws ClassFormatError<br>根据给定的字节码流 b 定义一个类，off 表示位置，len 表示长度。该方法只有子类可以使用。</p>
+</li>
+<li><p>protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException<br>查找一个类，也是只能子类使用，这是重载 ClassLoader 时，最重要的系统扩展点。这个方法会被 loadClass 调用，用于自定义查找类的逻辑，如果不需要修改类加载默认机制，只是想改变类加载的形式，就可以重载该方法。</p>
+</li>
+<li><p>protected final Class&lt;?&gt; findLoadedClass(String name)<br>同样的，这个方法也只有子类能够使用，他会去寻找已经加载的类，这个方法是 final 方法，无法被修改。</p>
+</li>
+</ol>
+<p>同时，在该类中，还有一个字段非常重要：parent，他也是一个 ClassLoader 的实例，这个字段所表示的 ClassLoader 也称为这个 ClassLoader 的双亲，在类加载的过程中，ClassLoader 可能会将某些请求交给自己的双亲处理。</p>
+<h4 id="3-2-类加载器的双亲委派模型"><a href="#3-2-类加载器的双亲委派模型" class="headerlink" title="# 3.2 类加载器的双亲委派模型"></a># 3.2 类加载器的双亲委派模型</h4><p>在标准的 Java 程序中，从虚拟机的角度讲，只有2种类加载器：</p>
+<ol>
+<li>启动类加载器（BootStrap ClassLoader），C++ 语言实现，虚拟机自身的一部分</li>
+<li>另一种就是所有其他的类加载器，由 Java 语言实现，独立于虚拟机外部，并且全部继承自抽身类 java.lang.ClassLoader。</li>
+</ol>
+<p>从程序员的角度讲，虚拟机会创建 3 中类加载器，分别是：Bootstrap ClassLoader(启动类加载器），Extension ClassLoader（扩展类加载器）和 APPClassLoader（应用类加载器，也称为系统类加载器）。此外，每一个应用程序还可以拥有自定义的 ClassLoader，扩展 Java 虚拟机获取 Class 数据的能力。</p>
+<p>而这 3 个类加载器有着层次关系。</p>
+<p>先来看一个著名的图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-eba420d0b83f65a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="类加载器双亲委派模型"></p>
+<p>如图所示：从 ClassLoader 的层次自顶向下为启动类加载器，扩展类加载器，应用类加载器和自定义类加载器，当系统需要适用一个类时，在判断类是否已经被加载时，会先从当前底层类加载器进行判断，但系统需要加载一个类时，会从顶层类开始加载，依次向下尝试，直到成功。</p>
+<p>注意，我们无法访问启动类加载器，当试图获取启动类加载器的时候，返回 null，因此，如果返回的是 null，并不意味没有类加载器为它服务，而是指哪个类为启动类加载器。</p>
+<p>那么这些类加载路径是哪些呢？</p>
+<ol>
+<li><p>BootStrap 类加载器负责加载 <JAVA_HOME>/lib 目录中的，或者别-Xbootclasspath 参数指定的路径。并且是被虚拟机识别的，如 rt.jar，名字不符合的类库即使放在 lib 目录中也不会加载。</p>
+</li>
+<li><p>扩展类加载器有 sun.misc.Launcher$ExtClassLoader 实现，负责加载 <JAVA_HOME>/lib/ext 目录中的。或者被 java.ext.dirs 系统变量所指定的路径中的所有类库。</p>
+</li>
+<li><p>应用类加载器由 sun.misc.Launcher$AppClassLoader 实现，由于这个类是 ClassLoader 中的 getSystemClassLoader 方法的返回值，也称为系统类加载器，负载加载用户类路径（ClassPath）上所指定的类库，开发者可以直接使用这个类加载器。一般情况下，这个就是程序中默认的类加载器。</p>
+</li>
+<li><p>自定义类加载器用于加载一些特殊途径的类，一般也是用户程序类。</p>
+</li>
+</ol>
+<p>系统中的 ClassLoader 在协同工作时，默认会使用双亲委托模式，即在类加载的时候，系统会判断当前类是否已经被加载，如果已经加载，则直接返回，否则就尝试加载，在尝试加载时，会先请求双亲处理，如果双亲查找事变，则自己加载。代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> Class&lt;?&gt; loadClass(String name, <span class="type">boolean</span> resolve)</span><br><span class="line">       <span class="keyword">throws</span> ClassNotFoundException</span><br><span class="line">   &#123;</span><br><span class="line">       <span class="keyword">synchronized</span> (getClassLoadingLock(name)) &#123;</span><br><span class="line">           <span class="comment">// First, check if the class has already been loaded</span></span><br><span class="line">           Class&lt;?&gt; c = findLoadedClass(name);</span><br><span class="line">           <span class="keyword">if</span> (c == <span class="literal">null</span>) &#123;</span><br><span class="line">               <span class="type">long</span> <span class="variable">t0</span> <span class="operator">=</span> System.nanoTime();</span><br><span class="line">               <span class="keyword">try</span> &#123;</span><br><span class="line">                   <span class="keyword">if</span> (parent != <span class="literal">null</span>) &#123;</span><br><span class="line">                       c = parent.loadClass(name, <span class="literal">false</span>);</span><br><span class="line">                   &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                       c = findBootstrapClassOrNull(name);</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">                   <span class="comment">// ClassNotFoundException thrown if class not found</span></span><br><span class="line">                   <span class="comment">// from the non-null parent class loader</span></span><br><span class="line">               &#125;</span><br><span class="line"></span><br><span class="line">               <span class="keyword">if</span> (c == <span class="literal">null</span>) &#123;</span><br><span class="line">                   <span class="comment">// If still not found, then invoke findClass in order</span></span><br><span class="line">                   <span class="comment">// to find the class.</span></span><br><span class="line">                   <span class="type">long</span> <span class="variable">t1</span> <span class="operator">=</span> System.nanoTime();</span><br><span class="line">                   c = findClass(name);</span><br><span class="line"></span><br><span class="line">                   <span class="comment">// this is the defining class loader; record the stats</span></span><br><span class="line">                   sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);</span><br><span class="line">                   sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);</span><br><span class="line">                   sun.misc.PerfCounter.getFindClasses().increment();</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="keyword">if</span> (resolve) &#123;</span><br><span class="line">               resolveClass(c);</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="keyword">return</span> c;</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>代码中，如果双亲是 null，则使用启动类加载器加载，如果事变，则使用当前类加载器加载。</p>
+<p>双亲为 null 一般有2种情况，1. 双亲是启动类加载器。2. 自己就是启动类加载器。</p>
+<p>其中加载类的逻辑有2个注意的地方。</p>
+<ol>
+<li><p>判断是否已经加载？当判断类是否需要加载时，是从底层开始判断，如果底层已经加载了，则不再请求双亲。</p>
+</li>
+<li><p>当系统准备加载一个类时。会先从双亲加载，也就是最顶层的启动类加载器，逐层向下，直到找到该类。和上面的是相反的。</p>
+</li>
+</ol>
+<h4 id="3-3-类加载器的双亲委派模型缺陷和补充"><a href="#3-3-类加载器的双亲委派模型缺陷和补充" class="headerlink" title="# 3.3 类加载器的双亲委派模型缺陷和补充"></a># 3.3 类加载器的双亲委派模型缺陷和补充</h4><p>双亲模型固然有着优点，能够让整个系统保持了类的唯一性。但在有些场合，却不适合，也就是说，顶层的启动类加载器的代码无法访问到底层的类加载器。如 rt.jar 无法中代码无法访问到应用类加载器。</p>
+<p>你肯定要问，为什么需要访问呢？</p>
+<p>在 Java 平台中，把核心类（rt.jar)中提供外部服务，可由应用层自行实现的接口，通常可以称为 Service Provider Interface，即 SPI。</p>
+<p>在 rt.jar 中的抽象类需要加载继承他们的在应用层的子类实现，但是以目前的双亲机制是无法实现的。</p>
+<p>因此 JDK 引用了一个不太优雅的设计，上下文类加载器。也就是讲类加载放在线程上下文变量中。通过     Thread.getContextClassLoader()，    Thread.setContextClassLoader(ClassLoader) 这两个方法获取和设置 ClassLoader，这样，rt.jar 中的代码就可以获取到底层的类加载了。</p>
+<h4 id="3-4-突破双亲模式"><a href="#3-4-突破双亲模式" class="headerlink" title="# 3.4 突破双亲模式"></a># 3.4 突破双亲模式</h4><p>双亲模式是虚拟机的默认行为，但并非必须这么做，通过重载 ClassLoader 可以修改该行为。事实上，很多框架和软件都修改了，比如 Tomcat，OSGI。具体实现则是通过重写 loadClass 方法，改变类的加载次序。比如先使用自定义类加载器加载，如果加载不到，则交给双亲加载。</p>
+<h2 id="4-类加载的扩展—热替换"><a href="#4-类加载的扩展—热替换" class="headerlink" title="# 4. 类加载的扩展—热替换"></a># 4. 类加载的扩展—热替换</h2><p>我们知道：由不同的 ClassLoader 加载的同名类属于不同的类型，不能相互转化和兼容。</p>
+<p>而这个特性就是我们实现热替换的关键。过程如图所示：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-dbe5357dffc7d83b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="热替换基本思路"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="# 总结"></a># 总结</h2><p>好了，到这里，基本的类加载器就介绍结束了。我们总结了类加载的工作流程，包括加载，连接，初始化。然后我们重点介绍了加载，因为加载阶段是我们程序员唯一有所作为的地方。然后介绍了加载阶段的一些细节，比如双亲委派，然后说了双亲委派的缺点和补充，然后探讨了如何修改默认的类加载方式，最后通过类加载的特性实现了热替换。当然也看了核心类 ClassLoader 的源码。不过，这肯定不是类加载器的全部。我们将在后面的文章中将类加载的其他特性一一解开。</p>
+<p>good luck！！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/JVM/" class="category-chain-item">JVM</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>深入浅出-JVM-ClassLoader</div>
+      <div>http://thinkinjava.cn/2018/02/21/2018/2018-02-21-深入浅出-JVM-ClassLoader/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年2月21日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/02/24/2018/2018-02-24-JVM-%E7%BA%BF%E4%B8%8A%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C/" title="JVM-线上故障排查基本操作">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">JVM-线上故障排查基本操作</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/02/20/2018/2018-02-20-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%884%EF%BC%89%E5%B8%B8%E7%94%A8-GC-%E5%8F%82%E6%95%B0%E4%BB%8B%E7%BB%8D/" title="深入浅出-JVM-GC（4）常用-GC-参数介绍">
+                        <span class="hidden-mobile">深入浅出-JVM-GC（4）常用-GC-参数介绍</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

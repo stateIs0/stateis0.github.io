@@ -1,0 +1,718 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="并发编程之-源码剖析-线程池-实现原理">
+<meta property="og:url" content="http://thinkinjava.cn/2018/01/05/2018/2018-01-05-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-%E7%BA%BF%E7%A8%8B%E6%B1%A0-%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-949e805bf8642a62.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-ed51d424fa5ea7e4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-912795ee963d4f4e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-ce568d2da4345871.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-5acf0ebbb6ade295.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-18f53ffe983616e2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-2199e01f35524889.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-675163f0bf1a0a02.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-7c725853248a3f5e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-8bb60a3d51b44412.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-0bdc22fde7a15b74.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-6d9a00b0ca834d9e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-fe99316fac59b618.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-975dbf7d534f9c7a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-695e75b79482558e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-3ccaa542a17cd88c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-01-04T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.533Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-949e805bf8642a62.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>并发编程之-源码剖析-线程池-实现原理 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="并发编程之-源码剖析-线程池-实现原理"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-01-05 02:11" pubdate>
+          2018年1月5日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          17 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">并发编程之-源码剖析-线程池-实现原理</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       在上一篇文章中我们介绍了线程池的使用，那么现在我们有个疑问：线程池到底是怎么实现的？毕竟好奇是人类的天性。那我们今天就来看看吧，扒开 他的源码，一探究竟。
+
+<h2 id="1-从-Demo-入手"><a href="#1-从-Demo-入手" class="headerlink" title="1. 从 Demo 入手"></a>1. 从 Demo 入手</h2><p><img src="http://upload-images.jianshu.io/upload_images/4236553-949e805bf8642a62.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>上图是个最简单的demo，我们从这个 demo 开始看源码，首先一步一步来看。</p>
+<p>首先我们手动创建了线程池，使用了有数量限制的阻塞队列，使用了线程池工厂提供的默认线程工厂，和一个默认的拒绝策略，我们看看默认的线程工厂是如何创建的？</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-ed51d424fa5ea7e4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-912795ee963d4f4e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>默认的线程工厂从当前线程中获取线程组，设置了默认的线程名字前缀 pool-xxx-thread-xxx，强制设置为非守护线程，强制设置为默认优先级。</p>
+<p>然后我们看看ThreadPoolExecutor 的构造方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-ce568d2da4345871.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>没有什么特殊的东西，主要是一些判断。</p>
+<p>好了，那么我们看看 execute 方法是如何实现的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">execute</span><span class="params">(Runnable command)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (command == <span class="literal">null</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NullPointerException</span>();</span><br><span class="line">    <span class="comment">// c = -536870911</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">c</span> <span class="operator">=</span> ctl.get();</span><br><span class="line">    <span class="comment">//  工作线程数量小于核心线程池设定数，则创建线程。</span></span><br><span class="line">    <span class="keyword">if</span> (workerCountOf(c) &lt; corePoolSize) &#123;</span><br><span class="line">        <span class="comment">// 如果添加成功则直接返回</span></span><br><span class="line">        <span class="keyword">if</span> (addWorker(command, <span class="literal">true</span>))</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        <span class="comment">// 否则再次获取活动线程数量</span></span><br><span class="line">        c = ctl.get();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 如果线程池正在运行，并且添加进队列成功</span></span><br><span class="line">    <span class="keyword">if</span> (isRunning(c) &amp;&amp; workQueue.offer(command)) &#123;</span><br><span class="line">        <span class="comment">// 再次对线程池状态检查， 因为上面 addWorker 过了并且失败了，所以需要检查</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">recheck</span> <span class="operator">=</span> ctl.get();</span><br><span class="line">        <span class="comment">// 如果状态不是运行状态，且从队列删除该任务成功并尝试停止线程池</span></span><br><span class="line">        <span class="keyword">if</span> (! isRunning(recheck) &amp;&amp; remove(command))</span><br><span class="line">            <span class="comment">// 拒绝任务</span></span><br><span class="line">            reject(command);</span><br><span class="line">        <span class="comment">// 如果当前工作线程数量为0（线程池已关闭），则添加一个 null 到队列中</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (workerCountOf(recheck) == <span class="number">0</span>)</span><br><span class="line">            <span class="comment">// 添加个空的任务</span></span><br><span class="line">            addWorker(<span class="literal">null</span>, <span class="literal">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 如果添加队列失败，则创建一个任务线程，如果失败，则拒绝</span></span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (!addWorker(command, <span class="literal">false</span>))</span><br><span class="line">        <span class="comment">// 拒绝</span></span><br><span class="line">        reject(command);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先，空判断。</p>
+<p>然后判断，如果正在工作的线程小于设置的核心线程，则创建线程并返回，如果正在工作的线程数量大于等于核心线程数量，则试图将任务放入队列，如果失败，则尝试创建一个 maximumPoolSize 的任务。注意，在remove 方法中，该方法已经试图停止线程池的运行。</p>
+<p>从这段代码中，可以看到，最重要的方法就是 addWorker 和 workQueue.offer(command) 这段代码，一个是创建线程，一个是放入队列。后者就是将任务添加到阻塞队列中。</p>
+<p>那么我们就看看 addWorker 方法。</p>
+<h2 id="2-addWorker-方法—–创建线程池"><a href="#2-addWorker-方法—–创建线程池" class="headerlink" title="2. addWorker 方法—–创建线程池"></a>2. addWorker 方法—–创建线程池</h2><p>private boolean addWorker(Runnable firstTask, boolean core)</p>
+<p>该方法很长，楼主说一下这个方法的两个参数，第一个参数为 Runnable 类型，表示线程池中某个线程的第一个任务，第二个参数是如果是 true，则创建 core 核心线程，如果是 false ，则创建 maximumPoolSize 线程。这两个线程的生命周期是不同的。</p>
+<p>楼主截取该方法中最终的代码：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-5acf0ebbb6ade295.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>其中，在该方法中，创建一个 Worker 对象，该对象代理了任务对象，我们看看该类的构造方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-18f53ffe983616e2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>通过线程工厂创建线程，注意，传递的是 this ，因此，在上面的代码中国，调用了 worker 对象的 thread 属性的 start 方法，实际上就是调用了该类的 run 方法。那么改类的 run 方法是怎么实现的呢？</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-2199e01f35524889.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>调用了自身的 runWorker 方法。这个方法非常的重要。</p>
+<h2 id="3-Worker-runWorker-Worker-w-方法——-线程池的最核心方法"><a href="#3-Worker-runWorker-Worker-w-方法——-线程池的最核心方法" class="headerlink" title="3. Worker.runWorker(Worker w) 方法——-线程池的最核心方法"></a>3. Worker.runWorker(Worker w) 方法——-线程池的最核心方法</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">runWorker</span><span class="params">(Worker w)</span> &#123;</span><br><span class="line">    <span class="type">Thread</span> <span class="variable">wt</span> <span class="operator">=</span> Thread.currentThread();</span><br><span class="line">    <span class="type">Runnable</span> <span class="variable">task</span> <span class="operator">=</span> w.firstTask;</span><br><span class="line">    w.firstTask = <span class="literal">null</span>;</span><br><span class="line">    w.unlock(); <span class="comment">// allow interrupts</span></span><br><span class="line">    <span class="type">boolean</span> <span class="variable">completedAbruptly</span> <span class="operator">=</span> <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (task != <span class="literal">null</span> || (task = getTask()) != <span class="literal">null</span>) &#123;</span><br><span class="line">            w.lock();</span><br><span class="line">            <span class="comment">// If pool is stopping, ensure thread is interrupted;</span></span><br><span class="line">            <span class="comment">// if not, ensure thread is not interrupted.  This</span></span><br><span class="line">            <span class="comment">// requires a recheck in second case to deal with</span></span><br><span class="line">            <span class="comment">// shutdownNow race while clearing interrupt</span></span><br><span class="line">            <span class="keyword">if</span> ((runStateAtLeast(ctl.get(), STOP) ||</span><br><span class="line">                 (Thread.interrupted() &amp;&amp;</span><br><span class="line">                  runStateAtLeast(ctl.get(), STOP))) &amp;&amp;</span><br><span class="line">                !wt.isInterrupted())</span><br><span class="line">                wt.interrupt();</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                beforeExecute(wt, task);</span><br><span class="line">                <span class="type">Throwable</span> <span class="variable">thrown</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    task.run();</span><br><span class="line">                &#125; <span class="keyword">catch</span> (RuntimeException x) &#123;</span><br><span class="line">                    thrown = x; <span class="keyword">throw</span> x;</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Error x) &#123;</span><br><span class="line">                    thrown = x; <span class="keyword">throw</span> x;</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Throwable x) &#123;</span><br><span class="line">                    thrown = x; <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">Error</span>(x);</span><br><span class="line">                &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                    afterExecute(task, thrown);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                task = <span class="literal">null</span>;</span><br><span class="line">                w.completedTasks++;</span><br><span class="line">                w.unlock();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        completedAbruptly = <span class="literal">false</span>;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        processWorkerExit(w, completedAbruptly);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先说该方法的主要逻辑：</p>
+<ol>
+<li>首先执行 firstTask 的 run 方法。</li>
+<li>然后循环获取阻塞队列中的任务，并调用他们的 run 方法。</li>
+<li>如果线程池中的任务异常，就抛出异常并停止运行线程池。</li>
+</ol>
+<p>这个方法可以说就是线程池的核心，在最开始的设定的核心任务数都是直接调用 start 方法启动线程的，启动之后，这个线程并不关闭，而是一直在阻塞队列上等待，如果有任务就执行任务的run 方法，而不是 start 方法，这点很重要。</p>
+<p>而该方法中有几个注意的地方就是线程池留给我们扩展的，在执行任务之前，会执行 beforeExecute 方法，该方法默认为空，我们可以实现该方法，在任务执行结束后，在 finally 块中有 afterExecute 方法，同样也是空的，我们可以扩展。</p>
+<p>楼主看到这里的代码后，大为赞叹，Doug Lea 可以说神一般的人物。</p>
+<p>那么，线程池还有一个方法， submit 是如何实现的呢？其实核心逻辑也是 runWorker 方法，不然楼主也不会说这个方法是线程池的核心。</p>
+<p>那我们看看 submit 方法是如何实现的。</p>
+<h2 id="4-submit-方法实现原理。"><a href="#4-submit-方法实现原理。" class="headerlink" title="4. submit 方法实现原理。"></a>4. submit 方法实现原理。</h2><p><img src="http://upload-images.jianshu.io/upload_images/4236553-675163f0bf1a0a02.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>该方法最终也是走 execute 方法的，因此逻辑基本相同，不同的是什么呢？我们看看。我们看到，第二行代码创建了 一个 RunnableFuture 对象，RunnableFuture 是一个接口，具体的实现是什么呢？我们看看：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-7c725853248a3f5e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="FutureTask "></p>
+<p>FutureTask 对象，该对象也是一个线程对象：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-8bb60a3d51b44412.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>那我们就看看该方法的 run 方法。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-0bdc22fde7a15b74.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>该方法核心逻辑楼主已经框起来了，其中调用了 call 方法，返回一个返回值，并在set 方法中，将返回值设置在一个变量中，如果是异常，则将异常设置在变量中。我们看看set方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-6d9a00b0ca834d9e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>该方法通过CAS将任务状态状态从new变成 COMPLETING，然后，设置 outcome 变量，也就是返回值。最后，调用 finishCompletion 方法，完成一些变量的清理工作。</p>
+<p>那么，如果从submit 中获得返回值呢？这要看get方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-fe99316fac59b618.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>该方法会判断状态，如果状态还没有完成，那么就调用  awaitDone 方法等待，如果完成了，调用 report 返回值结果。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-975dbf7d534f9c7a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>看见了刚刚设置的 outcome 变量，如果状态正常，则直接返回，如果状态为取消，则抛出异常，其余情况也抛出异常。</p>
+<p>我们回到 awaitDone 方法，看看该方法如何等待的。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-695e75b79482558e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>该方法有一个死循环，直到有一个确定的状态返回，如果状态大于 COMPLETING ，也就是 成功了，就返回该状态，如果正在进行中，则让出CPU时间片进行等待。如果都不是，则让该线程阻塞等待。在哪里唤醒呢？在 finishCompletion 方法中会唤醒该线程。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-3ccaa542a17cd88c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>该方法循环了等待线程链表的链表，并唤醒链表中的每个线程。</p>
+<p>还有一个需要的注意的地方就是，在任务执行完毕会执行 done 方法，JDK 默认是空的，我们可以扩展该方法。比如 Spring 的并发包 org.springframework.util.concurrent 就有2个类重写了该方法。</p>
+<h2 id="5-总结"><a href="#5-总结" class="headerlink" title="5. 总结"></a>5. 总结</h2><p>好了，到这里，线程池的基本实现原理我们知道了，也解开了楼主一直以来的疑惑，可以说，线程池的核心方法就是 runWorker 方法 配合 阻塞队列，当线程启动后，就从队列中取出队列中的任务，执行任务的 run 方法。可以说设计的非常巧妙。而回调线程 callback 也是通过该方法，JDK 封装了 FutureTask 类来执行他们的 call 方法。</p>
+<p>good luck！！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>并发编程之-源码剖析-线程池-实现原理</div>
+      <div>http://thinkinjava.cn/2018/01/05/2018/2018-01-05-并发编程之-源码剖析-线程池-实现原理/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年1月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/01/07/2018/2018-01-07-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-%E9%94%81%E7%9A%84%E4%BC%98%E5%8C%96%E6%9C%89%E5%93%AA%E4%BA%9B/" title="并发编程之-锁的优化有哪些">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">并发编程之-锁的优化有哪些</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/01/04/2018/2018-01-04-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B9%8B-%E7%BA%BF%E7%A8%8B%E5%8D%8F%E4%BD%9C%E5%B7%A5%E5%85%B7-LockSupport/" title="并发编程之-线程协作工具-LockSupport">
+                        <span class="hidden-mobile">并发编程之-线程协作工具-LockSupport</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

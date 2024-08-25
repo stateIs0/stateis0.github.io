@@ -1,0 +1,745 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="深入浅出-JVM-GC（2）">
+<meta property="og:url" content="http://thinkinjava.cn/2018/02/18/2018/2018-02-18-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%882%EF%BC%89/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-f97668ac64da7381.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-4dddb48f13d54c0a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-02-17T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.535Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-f97668ac64da7381.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>深入浅出-JVM-GC（2） - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="深入浅出-JVM-GC（2）"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-02-18 02:11" pubdate>
+          2018年2月18日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          24 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">深入浅出-JVM-GC（2）</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       <!--more-->       在 [深入浅出 JVM GC（1）](https://www.jianshu.com/p/f29d013c4f46) 中，限于上篇文章的篇幅，我们留下了一个问题 : 如何回收？ 这篇文章将重点讲述这个问题。
+
+<p>在上篇文章中，我们也列出了一些大纲，今天我们就按照那个大纲来逐个讲解。在此，我将大纲复制过来。</p>
+<p><strong>垃圾回收算法</strong></p>
+<ol>
+<li> 标记清除算法</li>
+<li> 复制算法</li>
+<li> 标记整理算法</li>
+<li> 分代收集算法（堆如何分代）</li>
+</ol>
+<p><strong>有哪些垃圾收集器</strong></p>
+<ol>
+<li> Serial 串行收集器（只适用于堆内存256m 以下的 JVM ）</li>
+<li> ParNew 并行收集器（Serial 收集器的多线程版本）</li>
+<li> Parallel Scavenge （PS 收集器，该收集器以吞吐量为主要目的，是1.8的默认 GC）</li>
+<li> CMS 收集器（该收集器全称 Concurrent Mark Sweep，是一种关注最短停顿时间的垃圾收集器）</li>
+<li> G1 收集器（JDK 9 的默认 GC）</li>
+</ol>
+<p><strong>有哪些GC</strong></p>
+<ol>
+<li> Young GC（又称 YGC，minor GC，年轻代 GC）</li>
+<li> Old GC （老年代 GC，只有 CMS 才会单独回收 Old 区）</li>
+<li> Full GC（又称 major GC）</li>
+<li> Mixed GC（混合 GC，G1 收集器独有）</li>
+</ol>
+<h2 id="1-有哪些垃圾回收算法"><a href="#1-有哪些垃圾回收算法" class="headerlink" title="1. 有哪些垃圾回收算法"></a>1. 有哪些垃圾回收算法</h2><ol>
+<li> 标记清除算法</li>
+<li> 复制算法</li>
+<li> 标记整理算法</li>
+<li> 分代收集算法（堆如何分代）</li>
+</ol>
+<h5 id="1-标记清除算法"><a href="#1-标记清除算法" class="headerlink" title="1. 标记清除算法"></a>1. 标记清除算法</h5><p>GC 中最基础的算法就是标记-清除算法，所谓标记清除，就是通过可达性分析，标记哪些是垃圾对象，然后清除。之所以说是最简单的算法，是因为后面的几种算法都是基于它的。</p>
+<p>但是这个算法有2个不足之处：1. 碎片问题，标记清除之后会导致大量内存不连续的碎片，空间碎片太多会导致分配大对象时无法找到足够的连续内存从而提前触发 Full GC （此 GC 严重影响应用性能）。2. 效率问题，标记和清除这两个过程的效率都不高。我们通过一幅图来看看标记清除的算法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-f97668ac64da7381.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="标记清除算法示意图"></p>
+<p>可以从上图看出，回收后，出现了大量的内存不连续的内存块。</p>
+<h5 id="2-复制算法"><a href="#2-复制算法" class="headerlink" title="2. 复制算法"></a>2. 复制算法</h5><p>为了解决效率问题，人们发明了一种复制算法（Coping）。它将可用内存按容量划分为大小相等的两块，每次只使用其中的一块。当这一块的用完了，就开始垃圾回收，将有用的对象复制到另一个空闲的内存上，清空之前使用的内存块。这样使得每次都对整个半区回收，而且也不用考虑<strong>内存碎片</strong>问题，只需要移动堆顶指针，按顺序分配即可，实现简单，运行高效。</p>
+<p>但是凡事都是有缺点的，复制算法的缺点就是内存缩小到了原来的一半，无法充分利用内存空间。</p>
+<p>总是有取舍的。</p>
+<p>现代的所有商业虚拟机都是采用这种算法来回收新生代。基于统计学，人们得出99% 的对象都是朝生夕死的，所以不需要留出那么大的空间保存存活的对象，也就是不要1:1 的比例来划分内存。</p>
+<p>通常的做法是：</p>
+<blockquote>
+<p>将内存分为一个较大的Eden（伊甸园）空间和两块较小的 Survivor（幸存区）空间，每次使用 Eden 和其中一块 Survivor ，当回收时，将 Eden 和 Survivor 还存活着的对象一次性的<strong>复制</strong>到另外一块 Survivor 空间，最后清理掉 Eden 和刚刚使用的 Survivor 空间。Hotspot 默认的比例是 8：1：1，也就是说，每次新生代可用内存空间为新生代总空间的90%，只有10%的内存会被浪费，从一定程度上解决了复制算法浪费空间的问题。</p>
+</blockquote>
+<p>当然，98% 的对象可回收只是一般的情况下，我们无法保证每次回收都只有不多于 10% 的对象存活，当 Survivor 空间不够用时怎么办呢？肯定需要依赖其他内存（老年代）进行所谓的<strong>分配担保（Handle Promotion）。</strong></p>
+<p>什么是分配担保呢？</p>
+<blockquote>
+<p>如果另外一块 Survivor 区域没有足够空间存放上一次新生代手机下来的存活对象时，这些对象将直接通过分配担保机制进入老年代。当然，具体细节这句话无法详细说明，我们将会在之后阐述具体细节。</p>
+</blockquote>
+<h5 id="3-标记整理算法"><a href="#3-标记整理算法" class="headerlink" title="3. 标记整理算法"></a>3. 标记整理算法</h5><p>从上面我们可以看出，复制算法的效率很高，请注意，该算法只有在对象存活率较低的时候（98% 对象可被回收）才能体现出效率。而如果一次 GC 活动之后，存活对象很多，那么就需要复制大量的对象，很明显，会导致效率不高；更关键的是，还需要额外的空间进行<strong>分配担保</strong>。</p>
+<p>所以，存活对象时间很长的老年代一般不使用该算法。</p>
+<p>根据老年代的特点，一般使用“标记-整理（Mark-Compact）”算法，标记过程仍然与 “标记清除” 算法一样，但我们知道，标记清除算法会产生大量的内存碎片，对性能影响很大，所以标记整理算法后续步骤不是直接对可回收对象进行清理，而是让所有存活的对象像一个方向移动，然后清理掉边界之外的内存。也就是将那些原来散落的对象移动在一起，让碎片不再存在。</p>
+<p>可以说，标记整理算法相对于标记清除算法牺牲了一些性能，但却避免了内存碎片的产生，在大部分场合，可抵消掉整理过程中产生的性能损耗。</p>
+<h5 id="4-分代收集算法"><a href="#4-分代收集算法" class="headerlink" title="4. 分代收集算法"></a>4. 分代收集算法</h5><p>上面我们提到了几个名词，新生代，老年代，这些就是分代算法中名词。分代算法最主要的就是根据对象存活周期的不同将内存分成几块，一般是把 Java 堆分成新生代和老年代，这样就可以根据各个年代的特点采用最适当的收集算法。</p>
+<p>在新生代中，每次垃圾收集都发现有大批对象死去，只有少量存活，那就选用复制算法，只需要付出少量存活对象的复制成本就可以完成收集。而老年代中因为对象存活率高，没有额外空间对它进行分配担保，就必须使用“标记清理” 或者 “标记整理” 算法来进行回收。</p>
+<h2 id="2-有哪些垃圾收集器"><a href="#2-有哪些垃圾收集器" class="headerlink" title="2. 有哪些垃圾收集器"></a>2. 有哪些垃圾收集器</h2><p>上面说的这些算法都是实现垃圾收集器的基础。</p>
+<p>如果说收集算法是内存回收的方法论，那么垃圾收集器就是内存回收的具体实现。</p>
+<p>Hotspot 虚拟机所包含的所有收集器如下图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-4dddb48f13d54c0a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="Hotspot 所有 GC 组合"></p>
+<p>从上图中看到，一共有6种 GC 组合（忽略 G1 和 为CMS备份的 SerialOld 组合 ）。</p>
+<ol>
+<li>Serial + Serial Old</li>
+<li>Serial + CMS</li>
+<li>ParNew + CMS</li>
+<li>ParNew + Serial Old</li>
+<li>Parallel Scavenge + Serial Old</li>
+<li>Parallel Scavenge + Parallel Old</li>
+</ol>
+<p>大家看到这里，一定有个疑问，为什么需要这么多垃圾收集器？</p>
+<p>答案是：没有任何一种垃圾收集器是完美的，没有任何一种垃圾收集器适合所有的应用情况。</p>
+<p>每个应用都需要自己的特定垃圾收集器，因此，可以说，GC 调优是门艺术，没有放之四海皆准的 GC。需要工程师们去根据应用的特性不断调优。</p>
+<p>这么多 GC ，限于篇幅，我们将在 <a target="_blank" rel="noopener" href="https://www.jianshu.com/p/fe70af687bc0">深入浅出 JVM GC（3）</a> 中慢慢解释。<br>这里只是列出一个大纲。</p>
+<p>接下来我们将说说关于 GC 的一些概念，方便阅读后面的关于 GC 处理器的文章。</p>
+<h2 id="3-有哪些GC"><a href="#3-有哪些GC" class="headerlink" title="3. 有哪些GC"></a>3. 有哪些GC</h2><ol>
+<li> Young GC（又称 YGC，minor GC，年轻代 GC）</li>
+<li> Old GC （老年代 GC，只有 CMS 才会单独回收 Old 区）</li>
+<li> Full GC（又称 major GC）</li>
+<li> Mixed GC（混合 GC，G1 收集器独有）</li>
+</ol>
+<p>关于这些 GC 的分类，R 大一个回答比较清楚：<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/41922036">Major GC和Full GC的区别是什么？触发条件呢？</a></p>
+<p>从大的方面讲，GC 只分为两种，一种是不收集整个堆，一种是收集整个堆。</p>
+<p>Partial GC：并不收集整个GC堆的模式</p>
+<ol>
+<li>Young GC：只收集young gen的GC</li>
+<li>Old GC：只收集old gen的GC。只有CMS的concurrent collection是这个模式</li>
+<li>Mixed GC：收集整个young gen以及部分old gen的GC。只有G1有这个模式</li>
+</ol>
+<p>Full GC：收集整个堆，包括young gen、old gen、perm gen（如果存在的话）等所有部分的模式。</p>
+<h5 id="1-YGC"><a href="#1-YGC" class="headerlink" title="1. YGC"></a>1. YGC</h5><p>YGC 又称 Young GC ，minor GC ，年轻代 GC。顾名思义，该 GC 过程发生在年轻代中。从分代算法中，我们知道，JVM 为了性能考虑，通常将内存区域根据对象生命周期的不同分为年轻代和年老代。</p>
+<p>新创建的对象基本上都存放在年轻代（除了一些大对象），因为大多数对象都是很快变成引用不可达，所以大多数对象都在年轻代中创建，然后消失。当对象从这块内存区域消失时，我们称之为 YGC。</p>
+<p>什么时候发生 YGC 呢？当 Eden 不够放入新创建的对象时，也就是Eden 区满了，JVM 就会清理Eden 区的空间，将存活的对象放入 to 区，如果 to 区放不下，则直接进入老年代。如果 to 区能放下，则放入 to 区，然后清理掉无用对象，第二次 YGC 时，GC 扫描 Eden 区和 to 区，将这两个区的存活对象放入到 from 区，将 to 区清空（总之一定会保证有一个 Survivor 区是干净的），同样的，如果 from 区放不下，则通过分配担保机制进入老年代。如果 YGC 后，仍放不下新对象，则也通过分配担保进入老年代。</p>
+<h5 id="2-Old-GC"><a href="#2-Old-GC" class="headerlink" title="2. Old GC"></a>2. Old GC</h5><p>通常，我们将 Old GC 等同于 Full GC，为什么呢？我们详细解释一下。</p>
+<p>什么时候发生 Old GC？ 当老年代空间满了的时候。也就是说通常是 YGC 后有很多对象进入到老年代，而老年代无法放下这些对象，这时候就需要对老年代 GC。而通常的 Old GC 其实就是 Full GC 。</p>
+<h5 id="3-Full-GC"><a href="#3-Full-GC" class="headerlink" title="3. Full GC"></a>3. Full GC</h5><p>也就是全 GC ，对整个堆和方法区（如果存在）进行 GC。<br>哪些情况会 Full GC 呢？</p>
+<ol>
+<li>System.gc() 方法的调用</li>
+<li>heap dump 带 GC </li>
+<li>永久代（方法区）空间不够</li>
+<li>当准备出发 YGC 时，发现之前 YGC 后晋升对象的大小比目前 Old 区的剩余空间大，则不会触发 YGC ，转而直接触发 Full GC。</li>
+</ol>
+<p>第四条说到晋升，什么是晋升呢？YGC 后，幸存的对象会放入到 Survivor 区，如果一个对象在多次 YGC 后仍然存活，则进入老年代，这个过程叫做晋升。每次 YGC 后，这个对象的年龄加一。当然，晋升的条件比较复杂。我们后面会详细讲述。</p>
+<h5 id="4-Mixed-GC"><a href="#4-Mixed-GC" class="headerlink" title="4. Mixed GC"></a>4. Mixed GC</h5><p>G1 专属GC，这里不准备讲述这个 GC。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>到这里，我们解释了3种垃圾回收算法，第四个不算是算法，而是一种设计。还大致讲了5种收集器，并将这个坑留在了后面的文章里，最后讲了一些 GC 术语，YGC ，Old GC ，Full GC 等。</p>
+<p>好了，关于5种垃圾收集器的详细介绍，我们将在 <a target="_blank" rel="noopener" href="https://www.jianshu.com/p/fe70af687bc0">深入浅出 JVM GC（3）</a>中详细说明。</p>
+<p>good luck！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/JVM/" class="category-chain-item">JVM</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>深入浅出-JVM-GC（2）</div>
+      <div>http://thinkinjava.cn/2018/02/18/2018/2018-02-18-深入浅出-JVM-GC（2）/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年2月18日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/02/20/2018/2018-02-20-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%884%EF%BC%89%E5%B8%B8%E7%94%A8-GC-%E5%8F%82%E6%95%B0%E4%BB%8B%E7%BB%8D/" title="深入浅出-JVM-GC（4）常用-GC-参数介绍">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">深入浅出-JVM-GC（4）常用-GC-参数介绍</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/02/18/2018/2018-02-18-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA-JVM-GC%EF%BC%883%EF%BC%89/" title="深入浅出-JVM-GC（3）">
+                        <span class="hidden-mobile">深入浅出-JVM-GC（3）</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

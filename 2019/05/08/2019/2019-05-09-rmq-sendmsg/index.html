@@ -1,0 +1,751 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="目录:  前言 quickStart 单刀直入 Remoting 模块发送消息实现 如何处理返回值 Broker Server 处理消息流程  前言RocketMQ 目前在国内应该是比较流行的 MQ 了，楼主目前也在使用中，今天借着本文，理理 RocketMQ 发送一条消息到存储一条消息的过程。 注意：本文主线是发送到存储，因此，阅读源码时，其他和这条线相关度不高的代码，会酌情阅读。另外，本文的目">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RocketMQ 发送消息（一条消息从发送到存储的过程）">
+<meta property="og:url" content="http://thinkinjava.cn/2019/05/08/2019/2019-05-09-rmq-sendmsg/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="目录:  前言 quickStart 单刀直入 Remoting 模块发送消息实现 如何处理返回值 Broker Server 处理消息流程  前言RocketMQ 目前在国内应该是比较流行的 MQ 了，楼主目前也在使用中，今天借着本文，理理 RocketMQ 发送一条消息到存储一条消息的过程。 注意：本文主线是发送到存储，因此，阅读源码时，其他和这条线相关度不高的代码，会酌情阅读。另外，本文的目">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/05/09/img.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/05/09/img_1.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/05/09/img_2.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/05/09/img_3.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/05/09/img_4.png">
+<meta property="og:image" content="http://thinkinjava.cn/img/2019/05/09/img_5.png">
+<meta property="article:published_time" content="2019-05-08T09:01:02.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.554Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://thinkinjava.cn/img/2019/05/09/img.png">
+  
+  
+  
+  <title>RocketMQ 发送消息（一条消息从发送到存储的过程） - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="RocketMQ 发送消息（一条消息从发送到存储的过程）"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2019-05-08 17:01" pubdate>
+          2019年5月8日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          23 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">RocketMQ 发送消息（一条消息从发送到存储的过程）</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>目录:</p>
+<ul>
+<li>前言</li>
+<li>quickStart</li>
+<li>单刀直入</li>
+<li>Remoting 模块发送消息实现</li>
+<li>如何处理返回值</li>
+<li>Broker Server 处理消息流程</li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>RocketMQ 目前在国内应该是比较流行的 MQ 了，楼主目前也在使用中，今天借着本文，理理 RocketMQ 发送一条消息到存储一条消息的过程。</p>
+<p>注意：本文主线是发送到存储，因此，阅读源码时，其他和这条线相关度不高的代码，会酌情阅读。另外，本文的目的是为了看清一条消息是如何被发出且被存储的，代码中，关于 MQ 文件系统的优化，设计等，并不会花很多篇幅介绍。</p>
+<h2 id="quickStart"><a href="#quickStart" class="headerlink" title="quickStart"></a>quickStart</h2><p>来自官方源码 example 的一段发送代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">DefaultMQProducer</span> <span class="variable">producer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DefaultMQProducer</span>(<span class="string">&quot;ProducerGroupName&quot;</span>);</span><br><span class="line">producer.start();</span><br><span class="line"></span><br><span class="line"><span class="type">Message</span> <span class="variable">msg</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Message</span>(<span class="string">&quot;TopicTest&quot;</span>, <span class="string">&quot;TagA&quot;</span>, <span class="string">&quot;OrderID188&quot;</span>, <span class="string">&quot;Hello world&quot;</span>.getBytes(RemotingHelper.DEFAULT_CHARSET));</span><br><span class="line"><span class="type">SendResult</span> <span class="variable">sendResult</span> <span class="operator">=</span> producer.send(msg);</span><br><span class="line">System.out.printf(<span class="string">&quot;%s%n&quot;</span>, sendResult);</span><br><span class="line"></span><br><span class="line">producer.shutdown();</span><br></pre></td></tr></table></figure>
+
+<h2 id="单刀直入"><a href="#单刀直入" class="headerlink" title="单刀直入"></a>单刀直入</h2><p>我们直接看看 send 方法。</p>
+<p>send 方法会设置一个默认的 timeout， 3 秒。<br>默认使用 SYNC 模式，另外有 Async 和 OneWay 模式。<br>我们需要处理方法签名中的 Client 端的异常，网络异常，Broker 端的异常，线程中断异常。</p>
+<p>DefaultMQProducerImpl # sendDefaultImpl 方法就是发送的主要逻辑。</p>
+<p><img src="/img/2019/05/09/img.png" srcset="/img/loading.gif" lazyload></p>
+<p>这端代码里，有个有趣的地方，可以提一下，关于更新故障时间的策略，RMQ 有一个类 MQFaultStrategy，用来处理 MQ 错误，然后对 MQ Server 进行服务降级。</p>
+<p>对照图:</p>
+<p><img src="/img/2019/05/09/img_1.png" srcset="/img/loading.gif" lazyload></p>
+<p>这个策略具体内容：如果发送一条消息在 550 毫秒以内，那么就不用降级，如果 550 毫秒以外，就进行容错降级（熔断）30 秒，以此类推。<br>再看 DefaultMQProducerImpl # sendKernelImpl 发送到内核的方法实现。</p>
+<p>先找到 broker 的地址。尝试压缩大于 4M 的消息（批量消息不压缩）。执行各种钩子。构造 Request 对象（存放数据），Context 上下文对象（存放调用上下文）。</p>
+<p>这里会设置一个消息生成时间，即 bornTimestamp。后面使用消息轨迹的时候，可以查看。</p>
+<p>最后，如果是 SYNC 模式，就调用 MQClientAPIImpl 来发送消息，这一层还是在 Client 模块里，在这一层，会设置更详细的消息细节，构造命令对象。最后调用 remotingClient # invokeSync 发送消息。</p>
+<p>注意，在 MQClientAPIImpl # sendMessage 这一层，会给命令对象设置一个 CmdCode，叫 SEND_MESSAGE，这个东西就是一个和 Broker 的契约，Broker 会根据这个 Code 进行不同的策略。另外，如果这里用 RPC 的方式，例如，使用一个接口的抽象方法，然后 Broker 对抽象方法进行 RPC 调用，这样可不可以呢？</p>
+<p>最后，看看 remotingClient # invokeSync 是如何实现的。</p>
+<h2 id="Remoting-模块发送消息实现"><a href="#Remoting-模块发送消息实现" class="headerlink" title="Remoting 模块发送消息实现"></a>Remoting 模块发送消息实现</h2><p>invokeSync 方法首先执行  RPCBefore 钩子，类似 Spring 的各种 Bean 扩展组件，然后就是对超时进行判断。可以看到，每个方法几乎都有对超时的判断，超时判断和超时处理在分布式场景非常重要。</p>
+<p>然后根据 addr 找到对应的 Socket Channel。然后执行 invokeSyncImpl 方法。</p>
+<p>这里其实和其他大部分的 RPC 框架都是类似的了，生产一个永远自增的 Request ID，创建一个 Feature 对象，和这个 ID 绑定，方便 Netty 返回数据对这个 ID 对应的线程进行唤醒。<br>然后调用 Netty 的 writeAndFlush 方法，将数据写进 Socket，同时添加一个监听器，如果发送失败，唤醒当前线程。</p>
+<p>发送完毕之后，当前线程进行等待，使用 CountDownLatch.wait 方法实现，当 Netty 返回数据时，使用 CountDownLatch.countDown 进行唤醒，然后返回从 Broker 写入的结果，可能成功，也可能失败，需要到上层（Client 层）解析，网络层只负责网络的事情。</p>
+<p>我们知道， Netty 会使用 Handler 处理出去的数据和返回的数据，我们看看 Client 端 Netty 有哪些 Handler.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Bootstrap</span> <span class="variable">handler</span> <span class="operator">=</span> <span class="built_in">this</span>.bootstrap.group(<span class="built_in">this</span>.eventLoopGroupWorker).channel(NioSocketChannel.class)</span><br><span class="line">            .option(ChannelOption.TCP_NODELAY, <span class="literal">true</span>)</span><br><span class="line">            .option(ChannelOption.SO_KEEPALIVE, <span class="literal">false</span>)</span><br><span class="line">            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, nettyClientConfig.getConnectTimeoutMillis())</span><br><span class="line">            .option(ChannelOption.SO_SNDBUF, nettyClientConfig.getClientSocketSndBufSize())</span><br><span class="line">            .option(ChannelOption.SO_RCVBUF, nettyClientConfig.getClientSocketRcvBufSize())</span><br><span class="line">            .handler(<span class="keyword">new</span> <span class="title class_">ChannelInitializer</span>&lt;SocketChannel&gt;() &#123;</span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">initChannel</span><span class="params">(SocketChannel ch)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">                    <span class="type">ChannelPipeline</span> <span class="variable">pipeline</span> <span class="operator">=</span> ch.pipeline();</span><br><span class="line">                    <span class="keyword">if</span> (nettyClientConfig.isUseTLS()) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (<span class="literal">null</span> != sslContext) &#123;</span><br><span class="line">                            pipeline.addFirst(defaultEventExecutorGroup, <span class="string">&quot;sslHandler&quot;</span>, sslContext.newHandler(ch.alloc()));</span><br><span class="line">                            log.info(<span class="string">&quot;Prepend SSL handler&quot;</span>);</span><br><span class="line">                        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                            log.warn(<span class="string">&quot;Connections are insecure as SSLContext is null!&quot;</span>);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    pipeline.addLast(</span><br><span class="line">                        defaultEventExecutorGroup,</span><br><span class="line">                        <span class="keyword">new</span> <span class="title class_">NettyEncoder</span>(),</span><br><span class="line">                        <span class="keyword">new</span> <span class="title class_">NettyDecoder</span>(),</span><br><span class="line">                        <span class="keyword">new</span> <span class="title class_">IdleStateHandler</span>(<span class="number">0</span>, <span class="number">0</span>, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()),</span><br><span class="line">                        <span class="keyword">new</span> <span class="title class_">NettyConnectManageHandler</span>(),</span><br><span class="line">                        <span class="keyword">new</span> <span class="title class_">NettyClientHandler</span>());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br></pre></td></tr></table></figure>
+
+
+<p>我们看到，这里使用了一个 Encoder，Decoder，空闲处理器，连接管理器，ClientHandler。</p>
+<p>XXCoder 就是对 Cmd 对象进行序列化和反序列化的。这里的空闲使用的读写最大空闲时间为 120s，超过这个，就会触发空闲事件。RMQ 就会关闭 Channel 连接。而针对空闲事件进行处理的就是连接管理器了。</p>
+<p>连接管理器处理空闲、Close、Connect、异常等事件，使用监听器模式，不同的监听器对不同的事件进行处理。另外，这里也许可以借鉴 EventBus，每个事件可以设置多个监听器。</p>
+<h2 id="如何处理返回值"><a href="#如何处理返回值" class="headerlink" title="如何处理返回值"></a>如何处理返回值</h2><p>我们看了 RMQ 中 Netty 的设计，再看看返回值处理就简单了，NettyClientHandler 会在 channelRead0 方法处理 Netty Server 的返回值。对应 RMQ，则是 processMessageReceived 方法。该方法很简洁：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processMessageReceived</span><span class="params">(ChannelHandlerContext ctx, RemotingCommand msg)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="type">RemotingCommand</span> <span class="variable">cmd</span> <span class="operator">=</span> msg;</span><br><span class="line">        <span class="keyword">if</span> (cmd != <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">switch</span> (cmd.getType()) &#123;</span><br><span class="line">                <span class="keyword">case</span> REQUEST_COMMAND:</span><br><span class="line">                    processRequestCommand(ctx, cmd);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> RESPONSE_COMMAND:</span><br><span class="line">                    processResponseCommand(ctx, cmd);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">default</span>:</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;    </span><br></pre></td></tr></table></figure>
+
+<p>其实，这是一个模板方法，固定算法，由子类实现，分为 Request 实现和 Response 实现。我们看看 Response 实现。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processResponseCommand</span><span class="params">(ChannelHandlerContext ctx, RemotingCommand cmd)</span> &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="type">int</span> <span class="variable">opaque</span> <span class="operator">=</span> cmd.getOpaque();</span><br><span class="line">        <span class="comment">// 找到 Response .</span></span><br><span class="line">        <span class="keyword">final</span> <span class="type">ResponseFuture</span> <span class="variable">responseFuture</span> <span class="operator">=</span> responseTable.get(opaque);</span><br><span class="line">        <span class="keyword">if</span> (responseFuture != <span class="literal">null</span>) &#123;</span><br><span class="line">            responseFuture.setResponseCommand(cmd);</span><br><span class="line"></span><br><span class="line">            responseTable.remove(opaque);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (responseFuture.getInvokeCallback() != <span class="literal">null</span>) &#123;</span><br><span class="line">                executeInvokeCallback(responseFuture);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;<span class="comment">// 返回结果</span></span><br><span class="line">                responseFuture.putResponse(cmd);</span><br><span class="line">                responseFuture.release();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            log.warn(<span class="string">&quot;receive response, but not matched any request, &quot;</span> + RemotingHelper.parseChannelRemoteAddr(ctx.channel()));</span><br><span class="line">            log.warn(cmd.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里，通过 cmd 对象的 Request ID 找到 Feature,执行 responseFuture.putResponse，设置返回值，唤醒阻塞等待的发送线程。这里还有一个 release 调用，这个和异步发送有关，默认最大同时 65535 个异步请求，具体就不展开了。</p>
+<p>好，到这里，唤醒阻塞的发送线程，返回数据，客户端层面的发送就结束了，我们小结一下。根据模块层次，我们记录一下 sendMessage 的过程：</p>
+<p><img src="/img/2019/05/09/img_2.png" srcset="/img/loading.gif" lazyload></p>
+<p>层次还是比较清晰的。</p>
+<p>我们再来看看 Server 端如何处理一条消息的。</p>
+<h2 id="Broker-Server-处理消息流程"><a href="#Broker-Server-处理消息流程" class="headerlink" title="Broker Server 处理消息流程"></a>Broker Server 处理消息流程</h2><p>从哪里入手呢？</p>
+<p>我们上面看源码，看到有个 SEND_MESSAGE Code，是 Client 和  Broker Server 的一个约定代码，我们看看这个代码在哪里用的。</p>
+<p>在 broker 模块的 BrokerController 类中，有个 registerProcessor 方法，会将 SEND_MESSAGE Code 和一个 SendMessageProcessor 对象绑定。</p>
+<p>这一步我们停一下，再去看看 netty Server 端的 Handler。</p>
+<p>NettyRemotingServer 是处理 Request 的类，他的 ServerBootstrap 会在 pipeline 中添加一个 NettyServerHandler 处理器，这个处理器的 channelRead0 方法会调用 NettyRemotingServer 的父类 processMessageReceived 方法。</p>
+<p>这个方法会从 processorTable 里，根据 Cmd Code，也就是 SEND_MESSAGE 获取对应的 Processor， Processor 由 2 部分组成，一部分是处理数据的对象，一部分是这个对象所对应的线程池。用于异步处理逻辑，防止阻塞 Netty IO 线程。</p>
+<p>关键代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">doBeforeRpcHooks(RemotingHelper.parseChannelRemoteAddr(ctx.channel()), cmd);</span><br><span class="line"><span class="keyword">final</span> <span class="type">RemotingCommand</span> <span class="variable">response</span> <span class="operator">=</span> pair.getObject1().processRequest(ctx, cmd);<span class="comment">// 处理.</span></span><br><span class="line">doAfterRpcHooks(RemotingHelper.parseChannelRemoteAddr(ctx.channel()), cmd, response);</span><br></pre></td></tr></table></figure>
+
+<p>前后都是执行一些钩子，例如 ACL 啥的。</p>
+<p>这里我们小结一下，RMQ 会有一个 BrokerController 类，会注册 Code 和 Processor 的绑定关系，BrokerController 也会把这些绑定，注册到 Netty Server 中，当 Netty Server 从 Socket 收到 Cmd 对象，根据 Cmd 对象的 Code，就可以找到对应 Processor 类，对数据进行处理。</p>
+<p>中间是处理 Request 请求的。这个 processRequest 方法，有很多的实现，如下图，我们主要看 SendMessageProcessor 的实现。</p>
+<p><img src="/img/2019/05/09/img_3.png" srcset="/img/loading.gif" lazyload></p>
+<p>SendMessageProcessor # sendMessage 是处理消息的主要逻辑。</p>
+<p>关键代码：<br>putMessageResult = this.brokerController.getMessageStore().putMessage(msgInner);</p>
+<p>消息存储引擎，这里我们看 DefaultMessageStore 的 putMessage 实现。</p>
+<p>首先一堆校验。注意，其中有一个地方：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="built_in">this</span>.isOSPageCacheBusy()) &#123;<span class="comment">// 检查 mmp 忙不忙.</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">PutMessageResult</span>(PutMessageStatus.OS_PAGECACHE_BUSY, <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由于 RMQ 写数据是王 PageCache 里面写的，因此，如果写的慢，就是 PageCache 忙，这里忙的标准是，如果锁文件的时间，超过了 1 秒，那就是忙。</p>
+<p>最后调用 PutMessageResult result = this.commitLog.putMessage(msg) 写数据。</p>
+<p>如果耗时超过 500 毫秒，就会打印日志。这样我们排查问题的时候，可以看看 storeStats 的日志。</p>
+<p>看看 commitLog 的 putMessage 方法实现。</p>
+<p>先拿到最新的 MappedFile 文件，MappedFile 文件的命名是用 offset 命名的，一个文件默认 1gb，这个大小和 mmp 的机制有关，通常不能过大。</p>
+<p>然后上锁，这段代码是可以说整个 RMQ Server 的热点区域，</p>
+<p>这里上锁会记录上锁的时间，方便前面做 PageCache Busy 的判断。</p>
+<p>写入代码：</p>
+<p>result = mappedFile.appendMessage(msg, this.appendMessageCallback)</p>
+<p>写完之后，释放锁，如果超过 500 毫秒，打印 cost time 日志。</p>
+<p>统计。</p>
+<p>处理刷盘和slave 同步，这里看刷盘策略和同步策略，是 SYNC 还是 ASYNC。</p>
+<p>经过我的测试，同步刷盘和异步刷盘的性能差距是 10 倍。<br>而 Slave 的数据同步，如果用 SYNC 模式，tps 最高也就 2000 多一丢度，为什么？内网，两台机器 ping 一下都要 0.2 毫秒，一秒最多 5000 次，再加上处理逻辑， 2000 已经到顶了，网络成了瓶颈。</p>
+<p>如果用全异步的话，我的 4c8g 的机器，单机 tps 最高能  2 万多。美滋滋。</p>
+<p>跑题了。</p>
+<p>我们看看  mappedFile.appendMessage 方法的实现。</p>
+<p>一路追踪，有个关键逻辑， 在 appendMessagesInner 里：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="variable">currentPos</span> <span class="operator">=</span> <span class="built_in">this</span>.wrotePosition.get();</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (currentPos &lt; <span class="built_in">this</span>.fileSize) &#123;</span><br><span class="line">    <span class="type">ByteBuffer</span> <span class="variable">byteBuffer</span> <span class="operator">=</span> writeBuffer != <span class="literal">null</span> ? writeBuffer.slice() : <span class="built_in">this</span>.mappedByteBuffer.slice();</span><br><span class="line">    byteBuffer.position(currentPos);</span><br><span class="line">    <span class="type">AppendMessageResult</span> <span class="variable">result</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (messageExt <span class="keyword">instanceof</span> MessageExtBrokerInner) &#123;</span><br><span class="line">        <span class="comment">// 写数据到 缓存</span></span><br><span class="line">        result = cb.doAppend(<span class="built_in">this</span>.getFileFromOffset(), byteBuffer, <span class="built_in">this</span>.fileSize - currentPos, (MessageExtBrokerInner) messageExt);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (messageExt <span class="keyword">instanceof</span> MessageExtBatch) &#123;</span><br><span class="line">        result = cb.doAppend(<span class="built_in">this</span>.getFileFromOffset(), byteBuffer, <span class="built_in">this</span>.fileSize - currentPos, (MessageExtBatch) messageExt);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">AppendMessageResult</span>(AppendMessageStatus.UNKNOWN_ERROR);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">this</span>.wrotePosition.addAndGet(result.getWroteBytes());</span><br><span class="line">    <span class="built_in">this</span>.storeTimestamp = result.getStoreTimestamp();</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>代码中，使用了 mappedFile 从 Linux 映射的 MMap buffer，对数据进行写入。我们看看 doAppend 方法。</p>
+<p>我们可以看到，一条消息有太多的内容：<br>总长度、魔数、CRC 校验、队列 ID、各种 flag、存储时间，物理 offset、存储 IP、时间戳、扩展属性等等。</p>
+<p>最终，这条消息会被写入到 MMap 中。</p>
+<p>那什么时候刷盘呢？</p>
+<p>如果是 SYNC 模式，执行 CommitLog 的 handleDiskFlush 的方法时，就会立刻刷盘并等待刷盘结果。<br>如果是 ASYNC 模式，执行  CommitLog 的 handleDiskFlush 的方法时，会通知异步线程进行刷盘，但不等待结果。</p>
+<p>另外，如果没有新数据，则为 500ms 执行一次刷盘策略。</p>
+<p>简单说下异步刷盘：</p>
+<ol>
+<li>默认刷盘 4 页，Linux 一页是  4kb 数据，4页就是 16kb。</li>
+<li>如果写的数据减去已经刷的数据，剩下的数据大于等于 4 页，就执行刷盘.</li>
+<li>执行 mappedByteBuffer.force() 或者 fileChannel.force(false);</li>
+</ol>
+<p>我们这里小结一下，看看 RMQ Server 处理处理一条消息的：</p>
+<p><img src="/img/2019/05/09/img_4.png" srcset="/img/loading.gif" lazyload></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>来张大图总结一下。</p>
+<p><img src="/img/2019/05/09/img_5.png" srcset="/img/loading.gif" lazyload></p>
+<p>篇幅有限，下篇再一起看看 RMQ 如何消费消息。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Message-Queue/" class="category-chain-item">Message Queue</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>RocketMQ 发送消息（一条消息从发送到存储的过程）</div>
+      <div>http://thinkinjava.cn/2019/05/08/2019/2019-05-09-rmq-sendmsg/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2019年5月8日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2019/05/08/2019/2019-05-09-rmq-busy-exp/" title="RocketMQ 异常分析 [TIMEOUT_CLEAN_QUEUE]broker Busy, Start Flow Control for a Whil">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">RocketMQ 异常分析 [TIMEOUT_CLEAN_QUEUE]broker Busy, Start Flow Control for a Whil</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2019/04/13/2019/2019-04-13-architecture2/" title="软件架构视图介绍">
+                        <span class="hidden-mobile">软件架构视图介绍</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,766 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="Netty-源码剖析之-unSafe-Read-方法">
+<meta property="og:url" content="http://thinkinjava.cn/2018/03/18/2018/2018-03-18-Netty-%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90%E4%B9%8B-unSafe-read-%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-34d07961151497cb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-f6f18e4fac080d3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-db077a19e426423e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-03-17T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.537Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-34d07961151497cb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>Netty-源码剖析之-unSafe-Read-方法 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Netty-源码剖析之-unSafe-Read-方法"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-03-18 02:11" pubdate>
+          2018年3月18日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          31 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Netty-源码剖析之-unSafe-Read-方法</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       目录：
+1. NioSocketChannel$NioSocketChannelUnsafe 的 read 方法
+2. 首先看 ByteBufAllocator
+3. 再看 RecvByteBufAllocator.Handle
+4. 两者如何配合进行内存分配
+5. 如何读取到 ByteBuf
+6. 总结
+
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前的文章 <a target="_blank" rel="noopener" href="https://www.jianshu.com/p/9c1925e24e95">Netty 核心组件 Pipeline 源码分析（二）一个请求的 pipeline 之旅</a>中，我们知道了当客户端请求进来的时候，boss 线程会将 Socket 包装后交给 worker 线程，worker 线程会将这个 Socket 注册 selector  的读事件，当读事件进来的时候，会调用 unsafe 的 read 方法，这个方法的主要作用是读取 Socket 缓冲区的内存，并包装成 Netty 的 ByteBuf 对象，最后传递进 pipeline 中的所有节点完成处理。</p>
+<p>今天，我们就要好好的看看这个 read方法的实现。</p>
+<h2 id="1-NioSocketChannel-NioSocketChannelUnsafe-的-read-方法"><a href="#1-NioSocketChannel-NioSocketChannelUnsafe-的-read-方法" class="headerlink" title="1. NioSocketChannel$NioSocketChannelUnsafe 的 read 方法"></a>1. NioSocketChannel$NioSocketChannelUnsafe 的 read 方法</h2><p>源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">read</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">ChannelConfig</span> <span class="variable">config</span> <span class="operator">=</span> config();</span><br><span class="line">    <span class="keyword">final</span> <span class="type">ChannelPipeline</span> <span class="variable">pipeline</span> <span class="operator">=</span> pipeline();</span><br><span class="line">    <span class="comment">// 用来处理内存的分配:池化或者非池化 UnpooledByteBufAllocator</span></span><br><span class="line">    <span class="keyword">final</span> <span class="type">ByteBufAllocator</span> <span class="variable">allocator</span> <span class="operator">=</span> config.getAllocator();</span><br><span class="line">    <span class="comment">// 用来计算此次读循环应该分配多少内存 AdaptiveRecvByteBufAllocator 自适应计算缓冲分配</span></span><br><span class="line">    <span class="keyword">final</span> RecvByteBufAllocator.<span class="type">Handle</span> <span class="variable">allocHandle</span> <span class="operator">=</span> recvBufAllocHandle();</span><br><span class="line">    allocHandle.reset(config);<span class="comment">// 重置为0</span></span><br><span class="line"></span><br><span class="line">    <span class="type">ByteBuf</span> <span class="variable">byteBuf</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="type">boolean</span> <span class="variable">close</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            byteBuf = allocHandle.allocate(allocator);</span><br><span class="line">            allocHandle.lastBytesRead(doReadBytes(byteBuf));</span><br><span class="line">            <span class="keyword">if</span> (allocHandle.lastBytesRead() &lt;= <span class="number">0</span>) &#123;<span class="comment">// 如果上一次读到的字节数小于等于0，清理引用和跳出循环</span></span><br><span class="line">                <span class="comment">// nothing was read. release the buffer.</span></span><br><span class="line">                byteBuf.release();<span class="comment">// 引用 -1</span></span><br><span class="line">                byteBuf = <span class="literal">null</span>;</span><br><span class="line">                close = allocHandle.lastBytesRead() &lt; <span class="number">0</span>;<span class="comment">// 如果远程已经关闭连接</span></span><br><span class="line">                <span class="keyword">if</span> (close) &#123;</span><br><span class="line">                    <span class="comment">// There is nothing left to read as we received an EOF.</span></span><br><span class="line">                    readPending = <span class="literal">false</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            allocHandle.incMessagesRead(<span class="number">1</span>);<span class="comment">//  totalMessages += amt;</span></span><br><span class="line">            readPending = <span class="literal">false</span>;</span><br><span class="line">            pipeline.fireChannelRead(byteBuf);</span><br><span class="line">            byteBuf = <span class="literal">null</span>;</span><br><span class="line">        &#125; <span class="keyword">while</span> (allocHandle.continueReading());</span><br><span class="line"></span><br><span class="line">        allocHandle.readComplete();</span><br><span class="line">        pipeline.fireChannelReadComplete();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (close) &#123;</span><br><span class="line">            closeOnRead(pipeline);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        handleReadException(pipeline, byteBuf, t, close, allocHandle);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (!readPending &amp;&amp; !config.isAutoRead()) &#123;</span><br><span class="line">            removeReadOp();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>代码很长，怎么办呢？当然是拆解，然后逐个击破。步骤如下：</p>
+<ol>
+<li>获取到 Channel 的 config 对象，并从该对象中获取内存分配器，还有”计算内存分配器”。</li>
+<li>将 <code>计算内存分配器</code> 重置。</li>
+<li>进入一个循环，循环体的作用是：使用内存分配器获取数据容器—–ByteBuf，调用 doReadBytes 方法将数据读取到容器中，如果这次读取什么都没有或远程连接关闭，则跳出循环。还有，如果满足了跳出推荐，也要结束循环，不能无限循环，默认16 次，默认参数来自 AbstractNioByteChannel 的 属性 ChannelMetadata 类型的 METADATA 实例。每读取一次就调用 pipeline 的 channelRead 方法，为什么呢？因为由于 TCP 传输如果包过大的话，丢失的风险会更大，导致重传，所以，大的数据流会分成多次传输。而 channelRead 方法也会被调用多次，因此，使用 channelRead 方法的时候需要注意，如果数据量大，最好将数据放入到缓存中，读取完毕后，再进行处理。</li>
+<li>跳出循环后，调用 <code>allocHandle</code> 的 readComplete 方法，表示读取已完成，并记录读取记录，用于下次分配合理内存。</li>
+<li>调用 pipeline 的方法。</li>
+</ol>
+<p>接下来就一步步看。</p>
+<h2 id="2-首先看-ByteBufAllocator"><a href="#2-首先看-ByteBufAllocator" class="headerlink" title="2. 首先看 ByteBufAllocator"></a>2. 首先看 ByteBufAllocator</h2><p>首先看看这个节点的定义：</p>
+<blockquote>
+<p>  Implementations are responsible to allocate buffers. Implementations of this interface are expected to be hread-safe.<br>实现负责分配缓冲区。这个接口的实现应该是线程安全的。</p>
+</blockquote>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-34d07961151497cb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="定义了如上方法"></p>
+<p>通过这个接口，可以看出来，主要作用是创建 ByteBuf，这个 ByteBuf 是 Netty 用来替代 NIO 的 ByteBuffer 的，是存储数据的缓存区。其中，这个接口有一个默认实现  ByteBufUtil.DEFAULT_ALLOCATOR ：该实现根据配置创建一个 池化或非池化的缓存区分配器。该参数是 <code>io.netty.allocator.type</code>。</p>
+<p>同时，由于很多方法都是重载的，那就说说上面的主要方法作用：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">buffer() <span class="comment">// 返回一个 ByteBuf 对象，默认直接内存。如果平台不支持，返回堆内存。</span></span><br><span class="line">heapBuffer（）<span class="comment">// 返回堆内存缓存区</span></span><br><span class="line">directBuffer（）<span class="comment">// 返回直接内存缓冲区</span></span><br><span class="line">compositeBuffer（） <span class="comment">// 返回一个复合缓冲区。可能同时包含堆内存和直接内存。</span></span><br><span class="line">ioBuffer（） <span class="comment">// 当当支持 Unsafe 时，返回直接内存的 Bytebuf，否则返回返回基于堆内存，当使用 PreferHeapByteBufAllocator 时返回堆内存</span></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+<h2 id="3-再看-RecvByteBufAllocator-Handle"><a href="#3-再看-RecvByteBufAllocator-Handle" class="headerlink" title="3. 再看 RecvByteBufAllocator.Handle"></a>3. 再看 RecvByteBufAllocator.Handle</h2><p>首先看这个接口：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-f6f18e4fac080d3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>上图中， Handle 是 RecvByteBufAllocator 的内部接口。而 RecvByteBufAllocator 是如何定义的呢？</p>
+<blockquote>
+<p> Creates a new handle.  The handle provides the actual operations and keeps the internal information which is required for predicting an optimal buffer capacity.<br>创建一个新的句柄。句柄提供了实际操作，并保留了用于预测最佳缓冲区容量所需的内部信息。</p>
+</blockquote>
+<p>该接口只定义了一个方法：newHandle（）。</p>
+<p>而 handle 的作用是什么呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">ByteBuf <span class="title function_">allocate</span><span class="params">(ByteBufAllocator alloc)</span>;<span class="comment">//创建一个新的接收缓冲区，其容量可能大到足以读取所有入站数据和小到数据足够不浪费它的空间。</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">guess</span><span class="params">()</span>;<span class="comment">// 猜测所需的缓冲区大小，不进行实际的分配</span></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">reset</span><span class="params">(ChannelConfig config)</span>;<span class="comment">// 每次开始读循环之前，重置相关属性</span></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">incMessagesRead</span><span class="params">(<span class="type">int</span> numMessages)</span>;<span class="comment">// 增加本地读循环的次数</span></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">lastBytesRead</span><span class="params">(<span class="type">int</span> bytes)</span>; <span class="comment">// 设置最后一次读到的字节数</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">lastBytesRead</span><span class="params">()</span>; <span class="comment">// 最后一次读到的字节数</span></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">attemptedBytesRead</span><span class="params">(<span class="type">int</span> bytes)</span>; <span class="comment">// 设置读操作尝试读取的字节数</span></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">attemptedBytesRead</span><span class="params">()</span>; <span class="comment">// 获取尝试读取的字节数</span></span><br><span class="line"><span class="type">boolean</span> <span class="title function_">continueReading</span><span class="params">()</span>; <span class="comment">// 判断是否需要继续读</span></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">readComplete</span><span class="params">()</span>; <span class="comment">// 读结束后调用</span></span><br></pre></td></tr></table></figure>
+<p>从上面的方法中，可以看出，该接口的主要作用就是计算字节数，如同 RecvByteBufAllocator 的文档说的那样，根据预测和计算最佳大小的缓存区，确保不浪费。</p>
+<h2 id="4-两者如何配合进行内存分配"><a href="#4-两者如何配合进行内存分配" class="headerlink" title="4. 两者如何配合进行内存分配"></a>4. 两者如何配合进行内存分配</h2><p>在默认的 config （NioSocketChannelConfig）中，allocator 来自 ByteBufAllocator 接口的默认实例，allocHandle 来自 AdaptiveRecvByteBufAllocator 自适应循环缓存分配器 的内部类 HandleImpl。</p>
+<p>好，知道了他们的默认实现，我们一个方法看看。</p>
+<p>首先看 reset 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">reset</span><span class="params">(ChannelConfig config)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.config = config;</span><br><span class="line">    maxMessagePerRead = maxMessagesPerRead();</span><br><span class="line">    totalMessages = totalBytesRead = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>设置了上次获取的最大消息读取次数（默认16），将之前计算的读取消息总数归零。该方法如同他的名字，归零重置。</p>
+<p>再看看 allocHandle.allocate(allocator) 方法的实现。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> ByteBuf <span class="title function_">allocate</span><span class="params">(ByteBufAllocator alloc)</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> alloc.ioBuffer(guess());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们刚刚说的 ioBuffer 方法，该方法默认返回直接内存缓冲区。而 guess() 方法返回一个猜测的大小，一个 nextReceiveBufferSize 属性，默认 1024，也就是说，默认创建一个 1024 大小的直接内存缓冲区。这个值的设定来自 HandleImpl 的构造方法，存储在一个 SIZE_TABLE 的数组中。</p>
+<p>我们还是看看 RecvByteBufAllocator 的实现类 AdaptiveRecvByteBufAllocator 的具体内容吧</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">DEFAULT_MINIMUM</span> <span class="operator">=</span> <span class="number">64</span>; <span class="comment">// 缓存区最小值</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">DEFAULT_INITIAL</span> <span class="operator">=</span> <span class="number">1024</span>; <span class="comment">// 缓冲区初始值</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">DEFAULT_MAXIMUM</span> <span class="operator">=</span> <span class="number">65536</span>; <span class="comment">// 缓冲区最大值</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">INDEX_INCREMENT</span> <span class="operator">=</span> <span class="number">4</span>;<span class="comment">// 当发现缓存过小，数组下标自增值</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">INDEX_DECREMENT</span> <span class="operator">=</span> <span class="number">1</span>;<span class="comment">// 当发现缓冲区过大，数组下标自减值</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span>[] SIZE_TABLE;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> &#123;</span><br><span class="line">    List&lt;Integer&gt; sizeTable = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;Integer&gt;();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">16</span>; i &lt; <span class="number">512</span>; i += <span class="number">16</span>) &#123;</span><br><span class="line">        sizeTable.add(i);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">512</span>; i &gt; <span class="number">0</span>; i &lt;&lt;= <span class="number">1</span>) &#123;</span><br><span class="line">        sizeTable.add(i);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    SIZE_TABLE = <span class="keyword">new</span> <span class="title class_">int</span>[sizeTable.size()];</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; SIZE_TABLE.length; i ++) &#123;</span><br><span class="line">        SIZE_TABLE[i] = sizeTable.get(i);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>楼主在上面的代码中写了注释，这个 SIZE_TABLE 的作用是存储缓存区大小的一个 int 数组，从 static 块中可以看到，这个数组从16开始，同时递增16，直到值到了 512，也就是下标 31 的地方，递增策略变为了 每次 * 2，直到溢出。最终的数组长度为 53。而对应的值接近 int 最大值。</p>
+<p>好，回到 allocate 方法中，进入到 ioBuffer 方法查看：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> ByteBuf <span class="title function_">ioBuffer</span><span class="params">(<span class="type">int</span> initialCapacity)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (PlatformDependent.hasUnsafe()) &#123;</span><br><span class="line">        <span class="keyword">return</span> directBuffer(initialCapacity);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> heapBuffer(initialCapacity);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断，如果平台支持 unSafe，就使用直接内存，否则使用堆内存，初始大小就是我们刚刚说的 1024。而这个判断的标准是：如果尝试获取 Unsafe 的时候有异常了，则赋值给一个  UNSAFE_UNAVAILABILITY_CAUSE 对象，否则赋值为 null，Netty 通过这个判 Null 确认平台是否支持 Unsafe。</p>
+<p>我们继续看看 directBuffer 方法的实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">public</span> ByteBuf <span class="title function_">directBuffer</span><span class="params">(<span class="type">int</span> initialCapacity)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> directBuffer(initialCapacity, DEFAULT_MAX_CAPACITY);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// </span></span><br><span class="line"><span class="keyword">public</span> ByteBuf <span class="title function_">directBuffer</span><span class="params">(<span class="type">int</span> initialCapacity, <span class="type">int</span> maxCapacity)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (initialCapacity == <span class="number">0</span> &amp;&amp; maxCapacity == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> emptyBuf;</span><br><span class="line">    &#125;</span><br><span class="line">    validate(initialCapacity, maxCapacity);</span><br><span class="line">    <span class="keyword">return</span> newDirectBuffer(initialCapacity, maxCapacity);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// </span></span><br><span class="line"><span class="keyword">protected</span> ByteBuf <span class="title function_">newDirectBuffer</span><span class="params">(<span class="type">int</span> initialCapacity, <span class="type">int</span> maxCapacity)</span> &#123;</span><br><span class="line">    <span class="keyword">final</span> ByteBuf buf;</span><br><span class="line">    <span class="keyword">if</span> (PlatformDependent.hasUnsafe()) &#123;</span><br><span class="line">        buf = noCleaner ? <span class="keyword">new</span> <span class="title class_">InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf</span>(<span class="built_in">this</span>, initialCapacity, maxCapacity) :</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">InstrumentedUnpooledUnsafeDirectByteBuf</span>(<span class="built_in">this</span>, initialCapacity, maxCapacity);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        buf = <span class="keyword">new</span> <span class="title class_">InstrumentedUnpooledDirectByteBuf</span>(<span class="built_in">this</span>, initialCapacity, maxCapacity);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> disableLeakDetector ? buf : toLeakAwareBuffer(buf);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>由于方法层层递进，楼主将代码合在一起，最终调用的是 newDirectBuffer，根据 noCleaner 参数决定创建一个 ByteBuf，这个属性怎么来的呢？当 unsafe 不是 null 的时候，会尝试获取 DirectByteBuffer 的构造器，如果成功获取，则 noCleaner 属性为 true。</p>
+<p>这个 noCleaner  属性的详细介绍请看这里<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/5b0395d513fc">Netty 内存回收之 noCleaner 策略</a>.</p>
+<p>默认情况下就是 true，那么，也就是创建了一个 InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf 对象，该对象构造如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">@<span class="number">1</span></span><br><span class="line">InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf(</span><br><span class="line">        UnpooledByteBufAllocator alloc, <span class="type">int</span> initialCapacity, <span class="type">int</span> maxCapacity) &#123;</span><br><span class="line">    <span class="built_in">super</span>(alloc, initialCapacity, maxCapacity);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@<span class="number">2</span></span><br><span class="line">UnpooledUnsafeNoCleanerDirectByteBuf(ByteBufAllocator alloc, <span class="type">int</span> initialCapacity, <span class="type">int</span> maxCapacity) &#123;</span><br><span class="line">    <span class="built_in">super</span>(alloc, initialCapacity, maxCapacity);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@<span class="number">3</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">UnpooledUnsafeDirectByteBuf</span><span class="params">(ByteBufAllocator alloc, <span class="type">int</span> initialCapacity, <span class="type">int</span> maxCapacity)</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>(maxCapacity);</span><br><span class="line">    <span class="keyword">if</span> (alloc == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NullPointerException</span>(<span class="string">&quot;alloc&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (initialCapacity &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;initialCapacity: &quot;</span> + initialCapacity);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (maxCapacity &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;maxCapacity: &quot;</span> + maxCapacity);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (initialCapacity &gt; maxCapacity) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(String.format(</span><br><span class="line">                <span class="string">&quot;initialCapacity(%d) &gt; maxCapacity(%d)&quot;</span>, initialCapacity, maxCapacity));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">this</span>.alloc = alloc;</span><br><span class="line">    setByteBuffer(allocateDirect(initialCapacity), <span class="literal">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@<span class="number">4</span></span><br><span class="line"><span class="keyword">static</span> ByteBuffer <span class="title function_">newDirectBuffer</span><span class="params">(<span class="type">long</span> address, <span class="type">int</span> capacity)</span> &#123;</span><br><span class="line">    ObjectUtil.checkPositiveOrZero(capacity, <span class="string">&quot;capacity&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> (ByteBuffer) DIRECT_BUFFER_CONSTRUCTOR.newInstance(address, capacity);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>最终使用了 DirectByteBuffer  的构造器进行反射创建。而这个构造器是没有默认的 new 创建的 Cleaner 对象的。因此称为 noCleaner。</p>
+<p>创建完毕后，调用 setByteBuffer ，将这个 DirectByteBuffer  包装一下。</p>
+<p>回到 newDirectBuffer 方法。</p>
+<p>最后根据 disableLeakDetector 属性判断释放进行自动内存回收（也就是当你忘记回收的时候，帮你回收），原理这里简单的说一下，使用虚引用进行跟踪。 FastThreadLocal 的内存回收类似。我们将在以后的文章中详细说明此策略。</p>
+<p>到这里，创建 ByteBuf 的过程就结束了。</p>
+<p>可以说，大部分工作都是 allocator 做的，allocHandle 的作用就是提供了如何分配一个合理的内存的策略。</p>
+<h2 id="5-如何读取到-ByteBuf"><a href="#5-如何读取到-ByteBuf" class="headerlink" title="5. 如何读取到 ByteBuf"></a>5. 如何读取到 ByteBuf</h2><p>回到 read 方法，doReadBytes(byteBuf) 就是将 Channel 的内容读取到容器中，并返回一个读取到的字节数。</p>
+<p>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="type">int</span> <span class="title function_">doReadBytes</span><span class="params">(ByteBuf byteBuf)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="keyword">final</span> RecvByteBufAllocator.<span class="type">Handle</span> <span class="variable">allocHandle</span> <span class="operator">=</span> unsafe().recvBufAllocHandle();</span><br><span class="line">    allocHandle.attemptedBytesRead(byteBuf.writableBytes());</span><br><span class="line">    <span class="keyword">return</span> byteBuf.writeBytes(javaChannel(), allocHandle.attemptedBytesRead());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>获取到 <code>内存预估器</code>，设置一个 attemptedBytesRead 属性为 ByteBuf 的可写字节数。这个参数可用于后面分配内存时的一些考量。</p>
+<p>然后调用 byteBuf.writeBytes（）方法。传入了 NIO 的 channel，还有刚刚的可写字节数。进入到该方法查看：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">@<span class="number">1</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">writeBytes</span><span class="params">(ScatteringByteChannel in, <span class="type">int</span> length)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    ensureWritable(length);</span><br><span class="line">    <span class="type">int</span> <span class="variable">writtenBytes</span> <span class="operator">=</span> setBytes(writerIndex, in, length);</span><br><span class="line">    <span class="keyword">if</span> (writtenBytes &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        writerIndex += writtenBytes;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> writtenBytes;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>首先对长度进行校验，确保可写长度大于0，如果被并发了导致容量不够，将这个底层的 ByteBuffer 的容量增加传入的长度。</p>
+<p>关于 ByteBuf 的 wirteIndex ，如下图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-db077a19e426423e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>回到 writeBytes 方法，调用 setBytes 方法，将流中输入写入到缓冲区。方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">setBytes</span><span class="params">(<span class="type">int</span> index, ScatteringByteChannel in, <span class="type">int</span> length)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    ensureAccessible();</span><br><span class="line">    <span class="type">ByteBuffer</span> <span class="variable">tmpBuf</span> <span class="operator">=</span> internalNioBuffer();</span><br><span class="line">    tmpBuf.clear().position(index).limit(index + length);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> in.read(tmpBuf);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (ClosedChannelException ignored) &#123;</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>非常熟悉的 NIO 操作。</p>
+<p>首先获取到内部 ByteBuffer 的共享缓冲区，赋值给临时的 tmpNioBuf 属性。然后返回这个引用。将这个引用清空，并将指针移动到给定 index 为止，然后 limit 方法设置缓存区大小。</p>
+<p>最后调用 Channel 的 read 方法，将Channel 数据读入到 ByteBuffer 中。读的过程时线程安全的，内部使用了 synchronized 关键字控制写入 buffer 的过程。返回了读到的字节数。</p>
+<p>回到 writeBytes 方法，得到字节数之后，将这个字节数追加到 writerIndex 属性，表示可写字节变小了。</p>
+<p>回到 read 方法。allocHandle 得到读取到的字节数，调用 lastBytesRead 方法，该方法的作用时调整下一次分配内存的大小。进入到该方法查看：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">lastBytesRead</span><span class="params">(<span class="type">int</span> bytes)</span> &#123;</span><br><span class="line">    <span class="comment">// If we read as much as we asked for we should check if we need to ramp up the size of our next guess.</span></span><br><span class="line">    <span class="comment">// This helps adjust more quickly when large amounts of data is pending and can avoid going back to</span></span><br><span class="line">    <span class="comment">// the selector to check for more data. Going back to the selector can add significant latency for large</span></span><br><span class="line">    <span class="comment">// data transfers.</span></span><br><span class="line">    <span class="keyword">if</span> (bytes == attemptedBytesRead()) &#123;</span><br><span class="line">        record(bytes);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">super</span>.lastBytesRead(bytes);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Netty 写了注释：</p>
+<blockquote>
+<p>如果我们读的内容和我们要求的一样多，我们应该检查一下是否需要增加下一个猜测的大小。<br>这有助于在等待大量数据时更快地进行调整，并且可以避免返回选择器以检查更多数据。回到选择器可以为大型数据传输添加显著的延迟。</p>
+</blockquote>
+<p>当获取的字节数和预估的一样大，则需要进行扩容。看看 record 方法实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">record</span><span class="params">(<span class="type">int</span> actualReadBytes)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (actualReadBytes &lt;= SIZE_TABLE[max(<span class="number">0</span>, index - INDEX_DECREMENT - <span class="number">1</span>)]) &#123;</span><br><span class="line">        <span class="keyword">if</span> (decreaseNow) &#123;</span><br><span class="line">            index = max(index - INDEX_DECREMENT, minIndex);</span><br><span class="line">            nextReceiveBufferSize = SIZE_TABLE[index];</span><br><span class="line">            decreaseNow = <span class="literal">false</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            decreaseNow = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (actualReadBytes &gt;= nextReceiveBufferSize) &#123;</span><br><span class="line">        index = min(index + INDEX_INCREMENT, maxIndex);</span><br><span class="line">        nextReceiveBufferSize = SIZE_TABLE[index];</span><br><span class="line">        decreaseNow = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果实际读取到的字节数小于等于预估的字节 下标 - 2（排除2以下），则将容量缩小一个下标。如果实际读取到的字节数大于等于预估的。则将下标增加 4，下次创建的 Buffer 容量也相应增加。如果不满足这两个条件，什么都不做。</p>
+<p>回答 lastBytesRead 方法，该方法记录了读取到的总字节数并且更新了最后一次的读取字节数。总字节数会用来判断是否可以结束读取循环。如果什么都没有读到，将最多持续到读 16（默认） 次。</p>
+<p>回到 read 方法。</p>
+<p>如果最后一次读取到字节数小于等于0，跳出循环，不做 channelRead 操作。<br>反之，将 totalMessages 加1，这个就是用来记录循环次数，判断不能超过 16次。</p>
+<p>调用 fireChannelRead 方法，方法结束后，将这个 Buffer 的引用置为null，</p>
+<p>判断是否需要继续读取，带入如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">continueReading</span><span class="params">(UncheckedBooleanSupplier maybeMoreDataSupplier)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> config.isAutoRead() &amp;&amp;</span><br><span class="line">           (!respectMaybeMoreData || maybeMoreDataSupplier.get()) &amp;&amp;</span><br><span class="line">           totalMessages &lt; maxMessagePerRead &amp;&amp;</span><br><span class="line">           totalBytesRead &gt; <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>几个条件：</p>
+<ol>
+<li>首先是否自动读取。</li>
+<li>且猜测是否还有更多数据，如果实际读取的和预估的一致，说明可能还有数据没读，需要再次循环。</li>
+<li>如果读取次数为达到 16 次，继续读取。</li>
+<li>如果读取到的总数大于0，说明有数据，继续读取。</li>
+</ol>
+<p>这里的循环的主要原因就像我们刚刚说的，TCP 传输过大数据容易丢包（带宽限制），因此会将大包分好几次传输，还有就是可能预估的缓冲区不够大，没有充分读取 Channel 的内容。</p>
+<h2 id="6-总结"><a href="#6-总结" class="headerlink" title="6. 总结"></a>6. 总结</h2><p>从 <code>NioSocketChannel$NioSocketChannelUnsafe</code> 的实现看 read 方法。每个 ByteBuf 都会由一个 Config 实例中的 ByteBufAllocator 对象创建，池化或非池化，直接内存或堆内存，这些都根据系统是否支持或参数设置，底层使用的是 NIO 的 API。今天我们看的是非池化的直接内存。同时，为了节省内存，为每个 ByteBufAllocator  配置了一个 handle，用于计算和预估缓冲区大小。</p>
+<p>还有一个需要注意的地方就是 noCleaner 策略。这是 Netty 的一个优化。针对默认的直接内存创建和销毁做了优化——–不使用 JDK 的 cleaner 策略。</p>
+<p>最终读取数据到封装了 NIO ByteBuffer 实例的 Netty 的 ByteBuf 中，其中，如果数据量超过 1024，则会读取超过两次，但最多不超过 16 次， 这个次数可以设置，也就是说，可能会调用超过2次 fireChannelRead 方法，使用的时候需要注意（存起来一起在 ChannelReadComplete 使用之类的方法）。</p>
+<p>好，关于 Netty 读取 Socket 数据到容器中的逻辑，就到这里。</p>
+<p>good luck！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Netty/" class="category-chain-item">Netty</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Netty-源码剖析之-unSafe-Read-方法</div>
+      <div>http://thinkinjava.cn/2018/03/18/2018/2018-03-18-Netty-源码剖析之-unSafe-read-方法/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年3月18日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/03/18/2018/2018-03-18-Netty-%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6%E4%B9%8B-noCleaner-%E7%AD%96%E7%95%A5/" title="Netty-内存回收之-noCleaner-策略">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Netty-内存回收之-noCleaner-策略</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/03/16/2018/2018-03-16-Netty-%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%9A%84%E6%80%9D%E8%80%83------%E8%80%97%E6%97%B6%E4%B8%9A%E5%8A%A1%E5%88%B0%E5%BA%95%E8%AF%A5%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86/" title="Netty-源码阅读的思考------耗时业务到底该如何处理">
+                        <span class="hidden-mobile">Netty-源码阅读的思考------耗时业务到底该如何处理</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

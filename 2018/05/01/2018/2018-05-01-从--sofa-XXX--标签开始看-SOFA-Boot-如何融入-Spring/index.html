@@ -1,0 +1,702 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="从--Sofa-XXX--标签开始看-SOFA-Boot-如何融入-Spring">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/01/2018/2018-05-01-%E4%BB%8E--sofa-XXX--%E6%A0%87%E7%AD%BE%E5%BC%80%E5%A7%8B%E7%9C%8B-SOFA-Boot-%E5%A6%82%E4%BD%95%E8%9E%8D%E5%85%A5-Spring/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-03c5b80b0b9be698.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-bcc952b2247a1059.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-04-30T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.542Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-03c5b80b0b9be698.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>从--Sofa-XXX--标签开始看-SOFA-Boot-如何融入-Spring - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="从--Sofa-XXX--标签开始看-SOFA-Boot-如何融入-Spring"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-05-01 02:11" pubdate>
+          2018年5月1日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          15 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">从--Sofa-XXX--标签开始看-SOFA-Boot-如何融入-Spring</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 前言
+
+<p>SOFA-Boot  现阶段支持 XML 的方式在 Spring 中定义 Bean，通过这些标签，我们就能从 Spring 容器中取出 RPC 中的引用，并进行调用，那么他是如何处理这些自定义标签的呢？一起来看看。</p>
+<h2 id="如何使用？"><a href="#如何使用？" class="headerlink" title="如何使用？"></a>如何使用？</h2><p>官方例子：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://www.springframework.org/schema/beans&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:sofa</span>=<span class="string">&quot;http://sofastack.io/schema/sofaboot&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:context</span>=<span class="string">&quot;http://www.springframework.org/schema/context&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd</span></span></span><br><span class="line"><span class="string"><span class="tag">            http://sofastack.io/schema/sofaboot   http://sofastack.io/schema/sofaboot.xsd&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">default-autowire</span>=<span class="string">&quot;byName&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;personServiceImpl&quot;</span> <span class="attr">class</span>=<span class="string">&quot;com.alipay.sofa.boot.examples.demo.rpc.bean.PersonServiceImpl&quot;</span>/&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">sofa:service</span> <span class="attr">ref</span>=<span class="string">&quot;personServiceImpl&quot;</span> <span class="attr">interface</span>=<span class="string">&quot;com.alipay.sofa.boot.examples.demo.rpc.bean.PersonService&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">sofa:binding.bolt</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">sofa:binding.rest</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">sofa:service</span>&gt;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">sofa:reference</span> <span class="attr">id</span>=<span class="string">&quot;personReferenceBolt&quot;</span> <span class="attr">interface</span>=<span class="string">&quot;com.alipay.sofa.boot.examples.demo.rpc.bean.PersonService&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">sofa:binding.bolt</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">sofa:reference</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">sofa:reference</span> <span class="attr">id</span>=<span class="string">&quot;personReferenceRest&quot;</span> <span class="attr">interface</span>=<span class="string">&quot;com.alipay.sofa.boot.examples.demo.rpc.bean.PersonService&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">sofa:binding.rest</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">sofa:reference</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;personFilter&quot;</span> <span class="attr">class</span>=<span class="string">&quot;com.alipay.sofa.boot.examples.demo.rpc.bean.PersonServiceFilter&quot;</span>/&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>显眼的 sofa 标签。那么如何知道他是怎么处理这些标签的内容的呢？</p>
+<p>答：从上面的 xmlns 命名空间可以找到。如果写过自定义标签的话，一定很熟悉了。</p>
+<p>如果没有写过的话，就简单介绍一下。Spring 支持用户自定标签，需要遵守以下规范。</p>
+<ol>
+<li><p>编写 xsd 文件，就是定义标签的属性。</p>
+</li>
+<li><p>继承抽象类 <code>NamespaceHandlerSupport</code> 并实现 init 方法，此类就是处理命名空间的类，不仅需要实现 init 方法，你还需要继承 <code>AbstractSingleBeanDefinitionParser</code> 类，自行解析标签。通常写法是这样：<br><code>registerBeanDefinitionParser(&quot;tagName&quot;,new UserBeanDefinitionParser());</code></p>
+</li>
+<li><p>在做完上面的步骤后，你需要在 META-INF 目录下编写 <code>spring.handlers</code> 和 <code>spring.schemas</code> 文件，前者 key 为命名空间名称，value 为 <code>NamespaceHandlerSupport</code> 的具体实现；后者 key 为 xsd 命名空间，value 为 xsd 具体文件（classpath 下）。</p>
+</li>
+</ol>
+<p>完成上面的步骤后，Spring 在加载 xml 配置文件的时候，会检查命名空间，如果是自定义的，则会根据命名空间的 key 找到对应的解析器，也就是 <code>NamespaceHandlerSupport</code> 对自定义标签进行解析。</p>
+<p>So，我们的目的是看 sofa 标签是如何解析的，则找到解析 sofa 的<code>NamespaceHandlerSupport</code>。</p>
+<h2 id="寻找解析-sofa-标签的源头"><a href="#寻找解析-sofa-标签的源头" class="headerlink" title="寻找解析 sofa 标签的源头"></a>寻找解析 sofa 标签的源头</h2><p>通过 IDEA 或者别的工具全局搜索，我们找到了源码中位于 start 模块下，resources 下的 META-INF 目录，目录下有以下几个文件：</p>
+<ol>
+<li>rpc.xsd</li>
+<li>sofaboot.xsd</li>
+<li>spring.handlers</li>
+<li>spring.schemas</li>
+</ol>
+<p>这几个文件我们是比较关注的，重点看 handlers 文件。内容如下：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http\://sofastack.io/schema/sofaboot=com.alipay.sofa.infra.config.spring.namespace.handler.SofaBootNamespaceHandler</span><br></pre></td></tr></table></figure>
+
+<p><code>SofaBootNamespaceHandler</code> 明显就是明明空间处理类，继承了 Spring 的 <code>NamespaceHandlerSupport</code>。</p>
+<p>该类的 init 方法通过 Java 的 SPI 进行扩展，找到 SofaBootTagNameSupport 的标签支持类，目前有 2 个实现： ServiceDefinitionParser 和 ReferenceDefinitionParser。</p>
+<p>两个类支持不同的 element。一个是引用服务，一个是发布服务。</p>
+<p>这样就比较清晰了。在得到两个类之后，注册到 Spring 的 parsers map 中。key 是 element 名字，value 是解析器。</p>
+<p>具体的解析上面说了，service 和 reference。</p>
+<p>Sofa 在这个设计上使用了模板模式，使用一个抽象类 <code>AbstractContractDefinitionParser</code>，并定义一个 doParseInternal 抽象方法让子类去实现。</p>
+<p>抽象父类将一些公用的属性进行解析，下图中都是公用的属性：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-03c5b80b0b9be698.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>你咋确定是公用的属性呢？首先，xml 解析后，肯定是要注入到 Bean 里面去的，那么这个 Bean 是什么呢？实际上，在 <code>AbstractSingleBeanDefinitionParser</code>  抽象类中，会有一个返回 Bean 类型的方法，对应着一个 tag，而他们的父类就是<code>  AbstractContractFactoryBean</code>。</p>
+<p>该类公用属性就对应上面图片中的定义。</p>
+<p>有了这些基础的信息，还是不能够直接使用的，毕竟都是字符串。我们要看看 SOFA 是如何将自己和 Spring 容器融合在一起的。</p>
+<h2 id="如何融入-Spring？"><a href="#如何融入-Spring？" class="headerlink" title="如何融入 Spring？"></a>如何融入 Spring？</h2><p>来看看他们的子类， ReferenceDefinitionParser 类（ServiceFactoryBean 类似）。对应的  Bean 是 ReferenceFactoryBean，该类单独定义了负载均衡（loadBalance）的属性。</p>
+<p>啊，从这个类的名字看，很熟悉，之前在分析 Spring 源码的时候，就看见过 FactoryBean。可以通过 getObject 方法修改返回的 Bean。</p>
+<p>来看看这个类的 类图</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-bcc952b2247a1059.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>如我们所料，继承了 Spring 中关键的扩展点。而他的 getObject 方法将返回一个代理：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"> <span class="keyword">public</span> Object <span class="title function_">getObject</span><span class="params">()</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">     <span class="keyword">return</span> proxy;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>具体创建代理的方法是 <code>com.alipay.sofa.runtime.service.component.ReferenceComponent</code> 类的 createProxy 方法，然后调用适配器。适配器的作用就是胶水的作用，将 Spring 容器和第三方框架粘合起来，Spring 提供的接口则是 FactoryBean 等接口，而第三方框架可以在 getObject 方法中大有作为。</p>
+<p>SOFA-Boot 的适配器在 <code>om.alipay.sofa.rpc.boot.runtime.adapter</code> 包中，具体实现则是 RpcBindingAdapter  类，其中 outBinding 方法用于发布服务，inBinding 方法用于引用服务，这里直接使用的就是 SOFA-RPC 的 consumerConfig 和 providerConfig。这就应该很熟悉了吧。哈哈。</p>
+<p>来点代码看看(已去除异常处理)：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> Object <span class="title function_">outBinding</span><span class="params">(Object contract, RpcBinding binding, Object target, SofaRuntimeContext sofaRuntimeContext)</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">String</span> <span class="variable">uniqueName</span> <span class="operator">=</span> ProviderConfigContainer.createUniqueName((Contract) contract, binding);</span><br><span class="line">    <span class="type">ProviderConfig</span> <span class="variable">providerConfig</span> <span class="operator">=</span> ProviderConfigContainer.getProviderConfig(uniqueName);</span><br><span class="line"></span><br><span class="line">    providerConfig.export();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ProviderConfigContainer.isAllowPublish()) &#123;</span><br><span class="line">        <span class="type">Registry</span> <span class="variable">registry</span> <span class="operator">=</span> RegistryConfigContainer.getRegistry();</span><br><span class="line">        providerConfig.setRegister(<span class="literal">true</span>);</span><br><span class="line">        registry.register(providerConfig);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> Boolean.TRUE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> Object <span class="title function_">inBinding</span><span class="params">(Object contract, RpcBinding binding, SofaRuntimeContext sofaRuntimeContext)</span> &#123;</span><br><span class="line">    <span class="type">ConsumerConfig</span> <span class="variable">consumerConfig</span> <span class="operator">=</span> ConsumerConfigHelper.getConsumerConfig((Contract) contract, binding);</span><br><span class="line">    ConsumerConfigContainer.addConsumerConfig(binding, consumerConfig);</span><br><span class="line"></span><br><span class="line">    <span class="type">Object</span> <span class="variable">result</span> <span class="operator">=</span> consumerConfig.refer();</span><br><span class="line">    binding.setConsumerConfig(consumerConfig);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>So，当 Spring 容器使用 getObject 方法的时候，获取的就是这个代理对象啦。是不是很简单?</p>
+<p>有一点需要注意一下，ServiceFactoryBean 的设计和 ReferenceFactoryBean 确实是类似，但是！但是！他的 getObject 方法就是实现类本身，这是 RPC 框架本身的设计决定的，因为它不需要代理，只需要发布服务就行，当收到了客户端传来的信息，就直接调用实现类的指定方法就好了，没有客户端这么复杂。</p>
+<p>当然，SOFA 中还有一个组件的概念，我们有时间会好好看看这块的设计。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次我们从 SOFA-Boot 配置文件的 xml 标签开始，对他如何融入 Spring 进行了分析，实际上，整体和我们联想的类似，使用 Spring 的 FactoryBean 的 getObject 方法返回代理，如果是客户端的话，在 getObject 方法中，会创建一个动态代理，这就要使用 SOFA-RPC 了，所以，融合 RPC 和 Spring 的任务肯定是个适配器。SOFA 的实现就是 RpcBindingAdapter 类。在该类中，将 RPC 和 Spring 适配。</p>
+<p>而发布服务相比较引用服务就简单一点了，整体上就是通过注解将服务发布，当然也是使用的 RpcBindingAdapter 进行适配。但是没有使用代理（不需要）。</p>
+<p>好了，这次研究 SOFA 和 Spring 融合的过程就到这里啦。</p>
+<p>bye ！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/SOFA/" class="category-chain-item">SOFA</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>从--Sofa-XXX--标签开始看-SOFA-Boot-如何融入-Spring</div>
+      <div>http://thinkinjava.cn/2018/05/01/2018/2018-05-01-从--sofa-XXX--标签开始看-SOFA-Boot-如何融入-Spring/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年5月1日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/05/02/2018/2018-05-02-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E9%93%BE%E8%B7%AF%E6%95%B0%E6%8D%AE%E9%80%8F%E4%BC%A0/" title="SOFA-源码分析-—-链路数据透传">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SOFA-源码分析-—-链路数据透传</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/04/30/2018/2018-04-30-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94%E2%80%94-%E6%9C%8D%E5%8A%A1%E5%BC%95%E7%94%A8%E8%BF%87%E7%A8%8B/" title="SOFA-源码分析-——-服务引用过程">
+                        <span class="hidden-mobile">SOFA-源码分析-——-服务引用过程</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

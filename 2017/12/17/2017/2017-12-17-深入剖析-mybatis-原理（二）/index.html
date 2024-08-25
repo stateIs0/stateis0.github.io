@@ -1,0 +1,712 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="深入剖析-Mybatis-原理（二）">
+<meta property="og:url" content="http://thinkinjava.cn/2017/12/17/2017/2017-12-17-%E6%B7%B1%E5%85%A5%E5%89%96%E6%9E%90-mybatis-%E5%8E%9F%E7%90%86%EF%BC%88%E4%BA%8C%EF%BC%89/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-ff694d625cc85828.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-da3aa1ec0a3d0302.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-19bfd6f8d9a4ffc6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-c31c196e39e8f7fa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-529c24e1aa81540e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-a386a3c180617e3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-f73fe5a113d6772c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-34f1449343bb4e42.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-afbebcdf7a8cd59f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-909387fc49bc21b0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-c4b930d3f264359f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-1bc1b3da65e133b1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-95e50440f6556558.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-8edcdfeaff0995dc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-e24af4c4c1d7a32a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-d4f49f5e2013655a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-1a6e9732af592d7e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-a9585665c511ff4e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4236553-dbd37c59a70f1dd3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2017-12-16T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.526Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4236553-ff694d625cc85828.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>深入剖析-Mybatis-原理（二） - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="深入剖析-Mybatis-原理（二）"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2017-12-17 02:11" pubdate>
+          2017年12月17日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          16 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">深入剖析-Mybatis-原理（二）</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       在上篇文章中我们分析了 sqlSession.selectOne("org.apache.ibatis.mybatis.UserInfoMapper.selectById", parameter) 代码的执行过程，我们说，这种方式虽然更接近 mybaits 的底层，但不够面向对象，也不利于 IDEA 工具的编译期排错。
+
+<p>而mybatis 还有另一种写法，我们在测试代码也写过，如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">UserInfoMapper</span> <span class="variable">userInfoMapper</span> <span class="operator">=</span> sqlSession.getMapper(UserInfoMapper.class);</span><br><span class="line"><span class="type">UserInfo</span> <span class="variable">userInfo2</span> <span class="operator">=</span> userInfoMapper.selectById(<span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这段代码非常的面向对象，也非常的利于IDE工具在编译期间排错。实际上这是mybait 为我们做的工作，是对第一种的方式的一种更抽象的封装。同时，这种方式也是我们现在开发常用的一种方式，所以，我们必须剖析的原理，看看他到底是如何实现的。想必有经验的大佬都能猜测到，肯定用动态代理的技术。不过，我们还是从源码看个究竟吧!</p>
+<h2 id="1-从-getMapper-方法进入源码"><a href="#1-从-getMapper-方法进入源码" class="headerlink" title="1. 从 getMapper 方法进入源码"></a>1. 从 getMapper 方法进入源码</h2><p><img src="http://upload-images.jianshu.io/upload_images/4236553-ff694d625cc85828.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>实际上调用了 configuration 的 getMapper方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-da3aa1ec0a3d0302.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>configuration  实际上调用了 mapperRegistry.getMapper：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-19bfd6f8d9a4ffc6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>注意，要停下来，看看 mapperRegistry 是什么，从名字上看出来，该对象是Mapper 映射器注册容器，我们看看该对象中有什么？</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-c31c196e39e8f7fa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-529c24e1aa81540e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>这是该类的属性，有一个 Configuration 对象，有一个 Map，Map 存放什么数据呢，key 是 class 类型， value是 MapperProxyFactory 类型，MapperProxyFactory  又是什么呢，看名字是映射器代理对象工厂，我们看看该类：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-a386a3c180617e3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>这是该类的结构图，有一个Class 对象，表示 映射器的接口，有一个Map 表示映射方法的缓存。并且由2 个newInstance 方法，看名字肯定是创建代理对象啦。我们看看这2个方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-f73fe5a113d6772c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>调用了动态的技术，根据给定的接口和SqlSession 和方法缓存，创建一个代理对象 MapperProxy ，该类实现了 InvocationHandler 接口，因此我们需要看看他的 invoke 方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-34f1449343bb4e42.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>这是  MapperProxy 的 invoke 方法，该方法首先判断方法的class 是否继承 Object ，如果是，就不使用代理，直接执行，如果该方法是默认的，那么就执行默认方法（该方法是针对Java7以上版本对动态类型语言的支持，不进行详述）。我们这里肯定不是，执行下面的 cachedMapperMethod 方法 并调用返回对象 MapperMethod 的execute 方法。</p>
+<p>我们看看 cachedMapperMethod  方法，该方法应该是跟缓存相关，我们看看实现：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-afbebcdf7a8cd59f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>该方法首先从缓存中取出，如果没有，便创建一个，并放入缓存并返回。我们关注一下 MapperMethod 的构造方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-909387fc49bc21b0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>该构造方法拿着这三个参数创建了两个对象，一个是SQL命令对象，一个方法签名对象，这两个类都是MapperMethod 的静态内部类。我们来看看这两个类。</p>
+<p>SqlCommand 类：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-c4b930d3f264359f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>该类由2个属性，一个是name，表示sql语句的名称，一个是type 自动，表示sql语句的类型，sql语句的名称是怎么来的呢？我们从代码中看到是从 resolveMappedStatement 方法返回的 MappedStatement 对象中得到的。而 SqlCommandType 也是从该方法中得到的。那么我重点关注该方法。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-1bc1b3da65e133b1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>我们刚刚说，name 是怎么来的，是调用了 MappedStatement 对象的getId 方法来的，而 id 是怎么来的呢？是mapperInterface.getName() + “.” + methodName 拼起来的，也就是接口名称和方法名称成为了一个id，素以注意，该方法不能重载。因为他不关注参数。根据id从 configuration 获取解析好的MappedStatement（存放在hashmap中）。如果没有这个id的话，注意，该方法最后还会递归调用该接口的所有父接口的 resolveMappedStatement ，确保找到给定 id 的 MappedStatement。</p>
+<p>那么 SqlCommandType  是什么呢？是个枚举，我们看看该枚举：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-95e50440f6556558.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>该枚举定义我们在xml中的标签。是不是很亲切？</p>
+<p>那么 MethodSignature 是什么呢？我们看看该类由哪些属性：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-8edcdfeaff0995dc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>看该类名字知道是方法的签名，因此包含方法的很多信息，是否返回多值，是否返回map，是否返回游标，返回值类型等等，这些属性都是在构造方法中注入的：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-e24af4c4c1d7a32a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>看完了内部类，回到 MapperProxy 的invoke 方法，现在有了 MapperMethod 对象，就要执行该对象的execute 方法，该方法是如何执行的呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Object <span class="title function_">execute</span><span class="params">(SqlSession sqlSession, Object[] args)</span> &#123;</span><br><span class="line">    Object result;</span><br><span class="line">    <span class="keyword">switch</span> (command.getType()) &#123;</span><br><span class="line">      <span class="keyword">case</span> INSERT: &#123;</span><br><span class="line">      <span class="type">Object</span> <span class="variable">param</span> <span class="operator">=</span> method.convertArgsToSqlCommandParam(args);</span><br><span class="line">        result = rowCountResult(sqlSession.insert(command.getName(), param));</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">case</span> UPDATE: &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">param</span> <span class="operator">=</span> method.convertArgsToSqlCommandParam(args);</span><br><span class="line">        result = rowCountResult(sqlSession.update(command.getName(), param));</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">case</span> DELETE: &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">param</span> <span class="operator">=</span> method.convertArgsToSqlCommandParam(args);</span><br><span class="line">        result = rowCountResult(sqlSession.delete(command.getName(), param));</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">case</span> SELECT:</span><br><span class="line">        <span class="keyword">if</span> (method.returnsVoid() &amp;&amp; method.hasResultHandler()) &#123;</span><br><span class="line">          executeWithResultHandler(sqlSession, args);</span><br><span class="line">          result = <span class="literal">null</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (method.returnsMany()) &#123;</span><br><span class="line">          result = executeForMany(sqlSession, args);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (method.returnsMap()) &#123;</span><br><span class="line">          result = executeForMap(sqlSession, args);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (method.returnsCursor()) &#123;</span><br><span class="line">          result = executeForCursor(sqlSession, args);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="type">Object</span> <span class="variable">param</span> <span class="operator">=</span> method.convertArgsToSqlCommandParam(args);</span><br><span class="line">          result = sqlSession.selectOne(command.getName(), param);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">case</span> FLUSH:</span><br><span class="line">        result = sqlSession.flushStatements();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">BindingException</span>(<span class="string">&quot;Unknown execution method for: &quot;</span> + command.getName());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (result == <span class="literal">null</span> &amp;&amp; method.getReturnType().isPrimitive() &amp;&amp; !method.returnsVoid()) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">BindingException</span>(<span class="string">&quot;Mapper method &#x27;&quot;</span> + command.getName() </span><br><span class="line">          + <span class="string">&quot; attempted to return null from a method with a primitive return type (&quot;</span> + method.getReturnType() + <span class="string">&quot;).&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>该方法主要是判断方法的类型，也就是我们的insert select 标签，根据不同的标签执行不同的方法，如果是 SELECT 标签就还要再判断他的返回值，根据不同的返回值类型执行不同的方法。默认执行 sqlSession 的 selectOne 方法，看到这里，是不是一目了然了呢？也就是说getMapper 最终还是调用 SqlSession 的 selectOne 方法，只不过通过动态代理封装了一遍，让mybatis 来管理这些字符串样式的key，而不是让用户来手动管理。</p>
+<p>我们回到 MapperRegistry 的 getMapper 方法：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-d4f49f5e2013655a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>首先根据接口类型从缓存中取出，如果没有，则抛出异常，因为这些缓存都是在解析配置文件的时候放入的。根据返回的映射代理工厂，调用该工厂的方法，传入 SqlSession 返回一个接口代理：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-1a6e9732af592d7e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>这段代码其实我们已经看过了，创建一个实现类 InvocationHandler 接口的对象，然后使用JDK动态代理创建实例返回，而 InvocationHandler  的实现类 MapperProxy 的代码我们刚刚也看过了。主要逻辑在invoke中，在该方法中调用 SqlSession 的 selectOne 方法。后面的我们就不说了，和上一篇文章的逻辑一样，就不赘述了。</p>
+<h2 id="2-总结"><a href="#2-总结" class="headerlink" title="2. 总结"></a>2. 总结</h2><p>大家可能注意到了，这篇文章不长，因为主要逻辑在上篇文章中，这里只不过将 Mybatis 如何封装代理的过程解析了一遍。主要实现这个功能是的是 mybatis 的binding 包下的几个类：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-a9585665c511ff4e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>这几个类完成了对代理的封装和对目标方法的调用。当然还有 SqlSession，可以看出，mybatis 的模块化做的非常好。</p>
+<p>我们也来看看这几个类的UML图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4236553-dbd37c59a70f1dd3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>可以看到，所有的类都关联着SqlSession，由此可以看出SqlSession的重要性。而我们今天解析的代码只不过在SqlSession外面封装了一层，便于开发者使用，否则，配置这些字符串，就太难以维护了。</p>
+<p>好了，今天的Mybatis 分析就到这里了。我们通过一个demo知道了mybatis 的运行原理，由此，在以后的开发中，遇到错误时，再也不是黑盒操作了。可以深入源码去找真正的原因。当然，阅读源码带来的好处肯定不止这些。</p>
+<p>good luck ！！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Mybatis/" class="category-chain-item">Mybatis</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>深入剖析-Mybatis-原理（二）</div>
+      <div>http://thinkinjava.cn/2017/12/17/2017/2017-12-17-深入剖析-mybatis-原理（二）/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2017年12月17日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2017/12/19/2017/2017-12-19-%E6%B7%B1%E5%85%A5%E5%89%96%E6%9E%90-mybatis-%E5%8E%9F%E7%90%86%EF%BC%88%E4%B8%89%EF%BC%89%E5%A6%82%E4%BD%95%E6%95%B4%E5%90%88Spring/" title="深入剖析-Mybatis-原理（三）如何整合Spring">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">深入剖析-Mybatis-原理（三）如何整合Spring</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2017/12/16/2017/2017-12-16-%E6%B7%B1%E5%85%A5%E5%89%96%E6%9E%90-mybatis-%E5%8E%9F%E7%90%86%EF%BC%88%E4%B8%80%EF%BC%89/" title="深入剖析-Mybatis-原理（一）">
+                        <span class="hidden-mobile">深入剖析-Mybatis-原理（一）</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

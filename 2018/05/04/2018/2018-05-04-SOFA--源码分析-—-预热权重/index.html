@@ -1,0 +1,699 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="article">
+<meta property="og:title" content="SOFA--源码分析-—-预热权重">
+<meta property="og:url" content="http://thinkinjava.cn/2018/05/04/2018/2018-05-04-SOFA--%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E2%80%94-%E9%A2%84%E7%83%AD%E6%9D%83%E9%87%8D/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/4236553-7b33cacfc6b7ba3e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2018-05-03T18:11:11.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.543Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/4236553-7b33cacfc6b7ba3e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+  
+  
+  <title>SOFA--源码分析-—-预热权重 - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="SOFA--源码分析-—-预热权重"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2018-05-04 02:11" pubdate>
+          2018年5月4日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          16 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">SOFA--源码分析-—-预热权重</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <meta name="referrer" content="no-referrer" />
+<span id="more"></span>       ## 前言
+
+<p>SOFA-RPC 支持根据权重对服务进行预热功能，具体地址：<a target="_blank" rel="noopener" href="https://github.com/alipay/sofa-rpc/wiki/Provider-Warmup-Weight">预热权重</a>.</p>
+<p>引用官方文档：</p>
+<p>预热权重功能让客户端机器能够根据服务端的相应权重进行流量的分发。该功能也常被用于集群内少数机器的启动场景。利用流量权重功能在短时间内对服务端机器进行预热，然后再接收正常的流量比重。 运行机制如下： </p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4236553-7b33cacfc6b7ba3e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" srcset="/img/loading.gif" lazyload></p>
+<p>1.服务端服务在启动时会将自身的预热时间，预热期内权重，预热完成后的正常权重推送给服务注册中心。如上图 ServiceB 指向 Service Registry 。</p>
+<p>2.客户端在引用服务的时候会获得每个服务实例的预热权重信息。如上图 Service Registry 指向 client 。</p>
+<p>3.客户端在进行调用的时候会根据服务所在地址的预热时期所对应的权重进行流量分发。如上图 client 指向 ServiceA 和 ServiceB 。 ServiceA 预热完毕，权重默认 100 ， ServiceB 处于预热期，权重为 10，因此所承受流量分别为 100%110 和 10%110 。</p>
+<h2 id="如何使用"><a href="#如何使用" class="headerlink" title="如何使用"></a>如何使用</h2><p>该功能使用方式如下。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ProviderConfig&lt;HelloWordService&gt; providerConfig = <span class="keyword">new</span> <span class="title class_">ProviderConfig</span>&lt;HelloWordService&gt;() </span><br><span class="line">            .setWeight(<span class="number">100</span>) </span><br><span class="line">            .setParameter(ProviderInfoAttrs.ATTR_WARMUP_WEIGHT,<span class="string">&quot;10&quot;</span>) </span><br><span class="line">            .setParameter(ProviderInfoAttrs.ATTR_WARM_UP_END_TIME,<span class="string">&quot;12000&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>如上，该服务的预热期为12s，在预热期内权重为10，预热期结束后的正常权重为100。如果该服务一共发布在两个机器A,B上，A机器正处于预热期内，并使用上述配置，B已经完成预热，正常权重为200。那么客户端在调用的时候，此时流量分发的比重为10：200，A机器预热结束后，流量分发比重为100：200。 在SOFABoot中，如下配置预热时间，预热期间权重和预热完后的权重即可。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">sofa:reference</span> <span class="attr">id</span>=<span class="string">&quot;sampleRestFacadeReferenceBolt&quot;</span> <span class="attr">interface</span>=<span class="string">&quot;com.alipay.sofa.endpoint.facade.SampleFacade&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">sofa:binding.bolt</span>&gt;</span></span><br><span class="line">         <span class="tag">&lt;<span class="name">sofa:global-attrs</span> <span class="attr">weight</span>=<span class="string">&quot;100&quot;</span> <span class="attr">warm-up-time</span>=<span class="string">&quot;10000&quot;</span> <span class="attr">warm-up-weight</span>=<span class="string">&quot;1000&quot;</span>/&gt;</span></span><br><span class="line">     <span class="tag">&lt;/<span class="name">sofa:binding.bolt</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">sofa:reference</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>再来看看源码实现。</p>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><p>从 demo 中看，SOFA 需要在 ProviderConfig 中配置属性，而这些属性都是保存在一个 Map 中。</p>
+<p>代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> S <span class="title function_">setParameter</span><span class="params">(String key, String value)</span> &#123;</span><br><span class="line">       <span class="keyword">if</span> (parameters == <span class="literal">null</span>) &#123;</span><br><span class="line">           parameters = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;String, String&gt;();</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">if</span> (value == <span class="literal">null</span>) &#123;</span><br><span class="line">           parameters.remove(key);</span><br><span class="line">       &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">           parameters.put(key, value);</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">return</span> castThis();</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<p>当发布服务的时候，这个 Map 会被发布到注册中心。具体代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">doRegister</span><span class="params">(String appName, String serviceName, ProviderInfo providerInfo)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (LOGGER.isInfoEnabled(appName)) &#123;</span><br><span class="line">        LOGGER.infoWithApp(appName, LogCodes.getLog(LogCodes.INFO_ROUTE_REGISTRY_PUB, serviceName));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//&#123;service : [provider...]&#125;</span></span><br><span class="line">    <span class="type">ProviderGroup</span> <span class="variable">oldGroup</span> <span class="operator">=</span> memoryCache.get(serviceName);</span><br><span class="line">    <span class="keyword">if</span> (oldGroup != <span class="literal">null</span>) &#123; <span class="comment">// 存在老的key</span></span><br><span class="line">        oldGroup.add(providerInfo);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123; <span class="comment">// 没有老的key，第一次加入</span></span><br><span class="line">        List&lt;ProviderInfo&gt; news = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;ProviderInfo&gt;();</span><br><span class="line">        news.add(providerInfo);</span><br><span class="line">        memoryCache.put(serviceName, <span class="keyword">new</span> <span class="title class_">ProviderGroup</span>(news));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 备份到文件 改为定时写</span></span><br><span class="line">    needBackup = <span class="literal">true</span>;</span><br><span class="line">    doWriteFile();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (subscribe) &#123;</span><br><span class="line">        notifyConsumerListeners(serviceName, memoryCache.get(serviceName));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码中，提供者会将 providerInfo 的信息写到本地文件(注册中心)中。</p>
+<p>而消费者则会从注册中心订阅服务列表的信息。具体代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> List&lt;ProviderGroup&gt; <span class="title function_">subscribe</span><span class="params">(ConsumerConfig config)</span> &#123;</span><br><span class="line">    <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> LocalRegistryHelper.buildListDataId(config, config.getProtocol());</span><br><span class="line">    List&lt;ConsumerConfig&gt; listeners = notifyListeners.get(key);</span><br><span class="line">    <span class="keyword">if</span> (listeners == <span class="literal">null</span>) &#123;</span><br><span class="line">        listeners = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;ConsumerConfig&gt;();</span><br><span class="line">        notifyListeners.put(key, listeners);</span><br><span class="line">    &#125;</span><br><span class="line">    listeners.add(config);</span><br><span class="line">    <span class="comment">// 返回已经加载到内存的列表（可能不是最新的)</span></span><br><span class="line">    <span class="type">ProviderGroup</span> <span class="variable">group</span> <span class="operator">=</span> memoryCache.get(key);</span><br><span class="line">    <span class="keyword">if</span> (group == <span class="literal">null</span>) &#123;</span><br><span class="line">        group = <span class="keyword">new</span> <span class="title class_">ProviderGroup</span>();</span><br><span class="line">        memoryCache.put(key, group);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> Collections.singletonList(group);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面这段代码会被 DefaultConsumerBootstrap 调用，根据消费者的配置信息，生成一个 key，然后将消费者添加到通知列表中（当数据变化时，通知消费者，由定时任务执行）。</p>
+<p>然后，从内存中取出key 对应的服务分组，并返回集合（就是提供者注册的信息）。</p>
+<p>这段代码会在 AbstractCluster 的 init 方法中调用—— <code>List&lt;ProviderGroup&gt; all = consumerBootstrap.subscribe();</code>。</p>
+<p>服务分组的数据结构是 ProviderInfo，是一个抽象的服务提供列表，其中包含服务的信息，比如地址，协议类型，主机地址，端口，路径，版本，动态参数，静态参数，服务状态等等，其中就包括<strong>权重</strong>。</p>
+<p>获取权重的方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">getWeight</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">ProviderStatus</span> <span class="variable">status</span> <span class="operator">=</span> getStatus();</span><br><span class="line">    <span class="keyword">if</span> (status == ProviderStatus.WARMING_UP) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 还处于预热时间中</span></span><br><span class="line">            <span class="type">Integer</span> <span class="variable">warmUpWeight</span> <span class="operator">=</span> (Integer) getDynamicAttr(ProviderInfoAttrs.ATTR_WARMUP_WEIGHT);</span><br><span class="line">            <span class="keyword">if</span> (warmUpWeight != <span class="literal">null</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> warmUpWeight;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="keyword">return</span> weight;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> weight;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意 getStatus 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> ProviderStatus <span class="title function_">getStatus</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (status == ProviderStatus.WARMING_UP) &#123;</span><br><span class="line">        <span class="keyword">if</span> (System.currentTimeMillis() &gt; (Long) getDynamicAttr(ProviderInfoAttrs.ATTR_WARM_UP_END_TIME)) &#123;</span><br><span class="line">            <span class="comment">// 如果已经过了预热时间，恢复为正常</span></span><br><span class="line">            status = ProviderStatus.AVAILABLE;</span><br><span class="line">            setDynamicAttr(ProviderInfoAttrs.ATTR_WARM_UP_END_TIME, <span class="literal">null</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> status;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>逻辑如下：</p>
+<p>获取服务状态，如果是预热状态，则获取预热状态的权重值，反之，如果不是，反之正常值（默认 100）。</p>
+<p>获取状态的方法则是判断时间，如果当前时间大于预热时间，则修改状态为可用。并删除动态参数列表中的“预热时间”。</p>
+<p>那么，什么时候会获取权重呢？</p>
+<p>如果看过之前文章的同学肯定知道，在负载均衡的时候，会调用。</p>
+<p>我们看看默认的随机均衡算法。还记得当时，楼主有个地方不是很明白，我们要根据权重随机，当时看来，并没有什么用处，今天明白了。再上一遍代码吧：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">@ AbstractLoadBalancer.java</span><br><span class="line"><span class="keyword">protected</span> <span class="type">int</span> <span class="title function_">getWeight</span><span class="params">(ProviderInfo providerInfo)</span> &#123;</span><br><span class="line">    <span class="comment">// 从provider中或得到相关权重,默认值100</span></span><br><span class="line">    <span class="keyword">return</span> providerInfo.getWeight() &lt; <span class="number">0</span> ? <span class="number">0</span> : providerInfo.getWeight();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>获取权重，默认 100.</p>
+<p>再看随机算法的 doSelect 方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">@ RandomLoadBalancer.java</span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> ProviderInfo <span class="title function_">doSelect</span><span class="params">(SofaRequest invocation, List&lt;ProviderInfo&gt; providerInfos)</span> &#123;</span><br><span class="line">    <span class="type">ProviderInfo</span> <span class="variable">providerInfo</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="type">int</span> <span class="variable">size</span> <span class="operator">=</span> providerInfos.size(); <span class="comment">// 总个数</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">totalWeight</span> <span class="operator">=</span> <span class="number">0</span>; <span class="comment">// 总权重</span></span><br><span class="line">    <span class="type">boolean</span> <span class="variable">isWeightSame</span> <span class="operator">=</span> <span class="literal">true</span>; <span class="comment">// 权重是否都一样</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">weight</span> <span class="operator">=</span> getWeight(providerInfos.get(i));</span><br><span class="line">        totalWeight += weight; <span class="comment">// 累计总权重</span></span><br><span class="line">        <span class="keyword">if</span> (isWeightSame &amp;&amp; i &gt; <span class="number">0</span> &amp;&amp; weight != getWeight(providerInfos.get(i - <span class="number">1</span>))) &#123;</span><br><span class="line">            isWeightSame = <span class="literal">false</span>; <span class="comment">// 计算所有权重是否一样</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (totalWeight &gt; <span class="number">0</span> &amp;&amp; !isWeightSame) &#123;</span><br><span class="line">        <span class="comment">// 如果权重不相同且权重大于0则按总权重数随机</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">offset</span> <span class="operator">=</span> random.nextInt(totalWeight);</span><br><span class="line">        <span class="comment">// 并确定随机值落在哪个片断上</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">            offset -= getWeight(providerInfos.get(i));</span><br><span class="line">            <span class="keyword">if</span> (offset &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                providerInfo = providerInfos.get(i);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 如果权重相同或权重为0则均等随机</span></span><br><span class="line">        providerInfo = providerInfos.get(random.nextInt(size));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> providerInfo;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先判断各个服务的权重是否相同，如果不同，进入第二个 if。</p>
+<p>关键点来了，如果权重不同，那么从总的权重中，随机一个数，一次从服务列表的权重递减。知道该值小于0，那么就使用该服务。</p>
+<p>这样就能<strong>大致</strong>保证权重小的被击中的几率较小。具体取决于 Java 的随机算法，但是我们还是比较相信 Java 的。</p>
+<p>我们来推倒一下这个算法。</p>
+<p>假设有 A， B， C， 3 个服务，每个服务默认权重 100，其中 C 现在处于预热阶段，则 C 的权重等于 10.</p>
+<p>那么总权重 210。</p>
+<p>如果C落在第一位，那么一定会选中C的情况是权重落在0-9之间；<br>如果C落在第二位，那么一定会选中C的情况是权重落在100-109之间；<br>如果C是在第三位，那么一定会选中C的情况是权重落在200-209；</p>
+<p>符合权重。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>现在看来，预热权重还是挺简单的，主要在负载均衡出进行处理就行。</p>
+<p>今天就到这里，bye！！！</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/SOFA/" class="category-chain-item">SOFA</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>SOFA--源码分析-—-预热权重</div>
+      <div>http://thinkinjava.cn/2018/05/04/2018/2018-05-04-SOFA--源码分析-—-预热权重/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2018年5月4日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/05/07/2018/2018-05-07-SOFA-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E2%80%94-%E8%87%AA%E5%AE%9A%E4%B9%89%E8%B7%AF%E7%94%B1%E5%AF%BB%E5%9D%80/" title="SOFA-源码分析—-自定义路由寻址">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SOFA-源码分析—-自定义路由寻址</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2018/05/04/2018/2018-05-04-Java-%E5%A6%82%E4%BD%95%E8%8E%B7%E5%8F%96%E6%B3%9B%E5%9E%8B%E7%B1%BB%E5%9E%8B/" title="Java-如何获取泛型类型">
+                        <span class="hidden-mobile">Java-如何获取泛型类型</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

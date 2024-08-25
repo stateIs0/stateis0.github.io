@@ -1,0 +1,993 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta property="og:type" content="website">
+<meta property="og:title" content="莫那·鲁道的技术博客">
+<meta property="og:url" content="http://thinkinjava.cn/page/20/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="莫那鲁道的技术博客"></span>
+          
+        </div>
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      <div class="container nopadding-x-md">
+        <div id="board"
+          >
+          
+          <div class="container">
+            <div class="row">
+              <div class="col-12 col-md-10 m-auto">
+                
+
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/11/11/2017/2017-11-11-%E8%A7%82%E5%AF%9F%E8%80%85%E6%A8%A1%E5%BC%8F/" target="_self">
+          观察者模式
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/11/11/2017/2017-11-11-%E8%A7%82%E5%AF%9F%E8%80%85%E6%A8%A1%E5%BC%8F/" target="_self">
+        <div>
+          观察者模式也叫发布-订阅模式，即Publish/Subscirbe,定义：观察者模式定义了一种一对多的依赖关系，让多个观察者对象同时监听某一个主题对象，这个主题对象再状态发生改变时，会通知所有观察真对象，使他们能够自动更新自己。 其实这个模式其实是最常用的。 我想起了上段时间做的一个物联网项目，用的是MQTT协议，也是基于发布订阅模式的。当时对观察者模式不了解，所以弄了好久才明白。废话不多说。开始
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-11-11 02:11" pubdate>
+              2017-11-11
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java-%E8%AE%BE%E8%AE%A1/" class="category-chain-item">Java 设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/11/05/2017/2017-11-05-%E7%8A%B6%E6%80%81%E6%A8%A1%E5%BC%8F/" target="_self">
+          状态模式
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/11/05/2017/2017-11-05-%E7%8A%B6%E6%80%81%E6%A8%A1%E5%BC%8F/" target="_self">
+        <div>
+          定义： 状态模式（State），当一个对象的内在状态改变时，允许改变其行为，这个对象看起来像是改变了其类。   一个方法过长就是代码的坏味道。这个类或者这个方法违背类“单一职责原则”。 状态模式主要解决的是当控制一个对象状态转换的体检表达式过于复杂的时的情况，把状态的判断逻辑转移到不同的状态的一系列类当中，可以把复杂的判断逻辑化。当然，如果这个判断很简单，那就没必要用“状态模式”了。  我们看到U
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-11-05 02:11" pubdate>
+              2017-11-05
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java-%E8%AE%BE%E8%AE%A1/" class="category-chain-item">Java 设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/10/27/2017/2017-10-27-%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/" target="_self">
+          策略模式
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/10/27/2017/2017-10-27-%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/" target="_self">
+        <div>
+          首先有一个收银台小程序： 商场会有促销活动，包括打折，买200减100，买500送积分之类的很多那么就会用到很多的if else 判断。 那么如何消除if else 判断呢？可能有人想到了使用简单工厂模式。是的，这样确实能够解决if 判断。但是如果后期的更改，我们是不是就要修改工厂类呢？岂不是很麻烦？ 123CashSuper csuper = CashFactory.createCashAcce
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-10-27 02:11" pubdate>
+              2017-10-27
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java-%E8%AE%BE%E8%AE%A1/" class="category-chain-item">Java 设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/10/23/2017/2017-10-23-%E6%B7%B1%E5%85%A5%E8%A7%A3%E6%9E%90%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F%E7%9A%84%E4%B8%83%E7%A7%8D%E5%AE%9E%E7%8E%B0/" target="_self">
+          深入解析单例模式的七种实现
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/10/23/2017/2017-10-23-%E6%B7%B1%E5%85%A5%E8%A7%A3%E6%9E%90%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F%E7%9A%84%E4%B8%83%E7%A7%8D%E5%AE%9E%E7%8E%B0/" target="_self">
+        <div>
+          什么是单例模式什么是单例模式呢？ 我们引用一下维基百科：  单例模式，也叫单子模式，是一种常用的软件设计模式。在应用这个模式时，单例对象的类必须保证只有一个实例存在。许多时候整个系统只需要拥有一个的全局对象，这样有利于我们协调系统整体的行为。比如在某个服务器程序中，该服务器的配置信息存放在一个文件中，这些配置数据由一个单例对象统一读取，然后服务进程中的其他对象再通过这个单例对象获取这些配置信息。这
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-10-23 02:11" pubdate>
+              2017-10-23
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java-%E8%AE%BE%E8%AE%A1/" class="category-chain-item">Java 设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/10/08/2017/2017-10-08-CPU/" target="_self">
+          CPU
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/10/08/2017/2017-10-08-CPU/" target="_self">
+        <div>
+          传统cpu只有控制器和运算器，而现代cpu异常复杂，含有浮点运算器，cache等。  控制器 由程序计算器，指令寄存器，指令译码器，时序产生器和操作控制器组成，他是发布命令的“决策机构”，即完成协调和指挥整个计算机系统的操作。控制器的主要功能有：  1231. 从内存中取出一条指令，并指出下一条指令在内存中的位置。2. 对指令进行译码和测试，并产生相应的操作控制信号，以便启动规定的动作。比如一次
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-10-08 02:11" pubdate>
+              2017-10-08
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%9F%BA%E7%A1%80/" class="category-chain-item">基础</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/10/08/2017/2017-10-08-IO%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E8%B0%83%E5%BA%A6/" target="_self">
+          IO管理和磁盘调度
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/10/08/2017/2017-10-08-IO%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E8%B0%83%E5%BA%A6/" target="_self">
+        <div>
+          I/O管理和磁盘调度I/O 也许是操作系统设计中欧最复杂的工作。因为村子这大量的设备，而且这些设备有许多应用，所以很难开发出一种通用一致的解决方案。 计算机系统和外界的接口是I/O体系结构。设计这个结构的目的在于提供一个控制与外界交互的系统方法，同时提供给操作系统其所需的有效管理I/O的信息。 I/O函数可以分成若干层，底层处理接近于物理功能，高层则用逻辑方法处理IO。这样，硬件参数的改变不必改变
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-10-08 02:11" pubdate>
+              2017-10-08
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%9F%BA%E7%A1%80/" class="category-chain-item">基础</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/10/08/2017/2017-10-08-Think-In-Java-%E8%AF%BB%E5%90%8E%E6%84%9F/" target="_self">
+          Think-in-Java-读后感
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/10/08/2017/2017-10-08-Think-In-Java-%E8%AF%BB%E5%90%8E%E6%84%9F/" target="_self">
+        <div>
+          这几天在对Think In Java 进行最后的冲锋，终于在今晚完成了第一次通读Think In Java的目标（除去GUI）。但是却感到更加的痛苦了，原本想看完了为了补充可能会遗漏的知识，看完之后才发现，原来自己知道的才是遗留的。知道的太少了，看到毕玄，R大，小狼，假笨，康德等等大神，我觉得自己就是一傻逼，连openJdk都不知道，一直以为Java都是开源的，为什么以为是开源的？我们不是每天都能
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-10-08 02:11" pubdate>
+              2017-10-08
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%89%AF%E6%B7%A1/" class="category-chain-item">扯淡</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/10/08/2017/2017-10-08-%E4%B8%AD%E5%A4%AE%E5%A4%84%E7%90%86%E5%99%A8/" target="_self">
+          中央处理器
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/10/08/2017/2017-10-08-%E4%B8%AD%E5%A4%AE%E5%A4%84%E7%90%86%E5%99%A8/" target="_self">
+        <div>
+          中央处理器CPU 是计算机的中央处理部件，具有指令控制，操作控制，时间控制，数据加工等基本功能。 早起的cpu有运算器和控制器两大部分组成。随着高密度继承电路技术的发展，当今的cpu新片编程运算器，cache和控制器三大部分，其中还包括浮点运算器，存储管理部件等，cpu中至少要有如下六类寄存器：指令寄存器，程序计数器，地址寄存器，缓冲寄存器，通用寄存器，状态条件寄存器。 CPU从存储器取出一条指令
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-10-08 02:11" pubdate>
+              2017-10-08
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%9F%BA%E7%A1%80/" class="category-chain-item">基础</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/10/08/2017/2017-10-08-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" target="_self">
+          内存管理
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/10/08/2017/2017-10-08-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" target="_self">
+        <div>
+          内存管理内存管理的要求在研究各种内存管理的机制和技术时，一定要牢记内存管理所必须满足的要求：  重定位 指的是处理机硬件和操作系统软件必须能将程序代码中地址映射为程序在内存中实际的物理地址。   保护 每个进程必须内保护以免受到其他进程的干扰，未经允许进程不能对其他进程的存储区进行读写操作   共享 协同工作的多个进程需要共享同一数据结构。   逻辑组织 计算机系统中的内存组织形式是包含字或字节序
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-10-08 02:11" pubdate>
+              2017-10-08
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%9F%BA%E7%A1%80/" class="category-chain-item">基础</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/10/08/2017/2017-10-08-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/" target="_self">
+          处理机调度
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/10/08/2017/2017-10-08-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/" target="_self">
+        <div>
+          处理机调度对于进程的执行，操作系统必须做出三个决定：长程调度，中程调度以及短程调度。 对于短程调度的设计可面向用户，也可面向系统。用户主要关心响应时间，而系统关系吞吐量和处理机利用率。 短程调度的算法有：先来先服务（FCFS)，时间片轮转法，最短进程优先，最短剩余时间优先，最高响应比优先，多级反馈队列等。调度算法的选择取决于期望的性能及实际应用。 在多处理机系统中。处理机可共享内存，各调度算法的性
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-10-08 02:11" pubdate>
+              2017-10-08
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%9F%BA%E7%A1%80/" class="category-chain-item">基础</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/10/08/2017/2017-10-08-%E5%A4%96%E5%9B%B4%E8%AE%BE%E5%A4%87/" target="_self">
+          外围设备
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/10/08/2017/2017-10-08-%E5%A4%96%E5%9B%B4%E8%AE%BE%E5%A4%87/" target="_self">
+        <div>
+          外围设备各种外围设备的数据传输速率相差很大。如果保证主机与外围设备在时间上同步，则设计外围设备的定时问题。 在计算机系统中，CPU对外围设备的管理有一下五种方式：1.程序查询方式；2.程序中断方式；3.直接存储访问（DMA）方式；4.通道方式；5.外围处理机（PPU）方式；其中第一种对CPU的资源浪费最大，而第五种使CPU得效率得到最大发挥，但是需要更多的硬件支持。 程序中断方式是各类计算机中广泛
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-10-08 02:11" pubdate>
+              2017-10-08
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%9F%BA%E7%A1%80/" class="category-chain-item">基础</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2017/10/08/2017/2017-10-08-%E5%AD%98%E5%82%A8%E7%B3%BB%E7%BB%9F/" target="_self">
+          存储系统
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2017/10/08/2017/2017-10-08-%E5%AD%98%E5%82%A8%E7%B3%BB%E7%BB%9F/" target="_self">
+        <div>
+          存储系统计算机对存储器的要求是容量大，速度快，成本低。为了解决这三方面的矛盾，计算机采用多级存储体系结构，即cache，主存和外存。cpu能直接发你给我内存（cache， 主存），但不能直接访问外存。存储器的技术指标有存储容量，存取时间，存储周期，存储器带宽。 广泛使用的SRAM和DRAM都是半导体随机读写存储器，前者速度比后者快，按集成度不如后者高。二者的有点是体积小，可靠性高，价格低廉，缺点是
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2017-10-08 02:11" pubdate>
+              2017-10-08
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%9F%BA%E7%A1%80/" class="category-chain-item">基础</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+      </div>
+    </article>
+  </div>
+
+
+
+  <nav aria-label="navigation">
+    <span class="pagination" id="pagination">
+      <a class="extend prev" rel="prev" href="/page/19/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/18/#board">18</a><a class="page-number" href="/page/19/#board">19</a><span class="page-number current">20</span><a class="page-number" href="/page/21/#board">21</a><a class="page-number" href="/page/22/#board">22</a><a class="extend next" rel="next" href="/page/21/#board"><i class="iconfont icon-arrowright"></i></a>
+    </span>
+  </nav>
+
+
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

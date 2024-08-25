@@ -1,0 +1,752 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.ico">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="莫那·鲁道">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="EMSExtend MySQL Stream； 一种基于 MySQL 实现的 stream 队列. 功能 通用 api，已有代码无需修改 集群消费、广播消费 自动重试、死信队列 快速重置消息位点，快速回放消息,快速查询消息 消息可基于磁盘积压、消息可快速清理 监控 group 积压，topic 消息量排行，消息链路追踪，消息消费超时告警； 读写性能 1200-3000 QPS 左右  写入设计ms">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Message Queue Stream Based on Mysql Implementation">
+<meta property="og:url" content="http://thinkinjava.cn/2023/09/02/2023/ems/index.html">
+<meta property="og:site_name" content="莫那·鲁道的技术博客">
+<meta property="og:description" content="EMSExtend MySQL Stream； 一种基于 MySQL 实现的 stream 队列. 功能 通用 api，已有代码无需修改 集群消费、广播消费 自动重试、死信队列 快速重置消息位点，快速回放消息,快速查询消息 消息可基于磁盘积压、消息可快速清理 监控 group 积压，topic 消息量排行，消息链路追踪，消息消费超时告警； 读写性能 1200-3000 QPS 左右  写入设计ms">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://thinkinjava.cn/img/2023/09/img.png">
+<meta property="article:published_time" content="2023-09-02T15:59:00.000Z">
+<meta property="article:modified_time" content="2024-08-25T14:53:01.556Z">
+<meta property="article:author" content="莫那·鲁道">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://thinkinjava.cn/img/2023/09/img.png">
+  
+  
+  
+  <title>Message Queue Stream Based on Mysql Implementation - 莫那·鲁道的技术博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"thinkinjava.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 30vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>莫那鲁道的技术博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Message Queue Stream Based on Mysql Implementation"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-09-02 23:59" pubdate>
+          2023年9月2日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          13 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Message Queue Stream Based on Mysql Implementation</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="EMS"><a href="#EMS" class="headerlink" title="EMS"></a>EMS</h2><p>Extend MySQL Stream；</p>
+<p>一种基于 MySQL 实现的 stream 队列.</p>
+<h2 id="功能"><a href="#功能" class="headerlink" title="功能"></a>功能</h2><ol start="0">
+<li>通用 api，已有代码无需修改</li>
+<li>集群消费、广播消费</li>
+<li>自动重试、死信队列</li>
+<li>快速重置消息位点，快速回放消息,快速查询消息</li>
+<li>消息可基于磁盘积压、消息可快速清理</li>
+<li>监控 group 积压，topic 消息量排行，消息链路追踪，消息消费超时告警；</li>
+<li>读写性能 1200-3000 QPS 左右</li>
+</ol>
+<h2 id="写入设计"><a href="#写入设计" class="headerlink" title="写入设计"></a>写入设计</h2><p>msg id 就是 topic 维度的自增 id，可对多个 topic 并发写入</p>
+<ul>
+<li>针对一个 topic，需要有物理 physics offset， 每次写入，topic 维度的 physics_offset 自增加一<ul>
+<li>写入需要上锁吗? 看怎么写, 如果使用非原子的形式自增 id,比如数据的的方式,先查出最大 id,再加一,那么必须加锁<ul>
+<li>如果使用 redis 自增特性实现, 为每个 topic 配置一个自增 key, 则可以避免加锁.</li>
+<li>redis 实现虽然性能好, 如为配置aof,宕机则可能导致丢失数据, 此时,会出现 offset 重复异常, 过一会随着继续自增, 也就恢复了.</li>
+</ul>
+</li>
+<li>topic 维度的自增 id 如果使用 mysql 实现， 性能不堪受辱，因此，此处使用 redis 自增实现（可配置为 mysql 实现）；</li>
+<li>经过测试，笔记本电脑，单 topic 20 并发写入，qps 在 1000-1500 左右（local mysql &amp; local redis），基本满足业务需求。</li>
+<li>考虑到高可用性和业务场景，此处无法使用批量插入</li>
+</ul>
+</li>
+<li>所有的 topic 和 msg 都写入的这一张表中，表数据定时清理，消费完的消息，可提前删除。</li>
+</ul>
+<h2 id="读取设计"><a href="#读取设计" class="headerlink" title="读取设计"></a>读取设计</h2><ol>
+<li>假设针对一个 topic，只有一个 consumer，只需循环读取，然后更新 offset 即可。<ol>
+<li>但结合实际业务场景，这种基本不存在，所以，忽略这种场景。</li>
+<li>通常，一个 topic 有多个 consumer group（简称 tg）， 一个 consumer group 有多个 client（jvm or thread）</li>
+</ol>
+</li>
+<li>如果一个 topic + group（简称 tg），有多个 consumer，每个 consumer 有多个线程，读取和更新 offset 则会有并发问题, 如下图。</li>
+</ol>
+<ul>
+<li>这个 client id，我们将其设计为，ip + pid + uuid + thread id；<ul>
+<li>ip 和 pid 可帮助我们追溯问题</li>
+<li>uuid 简单防重复</li>
+<li>thread id，一种性能优化，下面细说。</li>
+</ul>
+</li>
+<li>结合实际业务场景，且遵循 simple is better 原则，读取时，使用上锁的方式解决并发问题。锁的粒度就是 tg</li>
+<li>考虑到要实现基本的顺序读取和防止重复消费，多线程并发时，我们应当实现基于自增的形式读取 msg；每个 clientid 读取消息后，都会记录一个简单的log，并在 tg 维度增加一个 max offset</li>
+<li>每次读取消息时，每个 client 都需要去检查当前想要读取的 tg 是否已经有【其他 client】在操作 max offset。即，我们将锁的粒度缩小到了 max offset；<ul>
+<li>整体原则是，一个 t + g 的 max offset，同时只能有一个 thread 操作（写和更新）</li>
+<li>如果有其他人在读取，则阻塞</li>
+<li>如果没有其他人在读取，则锁住这个 tg， 并批量拉取一定数量的消息 id，<ul>
+<li>对这个 tg 维度的 max offset + n</li>
+<li>批量插入这个 tg + clientid offset log，表明这个消息被这个 clientid 读取了，同时也间接更新了 max offset（order by offset）</li>
+<li>释放锁🔐</li>
+<li>拉取刚刚读取的 msg id list 里面的消息体</li>
+<li>交给业务处理消息</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="/img/2023/09/img.png" srcset="/img/loading.gif" lazyload></p>
+<ol start="3">
+<li><p>ack</p>
+<ol>
+<li>对于集群消息，如何保证在断电情况下，消息不丢失,使用数据库存储消息, 写入即不会丢失, 但消费时, 如果刚刚读进内存就立刻宕机,则需要在重启时恢复消息.</li>
+<li>每个 client get 到消息后，都需要记录 msg pid，consumer group，state（start、done，retry）为 start 状态</li>
+<li>ack success，将 log update 为 done 状态</li>
+<li>ack fail 后，将 log update 为 retry 状态，同时将消息存入重试队列<ol>
+<li>这里需要上锁吗？其实是不需要的，因为更新的维度是 client id 的 log，不存在并发更新. 这里更新状态是表示这些消息已经处理结束了，否则无法判定宕机场景。</li>
+<li>对于 start 状态的消息，定时任务会去检查<ol>
+<li>如果 client 还存活，超过 1 分钟(可配)，则将其捞出，放进重试队列，并在 10s 进行第一次重试</li>
+<li>如果 client 还存活，则立刻将其捞出，放进重试队列，并在 10s 进行第一次重试</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>ack 是批量的，ack 失败，仅会导致重复消费。</li>
+</ol>
+</li>
+<li><p>广播消息</p>
+<ol>
+<li>是否为广播消息由 topic 确定</li>
+<li>广播消息不需要上锁，每一个订阅该 topic 的 client 都会读取到该消息</li>
+<li>广播消息不需要 ack，不需要记录成功或失败或重试，仅需要内存里记录 offset</li>
+<li>推荐尽可能使用集群模式，使用集群模式模拟广播模式</li>
+</ol>
+</li>
+</ol>
+<ol start="5">
+<li>client id<ol>
+<li>只有 consumer 需要 client id</li>
+<li>client id 由 ip pid uuid + thread id 组成, 可溯源.</li>
+<li>client id 需要续约（5s），如果机器宕机，则会被自动清除，且他的 start 状态的消息会进入重试队列，交给同 group 的其他 client</li>
+<li>client id 可以自己主动注销，注销前，自己内存的消息应当被优雅消费结束，一般来讲，kill -15 的 jvm 都会主动注销 client id；</li>
+</ol>
+</li>
+</ol>
+<h2 id="核心表设计"><a href="#核心表设计" class="headerlink" title="核心表设计"></a>核心表设计</h2><ol>
+<li>topic 表：记录topic 元信息</li>
+<li>group 表：记录 group 订阅元信息</li>
+<li>msg 表：msg总表，记录写入的信息，包含 body 和 topic 维度的自增 offset，类似 rocketmq commit log<ol>
+<li>该表会被多个 consumer 消费的消息</li>
+<li>该表会被定制删除过期数据</li>
+</ol>
+</li>
+<li>retry msg 表，消费失败、超时的消息，会进入该表，并按阶梯定时消费</li>
+<li>dead msg 表，消费重试 16（any config） 次的消息，会进入该表</li>
+<li>topic_group_log 表：记录 consumer group client 的 msg 消费记录，包含 state（start、done，retry） 字段，可 ack<ol>
+<li>该表的记录行数会非常多，单行数据较少，可自动删除 done 的记录</li>
+</ol>
+</li>
+</ol>
+<h2 id="锁🔐"><a href="#锁🔐" class="headerlink" title="锁🔐"></a>锁🔐</h2><p>如上文所说，由于本方案未采用常见的多 queue 和多 partition 的设计，因此瓶颈在于上图提到的分布式锁的设计上，具体链路为 consumer group client 在集群消费时，<br>为了让并发读取的 thread 拉取到的消息尽可能准确，使用上锁的方式来实现。</p>
+<p>总体看下来, 可以简单理解为, ems 失去了性能, 却拥有了所有.</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/openSource/" class="category-chain-item">openSource</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Message Queue Stream Based on Mysql Implementation</div>
+      <div>http://thinkinjava.cn/2023/09/02/2023/ems/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>莫那·鲁道</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年9月2日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/08/25/2024/0825p/" title="Photos From 2024-08-25">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Photos From 2024-08-25</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/08/21/2023/linkageerror/" title="Java LinkageError Loader Constraint 分析">
+                        <span class="hidden-mobile">Java LinkageError Loader Constraint 分析</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
